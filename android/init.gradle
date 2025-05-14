@@ -1,0 +1,9 @@
+gradle.startParameter.excludedTaskNames += 'generateLockfiles'
+
+allprojects {
+    tasks.whenTaskAdded { task ->
+        if (task.name == 'generateLockfiles') {
+            task.enabled = false
+        }
+    }
+} 

@@ -1,0 +1,49 @@
+{
+    "welcomeMessage": "Welcome,",
+    "scheduleTitle": "Activity Schedule",
+    "searchHint": "Search by destination or doctor name...",
+    "filterAll": "All",
+    "filterPendingApproval": "Pending",
+    "filterApproved": "Approved",
+    "filterRejected": "Rejected",
+    "filterCompleted": "Completed",
+    "noResults": "No Results",
+    "tryChangeFilter": "Try changing filters or search keywords",
+    "emptySchedule": "Empty Schedule",
+    "noScheduleYet": "No schedule at this time",
+    "loadingError": "Failed to load schedule",
+    "tryAgain": "Try Again",
+    "shift": "Shift {number}",
+    "@shift": {
+        "placeholders": {
+            "number": {
+                "type": "int"
+            }
+        }
+    },
+    "approvedBy": "Approved by {name}",
+    "@approvedBy": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "rejectedBy": "Rejected by {name}",
+    "@rejectedBy": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "pendingApproval": "Pending Approval",
+    "checkedIn": "Checked In",
+    "notCheckedOut": "Not Checked Out",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "rejected": "Rejected",
+    "userInfo": "User Information",
+    "logout": "Logout",
+    "pleaseLoginFirst": "Please login first"
+} 

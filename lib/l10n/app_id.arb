@@ -1,0 +1,49 @@
+{
+    "welcomeMessage": "Selamat Datang,",
+    "scheduleTitle": "Jadwal Aktivitas",
+    "searchHint": "Cari nama tujuan atau dokter...",
+    "filterAll": "Semua",
+    "filterPendingApproval": "Belum Disetujui",
+    "filterApproved": "Disetujui",
+    "filterRejected": "Ditolak",
+    "filterCompleted": "Selesai",
+    "noResults": "Tidak Ada Hasil",
+    "tryChangeFilter": "Coba ubah filter atau kata kunci pencarian",
+    "emptySchedule": "Jadwal Kosong",
+    "noScheduleYet": "Tidak ada jadwal saat ini",
+    "loadingError": "Gagal memuat jadwal",
+    "tryAgain": "Coba Lagi",
+    "shift": "Shift {number}",
+    "@shift": {
+        "placeholders": {
+            "number": {
+                "type": "int"
+            }
+        }
+    },
+    "approvedBy": "Disetujui",
+    "@approvedBy": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "rejectedBy": "Ditolak",
+    "@rejectedBy": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "pendingApproval": "Menunggu Persetujuan",
+    "checkedIn": "Sudah Check-in",
+    "notCheckedOut": "Belum Check-out",
+    "completed": "Selesai",
+    "cancelled": "Batal",
+    "rejected": "Ditolak",
+    "userInfo": "Informasi Pengguna",
+    "logout": "Keluar",
+    "pleaseLoginFirst": "Silakan Masuk terlebih dahulu"
+} 
