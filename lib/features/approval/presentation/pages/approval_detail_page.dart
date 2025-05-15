@@ -7,6 +7,7 @@ import '../../domain/entities/approval.dart';
 import '../bloc/approval_bloc.dart';
 import '../bloc/approval_event.dart';
 import '../bloc/approval_state.dart';
+import 'package:test_cbo/core/presentation/widgets/shimmer_overlay_loading.dart';
 
 class ApprovalDetailPage extends StatelessWidget {
   final Approval approval;
@@ -132,12 +133,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
             BlocBuilder<ApprovalBloc, ApprovalState>(
               builder: (context, state) {
                 if (state is ApprovalSending) {
-                  return Container(
-                    color: Colors.black.withOpacity(0.3),
-                    child: const Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
+                  return const ShimmerOverlayLoading();
                 }
                 return const SizedBox.shrink();
               },

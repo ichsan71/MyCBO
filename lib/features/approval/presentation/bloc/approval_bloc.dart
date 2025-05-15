@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/error/failures.dart';
-import '../../domain/entities/approval.dart';
 import '../../domain/usecases/get_approvals.dart';
 import '../../domain/usecases/send_approval.dart';
 import 'approval_event.dart';

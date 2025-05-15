@@ -1,16 +1,16 @@
 {
     "welcomeMessage": "Welcome,",
     "scheduleTitle": "Activity Schedule",
-    "searchHint": "Search by destination or doctor name...",
+    "searchHint": "Search destination or doctor name...",
     "filterAll": "All",
-    "filterPendingApproval": "Pending",
+    "filterPendingApproval": "Pending Approval",
     "filterApproved": "Approved",
     "filterRejected": "Rejected",
     "filterCompleted": "Completed",
     "noResults": "No Results",
-    "tryChangeFilter": "Try changing filters or search keywords",
+    "tryChangeFilter": "Try changing filter or search keyword",
     "emptySchedule": "Empty Schedule",
-    "noScheduleYet": "No schedule at this time",
+    "noScheduleYet": "No schedule at the moment",
     "loadingError": "Failed to load schedule",
     "tryAgain": "Try Again",
     "shift": "Shift {number}",
@@ -21,7 +21,7 @@
             }
         }
     },
-    "approvedBy": "Approved by {name}",
+    "approvedBy": "Approved",
     "@approvedBy": {
         "placeholders": {
             "name": {
@@ -29,7 +29,7 @@
             }
         }
     },
-    "rejectedBy": "Rejected by {name}",
+    "rejectedBy": "Rejected",
     "@rejectedBy": {
         "placeholders": {
             "name": {
@@ -37,7 +37,7 @@
             }
         }
     },
-    "pendingApproval": "Pending Approval",
+    "pendingApproval": "Waiting for Approval",
     "checkedIn": "Checked In",
     "notCheckedOut": "Not Checked Out",
     "completed": "Completed",
@@ -45,5 +45,9 @@
     "rejected": "Rejected",
     "userInfo": "User Information",
     "logout": "Logout",
-    "pleaseLoginFirst": "Please login first"
+    "pleaseLoginFirst": "Please login first",
+    "home": "Home",
+    "schedules": "Schedules",
+    "profile": "Profile",
+    "addSchedule": "Add Schedule"
 } 

@@ -45,5 +45,9 @@
     "rejected": "Ditolak",
     "userInfo": "Informasi Pengguna",
     "logout": "Keluar",
-    "pleaseLoginFirst": "Silakan Masuk terlebih dahulu"
+    "pleaseLoginFirst": "Silakan Masuk terlebih dahulu",
+    "home": "Beranda",
+    "schedules": "Jadwal",
+    "profile": "Profil",
+    "addSchedule": "Tambah Jadwal"
 } 

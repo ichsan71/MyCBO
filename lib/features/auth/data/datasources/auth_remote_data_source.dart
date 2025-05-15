@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/database/app_database.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/utils/constants.dart';
 import '../models/user_model.dart';
@@ -89,11 +91,31 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<bool> logout() async {
     try {
+      if (kDebugMode) {
+        print('Memulai proses logout...');
+        print('1. Menghapus data dari SharedPreferences');
+      }
+      
       // Hapus data user dari SharedPreferences menggunakan konstanta
       await sharedPreferences.remove(Constants.tokenKey);
       await sharedPreferences.remove(Constants.userDataKey);
+      
+      if (kDebugMode) {
+        print('2. Membersihkan database lokal');
+      }
+      
+      // Bersihkan semua data lokal di SQLite
+      await AppDatabase.instance.clearAllTables();
+      
+      if (kDebugMode) {
+        print('Proses logout selesai');
+      }
+      
       return true;
     } catch (e) {
+      if (kDebugMode) {
+        print('Error saat logout: $e');
+      }
       throw CacheException();
     }
   }

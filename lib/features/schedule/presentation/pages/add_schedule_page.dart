@@ -17,14 +17,26 @@ import 'package:test_cbo/features/schedule/domain/entities/schedule_type.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_bloc.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_event.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_state.dart';
+import 'package:test_cbo/features/schedule/presentation/bloc/schedule_bloc.dart';
+import 'package:test_cbo/features/schedule/presentation/bloc/schedule_event.dart';
+import 'package:test_cbo/core/presentation/widgets/shimmer_schedule_loading.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AddSchedulePage extends StatelessWidget {
   const AddSchedulePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => di.sl<AddScheduleBloc>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => di.sl<AddScheduleBloc>(),
+        ),
+        BlocProvider(
+          create: (_) => di.sl<ScheduleBloc>(),
+        ),
+      ],
       child: const _AddScheduleView(),
     );
   }
@@ -188,28 +200,41 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
   }
 
   void _submitForm(int userId) {
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState?.validate() ?? false) {
+      if (_selectedDoctor == null) {
+        // Tampilkan pesan error jika dokter belum dipilih
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Silakan pilih dokter terlebih dahulu'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       if (_selectedScheduleType == null) {
+        // Tampilkan pesan error jika tipe jadwal belum dipilih
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pilih tipe jadwal terlebih dahulu')),
+          const SnackBar(
+            content: Text('Silakan pilih tipe jadwal terlebih dahulu'),
+            backgroundColor: Colors.red,
+          ),
         );
         return;
       }
 
-      if (_selectedDoctor == null && _selectedDestinationType == 'dokter') {
+      if (_tanggalController.text.isEmpty) {
+        // Tampilkan pesan error jika tanggal belum dipilih
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pilih dokter terlebih dahulu')),
+          const SnackBar(
+            content: Text('Silakan pilih tanggal kunjungan'),
+            backgroundColor: Colors.red,
+          ),
         );
         return;
       }
 
-      if (_selectedProducts.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pilih minimal satu produk')),
-        );
-        return;
-      }
-
+      // Log debug informasi
       Logger.debug(_tag, 'Submitting form with data:');
       Logger.debug(_tag, '- Schedule Type: ${_selectedScheduleType?.nama}');
       Logger.debug(_tag, '- Doctor: ${_selectedDoctor?.nama}');
@@ -254,28 +279,49 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tambah Jadwal'),
-        centerTitle: true,
+        title: Text(
+          AppLocalizations.of(context)?.addSchedule ?? 'Tambah Jadwal',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         elevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: Theme.of(context).colorScheme.onBackground,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: BlocConsumer<AddScheduleBloc, AddScheduleState>(
         listener: (context, state) {
-          if (state is AddScheduleError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
-          } else if (state is AddScheduleSuccess) {
+          if (state is AddScheduleSuccess) {
+            // Tampilkan pesan sukses
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                  content: Text('Jadwal berhasil ditambahkan'),
-                  backgroundColor: Colors.green),
+                content: Text('Jadwal berhasil ditambahkan'),
+                backgroundColor: Colors.green,
+              ),
             );
-            Navigator.pop(context);
+
+            // Kembali ke halaman jadwal dengan membawa data refresh = true
+            Navigator.pop(context, true);
+          } else if (state is AddScheduleError) {
+            // Tampilkan pesan error
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+              ),
+            );
           }
         },
         builder: (context, state) {
           if (state is AddScheduleLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const ShimmerScheduleLoading();
           }
 
           // Build form if products and doctors are loaded

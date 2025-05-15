@@ -5,6 +5,7 @@ import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 import '../widgets/custom_text_field.dart';
+import 'package:test_cbo/core/presentation/widgets/shimmer_button_loading.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -170,14 +171,7 @@ class _LoginPageState extends State<LoginPage> {
                         elevation: 0,
                       ),
                       child: state is AuthLoading
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
+                          ? const ShimmerButtonLoading()
                           : Text(
                               'Masuk',
                               style: GoogleFonts.poppins(

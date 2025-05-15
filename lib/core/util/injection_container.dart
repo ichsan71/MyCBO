@@ -2,6 +2,7 @@ import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:test_cbo/core/database/app_database.dart';
 import 'package:test_cbo/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:test_cbo/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:test_cbo/features/auth/domain/repositories/auth_repository.dart';
@@ -10,6 +11,8 @@ import 'package:test_cbo/features/auth/domain/usecases/login_usecase.dart';
 import 'package:test_cbo/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:test_cbo/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:test_cbo/features/schedule/data/datasources/add_schedule_remote_data_source.dart';
+import 'package:test_cbo/features/schedule/data/datasources/local/add_schedule_local_data_source.dart';
+import 'package:test_cbo/features/schedule/data/datasources/local/add_schedule_local_data_source_impl.dart';
 import 'package:test_cbo/features/schedule/data/datasources/schedule_remote_data_source.dart';
 import 'package:test_cbo/features/schedule/data/repositories/add_schedule_repository_impl.dart';
 import 'package:test_cbo/features/schedule/data/repositories/schedule_repository_impl.dart';
@@ -104,6 +107,7 @@ Future<void> init() async {
   sl.registerLazySingleton<AddScheduleRepository>(
     () => AddScheduleRepositoryImpl(
       remoteDataSource: sl(),
+      localDataSource: sl(),
       networkInfo: sl(),
     ),
   );
@@ -123,7 +127,15 @@ Future<void> init() async {
     ),
   );
 
+  // Local Data Sources
+  sl.registerLazySingleton<AddScheduleLocalDataSource>(
+    () => AddScheduleLocalDataSourceImpl(
+      database: sl(),
+    ),
+  );
+
   //! Core
+  sl.registerLazySingleton(() => AppDatabase.instance);
   sl.registerLazySingleton<NetworkInfo>(
     () => NetworkInfoImpl(sl()),
   );

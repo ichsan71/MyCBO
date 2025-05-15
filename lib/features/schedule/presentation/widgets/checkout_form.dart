@@ -8,6 +8,9 @@ import 'package:image/image.dart' as img;
 import '../../data/models/checkout_request_model.dart';
 import '../bloc/schedule_bloc.dart';
 import '../bloc/schedule_event.dart';
+import 'package:test_cbo/core/presentation/widgets/shimmer_loading.dart';
+import 'package:test_cbo/core/presentation/widgets/shimmer_form_loading.dart';
+import 'package:test_cbo/core/presentation/widgets/shimmer_button_loading.dart';
 
 class CheckoutForm extends StatefulWidget {
   final int scheduleId;
@@ -138,15 +141,22 @@ class _CheckoutFormState extends State<CheckoutForm> {
           context: context,
           barrierDismissible: false,
           builder: (BuildContext context) {
-            return const Dialog(
+            return Dialog(
               child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Row(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(),
-                    SizedBox(width: 20),
-                    Text("Memproses check-out...")
+                    const SizedBox(
+                      height: 80,
+                      child: ShimmerFormLoading(
+                        isDetailed: false,
+                        hasImage: false,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text("Memproses check-out...",
+                        style: Theme.of(context).textTheme.titleMedium),
                   ],
                 ),
               ),
@@ -388,14 +398,11 @@ class _CheckoutFormState extends State<CheckoutForm> {
                 ? Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      SizedBox(
-                        width: 20,
+                      const ShimmerButtonLoading(
+                        width: 80,
                         height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white.withOpacity(0.8)),
-                        ),
+                        baseColor: Colors.white70,
+                        highlightColor: Colors.white,
                       ),
                       const SizedBox(width: 16),
                       const Text(
@@ -407,12 +414,12 @@ class _CheckoutFormState extends State<CheckoutForm> {
                       ),
                     ],
                   )
-                : Row(
+                : const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.logout, size: 20),
-                      const SizedBox(width: 8),
-                      const Text(
+                      Icon(Icons.logout, size: 20),
+                      SizedBox(width: 8),
+                      Text(
                         'Check-out',
                         style: TextStyle(
                           fontSize: 16,

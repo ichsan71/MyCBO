@@ -13,10 +13,13 @@ import '../../data/models/checkin_request_model.dart';
 import '../../data/models/checkout_request_model.dart';
 import '../bloc/schedule_bloc.dart';
 import '../bloc/schedule_event.dart';
+import '../bloc/schedule_state.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../widgets/checkin_form.dart';
 import '../widgets/checkout_form.dart';
+import '../../../../core/presentation/widgets/shimmer_schedule_detail_loading.dart';
+import '../../../../core/presentation/widgets/shimmer_form_loading.dart';
 
 class ScheduleDetailPage extends StatelessWidget {
   final Schedule schedule;
@@ -84,7 +87,13 @@ class ScheduleDetailPage extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const CircularProgressIndicator(),
+                const SizedBox(
+                  height: 100,
+                  child: ShimmerFormLoading(
+                    isDetailed: false,
+                    hasImage: false,
+                  ),
+                ),
                 const SizedBox(height: 20),
                 Text('Sedang mengirim data check-in...',
                     style: Theme.of(context).textTheme.titleMedium),
@@ -279,7 +288,13 @@ class ScheduleDetailPage extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const CircularProgressIndicator(),
+                const SizedBox(
+                  height: 100,
+                  child: ShimmerFormLoading(
+                    isDetailed: false,
+                    hasImage: false,
+                  ),
+                ),
                 const SizedBox(height: 20),
                 Text('Sedang mengirim data check-out...',
                     style: Theme.of(context).textTheme.titleMedium),
@@ -555,141 +570,148 @@ class ScheduleDetailPage extends StatelessWidget {
             centerTitle: true,
             elevation: 0,
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Informasi Utama
-                _buildCard(
-                  title: 'Informasi Jadwal',
-                  icon: Icons.calendar_today,
-                  iconColor: theme.colorScheme.primary,
-                  children: [
-                    _buildDetailRow(
-                      label: 'Tipe Schedule',
-                      value: schedule.tipeSchedule,
-                      icon: Icons.label_outline,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildDetailRow(
-                      label: 'Tanggal Visit',
-                      value: schedule.tglVisit,
-                      icon: Icons.event,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildDetailRow(
-                      label: 'Shift',
-                      value: schedule.shift,
-                      icon: Icons.access_time,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildDetailRowWithStatus(
-                      label: 'Status',
-                      value: schedule.statusCheckin,
-                      status: schedule.statusCheckin,
-                      draft: schedule.draft,
-                      approved: schedule.approved,
-                      icon: Icons.info_outline,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+          body: BlocBuilder<ScheduleBloc, ScheduleState>(
+              builder: (context, state) {
+            if (state is ScheduleLoading) {
+              return const ShimmerScheduleDetailLoading();
+            }
 
-                // Informasi Tujuan
-                _buildCard(
-                  title: 'Informasi Tujuan',
-                  icon: Icons.person,
-                  iconColor: theme.colorScheme.secondary,
-                  children: [
-                    _buildDetailRow(
-                      label: 'Tujuan',
-                      value: schedule.tujuan,
-                      icon: Icons.location_on_outlined,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildDetailRow(
-                      label: 'Nama Tujuan',
-                      value: schedule.namaTujuan,
-                      icon: Icons.account_circle_outlined,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Informasi Produk
-                _buildCard(
-                  title: 'Informasi Produk',
-                  icon: Icons.shopping_bag,
-                  iconColor: theme.colorScheme.tertiary,
-                  children: [
-                    _buildDetailRow(
-                      label: 'Nama Produk',
-                      value: schedule.namaProduct,
-                      icon: Icons.medication_outlined,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildDetailRow(
-                      label: 'Divisi',
-                      value: schedule.namaDivisi,
-                      icon: Icons.category_outlined,
-                    ),
-                    if (schedule.namaSpesialis.isNotEmpty) ...[
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Informasi Utama
+                  _buildCard(
+                    title: 'Informasi Jadwal',
+                    icon: Icons.calendar_today,
+                    iconColor: theme.colorScheme.primary,
+                    children: [
+                      _buildDetailRow(
+                        label: 'Tipe Schedule',
+                        value: schedule.tipeSchedule,
+                        icon: Icons.label_outline,
+                      ),
                       const SizedBox(height: 12),
                       _buildDetailRow(
-                        label: 'Spesialis',
-                        value: schedule.namaSpesialis,
-                        icon: Icons.local_hospital_outlined,
+                        label: 'Tanggal Visit',
+                        value: schedule.tglVisit,
+                        icon: Icons.event,
                       ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Informasi Tambahan
-                _buildCard(
-                  title: 'Catatan',
-                  icon: Icons.note,
-                  iconColor: theme.colorScheme.primary,
-                  children: [
-                    _buildDetailRow(
-                      label: 'Catatan',
-                      value: schedule.note.isNotEmpty
-                          ? schedule.note
-                          : 'Tidak ada catatan',
-                      icon: Icons.comment_outlined,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildDetailRowWithStatus(
-                      label: 'Status Approval',
-                      value: schedule.approved == 1
-                          ? 'Disetujui'
-                          : lowerDraft.contains('rejected')
-                              ? 'Ditolak'
-                              : 'Belum Disetujui',
-                      status: schedule.approved == 1
-                          ? 'approved'
-                          : lowerDraft.contains('rejected')
-                              ? 'rejected'
-                              : 'pending',
-                      draft: schedule.draft,
-                      approved: schedule.approved,
-                      icon: Icons.verified_outlined,
-                    ),
-                    if (schedule.namaApprover != null &&
-                        schedule.namaApprover!.isNotEmpty) ...[
                       const SizedBox(height: 12),
                       _buildDetailRow(
-                        label: 'Nama Approver',
-                        value: schedule.namaApprover!,
-                        icon: Icons.person_outlined,
+                        label: 'Shift',
+                        value: schedule.shift,
+                        icon: Icons.access_time,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDetailRowWithStatus(
+                        label: 'Status',
+                        value: schedule.statusCheckin,
+                        status: schedule.statusCheckin,
+                        draft: schedule.draft,
+                        approved: schedule.approved,
+                        icon: Icons.info_outline,
                       ),
                     ],
-                  ],
-                ),
-              ],
-            ),
-          ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Informasi Tujuan
+                  _buildCard(
+                    title: 'Informasi Tujuan',
+                    icon: Icons.person,
+                    iconColor: theme.colorScheme.secondary,
+                    children: [
+                      _buildDetailRow(
+                        label: 'Tujuan',
+                        value: schedule.tujuan,
+                        icon: Icons.location_on_outlined,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDetailRow(
+                        label: 'Nama Tujuan',
+                        value: schedule.namaTujuan,
+                        icon: Icons.account_circle_outlined,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Informasi Produk
+                  _buildCard(
+                    title: 'Informasi Produk',
+                    icon: Icons.shopping_bag,
+                    iconColor: theme.colorScheme.tertiary,
+                    children: [
+                      _buildDetailRow(
+                        label: 'Nama Produk',
+                        value: schedule.namaProduct,
+                        icon: Icons.medication_outlined,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDetailRow(
+                        label: 'Divisi',
+                        value: schedule.namaDivisi,
+                        icon: Icons.category_outlined,
+                      ),
+                      if (schedule.namaSpesialis.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        _buildDetailRow(
+                          label: 'Spesialis',
+                          value: schedule.namaSpesialis,
+                          icon: Icons.local_hospital_outlined,
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Informasi Tambahan
+                  _buildCard(
+                    title: 'Catatan',
+                    icon: Icons.note,
+                    iconColor: theme.colorScheme.primary,
+                    children: [
+                      _buildDetailRow(
+                        label: 'Catatan',
+                        value: schedule.note.isNotEmpty
+                            ? schedule.note
+                            : 'Tidak ada catatan',
+                        icon: Icons.comment_outlined,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDetailRowWithStatus(
+                        label: 'Status Approval',
+                        value: schedule.approved == 1
+                            ? 'Disetujui'
+                            : lowerDraft.contains('rejected')
+                                ? 'Ditolak'
+                                : 'Belum Disetujui',
+                        status: schedule.approved == 1
+                            ? 'approved'
+                            : lowerDraft.contains('rejected')
+                                ? 'rejected'
+                                : 'pending',
+                        draft: schedule.draft,
+                        approved: schedule.approved,
+                        icon: Icons.verified_outlined,
+                      ),
+                      if (schedule.namaApprover != null &&
+                          schedule.namaApprover!.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        _buildDetailRow(
+                          label: 'Nama Approver',
+                          value: schedule.namaApprover!,
+                          icon: Icons.person_outlined,
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            );
+          }),
           bottomNavigationBar: () {
             Logger.info(
                 'ScheduleDetailPage', '=== BOTTOM NAVIGATION STATUS ===');

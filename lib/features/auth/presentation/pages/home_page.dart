@@ -6,6 +6,9 @@ import '../bloc/auth_bloc.dart';
 import '../bloc/auth_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:test_cbo/features/schedule/presentation/pages/add_schedule_page.dart';
+import 'package:test_cbo/core/presentation/widgets/shimmer_home_loading.dart';
+import 'package:test_cbo/features/schedule/presentation/bloc/schedule_bloc.dart';
+import 'package:test_cbo/features/schedule/presentation/bloc/schedule_event.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -65,13 +68,25 @@ class HomePage extends StatelessWidget {
                             'Tambah Jadwal',
                             Icons.add_circle,
                             Colors.green,
-                            () {
-                              Navigator.push(
+                            () async {
+                              final result = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => const AddSchedulePage(),
                                 ),
                               );
+
+                              // Refresh jadwal jika penambahan berhasil
+                              if (result == true) {
+                                final authState =
+                                    context.read<AuthBloc>().state;
+                                if (authState is AuthAuthenticated) {
+                                  context.read<ScheduleBloc>().add(
+                                        RefreshSchedulesEvent(
+                                            userId: authState.user.idUser),
+                                      );
+                                }
+                              }
                             },
                           ),
                           if (hasApprovalAccess)
@@ -121,9 +136,7 @@ class HomePage extends StatelessWidget {
               ),
             );
           }
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const ShimmerHomeLoading();
         },
       ),
     );

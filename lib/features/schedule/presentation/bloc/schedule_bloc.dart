@@ -29,6 +29,10 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
     RefreshSchedulesEvent event,
     Emitter<ScheduleState> emit,
   ) async {
+    // Emit loading state terlebih dahulu untuk menunjukkan proses refresh
+    emit(const ScheduleLoading());
+
+    // Kemudian fetch data
     await _fetchSchedules(event.userId, emit);
   }
 
@@ -90,25 +94,35 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
         },
         (schedules) {
           if (schedules.isEmpty) {
-            Logger.info('ScheduleBloc', 'Berhasil mengambil data jadwal, tetapi data kosong');
-            Logger.info('ScheduleBloc', 'AKHIR PENGAMBILAN DATA JADWAL (KOSONG)');
+            Logger.info('ScheduleBloc',
+                'Berhasil mengambil data jadwal, tetapi data kosong');
+            Logger.info(
+                'ScheduleBloc', 'AKHIR PENGAMBILAN DATA JADWAL (KOSONG)');
             emit(const ScheduleEmpty());
           } else {
-            Logger.info('ScheduleBloc', 'BERHASIL mengambil data jadwal: ${schedules.length} item');
+            Logger.info('ScheduleBloc',
+                'BERHASIL mengambil data jadwal: ${schedules.length} item');
             Logger.info('ScheduleBloc', 'DETAIL DATA JADWAL');
             for (var i = 0; i < schedules.length; i++) {
               Logger.info('ScheduleBloc', 'Jadwal #${i + 1}:');
-              Logger.info('ScheduleBloc', '  - Nama Tujuan: ${schedules[i].namaTujuan}');
-              Logger.info('ScheduleBloc', '  - Tanggal: ${schedules[i].tglVisit}');
+              Logger.info('ScheduleBloc',
+                  '  - Nama Tujuan: ${schedules[i].namaTujuan}');
+              Logger.info(
+                  'ScheduleBloc', '  - Tanggal: ${schedules[i].tglVisit}');
               Logger.info('ScheduleBloc', '  - Shift: ${schedules[i].shift}');
-              Logger.info('ScheduleBloc', '  - Tipe: ${schedules[i].tipeSchedule}');
-              Logger.info('ScheduleBloc', '  - Status: ${schedules[i].statusCheckin}');
+              Logger.info(
+                  'ScheduleBloc', '  - Tipe: ${schedules[i].tipeSchedule}');
+              Logger.info(
+                  'ScheduleBloc', '  - Status: ${schedules[i].statusCheckin}');
               Logger.info('ScheduleBloc', '  - Draft: ${schedules[i].draft}');
-              Logger.info('ScheduleBloc', '  - Approved: ${schedules[i].approved}');
-              Logger.info('ScheduleBloc', '  - Nama Approver: ${schedules[i].namaApprover}');
+              Logger.info(
+                  'ScheduleBloc', '  - Approved: ${schedules[i].approved}');
+              Logger.info('ScheduleBloc',
+                  '  - Nama Approver: ${schedules[i].namaApprover}');
             }
             Logger.info('ScheduleBloc', 'AKHIR DETAIL DATA JADWAL');
-            Logger.info('ScheduleBloc', 'AKHIR PENGAMBILAN DATA JADWAL (SUKSES)');
+            Logger.info(
+                'ScheduleBloc', 'AKHIR PENGAMBILAN DATA JADWAL (SUKSES)');
             emit(ScheduleLoaded(schedules));
           }
         },
@@ -121,22 +135,24 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
 
   // Fungsi helper untuk mengubah failure menjadi pesan error
   String _mapFailureToMessage(Failure failure) {
-    Logger.error('ScheduleBloc', 'Mapping failure type: ${failure.runtimeType}');
+    Logger.error(
+        'ScheduleBloc', 'Mapping failure type: ${failure.runtimeType}');
     Logger.error('ScheduleBloc', 'Failure details: $failure');
 
     switch (failure.runtimeType) {
       case ServerFailure:
         final serverFailure = failure as ServerFailure;
-        Logger.error('ScheduleBloc', 'Server failure message: "${serverFailure.message}"');
-        
+        Logger.error('ScheduleBloc',
+            'Server failure message: "${serverFailure.message}"');
+
         if (serverFailure.message.isEmpty) {
           return 'Terjadi kesalahan pada server. Silakan coba lagi.';
         }
-        
+
         if (serverFailure.message.contains('Instance of')) {
           return 'Terjadi kesalahan pada server. Silakan coba lagi nanti.';
         }
-        
+
         return serverFailure.message;
       case NetworkFailure:
         return 'Tidak ada koneksi internet. Silakan periksa koneksi anda dan coba lagi.';

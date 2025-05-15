@@ -11,17 +11,14 @@ import '../../../schedule/presentation/pages/schedule_detail_page.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:test_cbo/core/presentation/widgets/shimmer_schedule_list_loading.dart';
 
 class SchedulePage extends StatelessWidget {
   const SchedulePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => sl<ScheduleBloc>(),
-      lazy: false,
-      child: const _ScheduleView(),
-    );
+    return const _ScheduleView();
   }
 }
 
@@ -36,7 +33,6 @@ class _ScheduleViewState extends State<_ScheduleView> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedFilter = 'Semua';
   List<Schedule> _filteredSchedules = [];
-  bool _isInitialLoadDone = false;
 
   @override
   void initState() {
@@ -59,7 +55,6 @@ class _ScheduleViewState extends State<_ScheduleView> {
           context.read<ScheduleBloc>().add(
                 GetSchedulesEvent(userId: authState.user.idUser),
               );
-          _isInitialLoadDone = true;
         }
       }
     });
@@ -164,6 +159,18 @@ class _ScheduleViewState extends State<_ScheduleView> {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: null,
+      floatingActionButton: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, state) {
+          if (state is AuthAuthenticated) {
+            return FloatingActionButton(
+              onPressed: () => _navigateToAddSchedule(),
+              backgroundColor: Theme.of(context).primaryColor,
+              child: const Icon(Icons.add),
+            );
+          }
+          return const SizedBox.shrink();
+        },
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16.0, 40.0, 16.0, 16.0),
@@ -284,67 +291,31 @@ class _ScheduleViewState extends State<_ScheduleView> {
                           if (state is ScheduleLoaded) {
                             Logger.info('SchedulePage',
                                 'Schedule loaded in listener, updating filters');
-                            // Hanya perbarui jika filteredSchedules kosong atau belum diinisialisasi
+
+                            // Selalu update saat jadwal baru dimuat
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) {
+                                _updateFilteredSchedules(state.schedules);
+                              }
+                            });
+                          }
+                        },
+                        builder: (context, state) {
+                          if (state is ScheduleLoading) {
+                            return const ShimmerScheduleListLoading();
+                          } else if (state is ScheduleLoaded) {
+                            // Jika state loaded tapi belum difilter, update sekali
                             if (_filteredSchedules.isEmpty) {
                               WidgetsBinding.instance.addPostFrameCallback((_) {
                                 if (mounted) {
                                   _updateFilteredSchedules(state.schedules);
                                 }
                               });
-                            }
-                          }
-                        },
-                        builder: (context, state) {
-                          if (state is ScheduleLoading) {
-                            // Jika sudah ada data, tampilkan data yang ada sambil loading
-                            if (_filteredSchedules.isNotEmpty) {
-                              return RefreshIndicator(
-                                onRefresh: () async {
-                                  _searchController.clear();
-                                  final l10n = AppLocalizations.of(context)!;
-                                  setState(() {
-                                    _selectedFilter = l10n.filterAll;
-                                    // Reset filtered schedules untuk memuat data baru
-                                    _filteredSchedules = [];
-                                  });
-                                  // Kemudian muat ulang data
-                                  context.read<ScheduleBloc>().add(
-                                        RefreshSchedulesEvent(
-                                          userId: authState.user.idUser,
-                                        ),
-                                      );
-                                },
-                                child: ListView.builder(
-                                  physics:
-                                      const AlwaysScrollableScrollPhysics(),
-                                  shrinkWrap: true,
-                                  itemCount: _filteredSchedules.length,
-                                  itemBuilder: (context, index) {
-                                    final schedule = _filteredSchedules[index];
-                                    return _buildScheduleCard(
-                                      context,
-                                      schedule,
-                                    );
-                                  },
-                                ),
-                              );
-                            }
-                            // Jika tidak ada data, tampilkan loading
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          } else if (state is ScheduleLoaded) {
-                            // Data sudah dimuat, cek apakah perlu difilter ulang
-
-                            // Jika filter kosong dan data belum difilter, tampilkan indikator loading
-                            if (_filteredSchedules.isEmpty) {
-                              // Pengecualian: jika state adalah loaded tapi filteredSchedules kosong,
-                              // kemungkinan belum difilter atau memang hasilnya kosong
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
+                              // Tampilkan loading hanya jika belum difilter
+                              return const ShimmerScheduleListLoading();
                             }
 
+                            // Setelah difilter, periksa apakah hasilnya kosong
                             if (_filteredSchedules.isEmpty) {
                               return RefreshIndicator(
                                 onRefresh: () async {
@@ -352,12 +323,11 @@ class _ScheduleViewState extends State<_ScheduleView> {
                                   final l10n = AppLocalizations.of(context)!;
                                   setState(() {
                                     _selectedFilter = l10n.filterAll;
-                                    // Reset filtered schedules juga untuk memastikan data segar
-                                    _filteredSchedules = [];
                                   });
-                                  // Kemudian muat ulang data
+
+                                  // Muat ulang data dengan state awal kosong
                                   context.read<ScheduleBloc>().add(
-                                        RefreshSchedulesEvent(
+                                        GetSchedulesEvent(
                                           userId: authState.user.idUser,
                                         ),
                                       );
@@ -406,18 +376,18 @@ class _ScheduleViewState extends State<_ScheduleView> {
                                 ),
                               );
                             }
+
+                            // Tampilkan hasil filter dalam ListView dengan RefreshIndicator
                             return RefreshIndicator(
                               onRefresh: () async {
                                 _searchController.clear();
-                                final l10n = AppLocalizations.of(context)!;
                                 setState(() {
                                   _selectedFilter = l10n.filterAll;
-                                  // Reset filtered schedules juga untuk memastikan data segar
-                                  _filteredSchedules = [];
                                 });
-                                // Kemudian muat ulang data
+
+                                // Muat ulang data dengan GetSchedulesEvent (bukan RefreshSchedulesEvent)
                                 context.read<ScheduleBloc>().add(
-                                      RefreshSchedulesEvent(
+                                      GetSchedulesEvent(
                                         userId: authState.user.idUser,
                                       ),
                                     );
@@ -487,9 +457,45 @@ class _ScheduleViewState extends State<_ScheduleView> {
               color: Colors.grey[500],
             ),
           ),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: () => _navigateToAddSchedule(),
+            icon: const Icon(Icons.add),
+            label: Text(l10n.addSchedule),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  // Fungsi untuk navigasi ke halaman tambah jadwal
+  Future<void> _navigateToAddSchedule() async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthAuthenticated) {
+      // Navigasi ke halaman tambah jadwal dan tunggu hasil
+      final result = await Navigator.pushNamed(context, '/add_schedule');
+
+      // Jika kembali dengan hasil sukses, refresh jadwal
+      if (result == true) {
+        if (!mounted) return;
+
+        // Merefresh jadwal secara langsung
+        context.read<ScheduleBloc>().add(
+              RefreshSchedulesEvent(userId: authState.user.idUser),
+            );
+
+        // Reset filter schedules
+        setState(() {
+          _filteredSchedules = [];
+        });
+      }
+    }
   }
 
   Widget _buildErrorState(

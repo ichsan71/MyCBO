@@ -23,7 +23,7 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
         final remoteApprovals = await remoteDataSource.getApprovals(userId);
         return Right(remoteApprovals);
       } on ServerException catch (e) {
-        return Left(ServerFailure(message: e.message ?? 'Terjadi kesalahan pada server'));
+        return Left(ServerFailure(message: e.message));
       } on UnauthorizedException catch (e) {
         return Left(AuthenticationFailure(message: e.message));
       }
@@ -42,7 +42,7 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
             isApproved: isApproved);
         return Right(response);
       } on ServerException catch (e) {
-        return Left(ServerFailure(message: e.message ?? 'Terjadi kesalahan pada server'));
+        return Left(ServerFailure(message: e.message));
       } on UnauthorizedException catch (e) {
         return Left(AuthenticationFailure(message: e.message));
       }

@@ -8,6 +8,9 @@ import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
 import 'features/auth/presentation/pages/dashboard_page.dart';
 import 'features/auth/presentation/pages/login_page.dart';
+import 'features/schedule/presentation/bloc/schedule_bloc.dart';
+import 'features/schedule/presentation/pages/add_schedule_page.dart';
+import 'features/splash/presentation/pages/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,8 +23,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => di.sl<AuthBloc>()..add(const CheckAuthStatusEvent()),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => di.sl<AuthBloc>()..add(const CheckAuthStatusEvent()),
+        ),
+        BlocProvider(
+          create: (_) => di.sl<ScheduleBloc>(),
+        ),
+      ],
       child: MaterialApp(
         title: 'CBO App',
         debugShowCheckedModeBanner: false,
@@ -38,10 +48,11 @@ class MyApp extends StatelessWidget {
           Locale('id'),
           Locale('en'),
         ],
-        home: const LoginPage(),
+        home: const SplashScreen(),
         routes: {
           '/login': (context) => const LoginPage(),
           '/dashboard': (context) => const DashboardPage(),
+          '/add_schedule': (context) => const AddSchedulePage(),
         },
       ),
     );

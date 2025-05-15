@@ -9,6 +9,7 @@ import '../bloc/approval_bloc.dart';
 import '../bloc/approval_event.dart';
 import '../bloc/approval_state.dart';
 import 'approval_detail_page.dart';
+import 'package:test_cbo/core/presentation/widgets/shimmer_approval_loading.dart';
 
 class ApprovalListPage extends StatelessWidget {
   const ApprovalListPage({Key? key}) : super(key: key);
@@ -173,9 +174,7 @@ class _ApprovalListViewState extends State<ApprovalListView> {
                     },
                     builder: (context, state) {
                       if (state is ApprovalLoading) {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
+                        return const ShimmerApprovalLoading();
                       } else if (state is ApprovalsLoaded) {
                         final filteredApprovals =
                             _filterApprovals(state.approvals);

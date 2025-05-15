@@ -11,6 +11,9 @@ import 'package:image/image.dart' as img;
 import '../../data/models/checkin_request_model.dart';
 import '../bloc/schedule_bloc.dart';
 import '../bloc/schedule_event.dart';
+import 'package:test_cbo/core/presentation/widgets/shimmer_loading.dart';
+import 'package:test_cbo/core/presentation/widgets/shimmer_form_loading.dart';
+import 'package:test_cbo/core/presentation/widgets/shimmer_button_loading.dart';
 
 class CheckinForm extends StatefulWidget {
   final int scheduleId;
@@ -249,15 +252,22 @@ class _CheckinFormState extends State<CheckinForm> {
           context: context,
           barrierDismissible: false,
           builder: (BuildContext context) {
-            return const Dialog(
+            return Dialog(
               child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Row(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(),
-                    SizedBox(width: 20),
-                    Text("Memproses check-in...")
+                    const SizedBox(
+                      height: 80,
+                      child: ShimmerFormLoading(
+                        isDetailed: false,
+                        hasImage: false,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text("Memproses check-in...",
+                        style: Theme.of(context).textTheme.titleMedium),
                   ],
                 ),
               ),
@@ -418,12 +428,17 @@ class _CheckinFormState extends State<CheckinForm> {
               child: Row(
                 children: [
                   SizedBox(
-                    width: 24,
+                    width: 100,
                     height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(Colors.orange.shade700),
+                    child: ShimmerLoading(
+                      baseColor: Colors.orange.shade200,
+                      highlightColor: Colors.orange.shade50,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -518,14 +533,11 @@ class _CheckinFormState extends State<CheckinForm> {
                 ? Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      SizedBox(
-                        width: 20,
+                      const ShimmerButtonLoading(
+                        width: 80,
                         height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white.withOpacity(0.8)),
-                        ),
+                        baseColor: Colors.white70,
+                        highlightColor: Colors.white,
                       ),
                       const SizedBox(width: 16),
                       const Text(

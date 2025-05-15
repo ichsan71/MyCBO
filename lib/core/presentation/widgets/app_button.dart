@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:test_cbo/core/presentation/widgets/shimmer_loading.dart';
 
 enum AppButtonType { primary, secondary, outline, text }
 
@@ -98,15 +99,21 @@ class AppButton extends StatelessWidget {
           const SizedBox(width: 8),
         ],
         if (isLoading)
-          SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(
+          ShimmerLoading(
+            baseColor:
                 type == AppButtonType.primary || type == AppButtonType.secondary
-                    ? Colors.white
-                    : theme.colorScheme.primary,
+                    ? theme.colorScheme.onPrimary.withOpacity(0.2)
+                    : theme.colorScheme.primary.withOpacity(0.2),
+            highlightColor:
+                type == AppButtonType.primary || type == AppButtonType.secondary
+                    ? theme.colorScheme.onPrimary.withOpacity(0.5)
+                    : theme.colorScheme.primary.withOpacity(0.5),
+            child: Container(
+              width: 80,
+              height: 16,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(4),
               ),
             ),
           )

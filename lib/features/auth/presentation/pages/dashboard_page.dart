@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'home_page.dart';
-import 'profile_page.dart';
-import 'schedule_page.dart';
-import '../bloc/auth_bloc.dart';
-import '../bloc/auth_state.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:test_cbo/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:test_cbo/features/auth/presentation/bloc/auth_state.dart';
+import 'package:test_cbo/features/auth/presentation/pages/home_page.dart';
+import 'package:test_cbo/features/auth/presentation/pages/profile_page.dart';
+import 'package:test_cbo/features/auth/presentation/pages/schedule_page.dart';
+import 'package:test_cbo/features/schedule/presentation/bloc/schedule_bloc.dart';
+import 'package:test_cbo/features/schedule/presentation/bloc/schedule_event.dart';
+import 'package:test_cbo/features/schedule/presentation/bloc/schedule_state.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -16,68 +21,81 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [
-    const HomePage(),
-    const SchedulePage(),
-    const ProfilePage(),
-  ];
-
-  final List<BottomNavigationBarItem> _navItems = const [
-    BottomNavigationBarItem(
-      icon: Icon(Icons.home_outlined),
-      activeIcon: Icon(Icons.home),
-      label: 'Home',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.calendar_month_outlined),
-      activeIcon: Icon(Icons.calendar_month),
-      label: 'Jadwal',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.person_outline),
-      activeIcon: Icon(Icons.person),
-      label: 'Profil',
-    ),
-  ];
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshScheduleIfNeeded();
     });
+  }
+
+  // Method untuk refresh data jadwal saat masuk tab jadwal
+  void _refreshScheduleIfNeeded() {
+    if (_selectedIndex == 1) {
+      final authState = context.read<AuthBloc>().state;
+      if (authState is AuthAuthenticated) {
+        context.read<ScheduleBloc>().add(
+              RefreshSchedulesEvent(userId: authState.user.idUser),
+            );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,
-        children: _pages,
+        children: const [
+          HomePage(),
+          SchedulePage(),
+          ProfilePage(),
+        ],
       ),
-      bottomNavigationBar: SafeArea(
-        child: Container(
-          decoration: BoxDecoration(
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.3),
-                spreadRadius: 1,
-                blurRadius: 10,
-                offset: const Offset(0, -2),
-              ),
-            ],
+      bottomNavigationBar:
+          BlocBuilder<ScheduleBloc, ScheduleState>(builder: (context, state) {
+        return BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+
+            // Refresh jadwal saat tab jadwal dipilih
+            _refreshScheduleIfNeeded();
+          },
+          items: [
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.home_outlined),
+              activeIcon: const Icon(Icons.home),
+              label: l10n.home,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.calendar_today_outlined),
+              activeIcon: const Icon(Icons.calendar_today),
+              label: l10n.schedules,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.person_outline),
+              activeIcon: const Icon(Icons.person),
+              label: l10n.profile,
+            ),
+          ],
+          selectedItemColor: Theme.of(context).primaryColor,
+          unselectedItemColor: Colors.grey,
+          selectedLabelStyle: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
           ),
-          child: BottomNavigationBar(
-            items: _navItems,
-            currentIndex: _selectedIndex,
-            selectedItemColor: Colors.blue,
-            unselectedItemColor: Colors.grey,
-            showSelectedLabels: true,
-            showUnselectedLabels: true,
-            onTap: _onItemTapped,
-            type: BottomNavigationBarType.fixed,
-            elevation: 0,
+          unselectedLabelStyle: GoogleFonts.poppins(
+            fontWeight: FontWeight.normal,
+            fontSize: 12,
           ),
-        ),
-      ),
+          type: BottomNavigationBarType.fixed,
+        );
+      }),
     );
   }
 }

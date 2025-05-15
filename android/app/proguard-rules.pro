@@ -7,14 +7,13 @@
 
 # Flutter wrapper
 -keep class io.flutter.app.** { *; }
--keep class io.flutter.plugin.**  { *; }
--keep class io.flutter.util.**  { *; }
--keep class io.flutter.view.**  { *; }
--keep class io.flutter.**  { *; }
--keep class io.flutter.plugins.**  { *; }
--keep class io.flutter.plugin.editing.** { *; }
+-keep class io.flutter.plugin.** { *; }
+-keep class io.flutter.util.** { *; }
+-keep class io.flutter.view.** { *; }
+-keep class io.flutter.** { *; }
+-keep class io.flutter.plugins.** { *; }
 
-# Kotlin specific rules
+# Kotlin
 -keep class kotlin.** { *; }
 -keep class kotlin.Metadata { *; }
 -dontwarn kotlin.**
@@ -24,6 +23,26 @@
 -keepclassmembers class kotlin.Metadata {
     public <methods>;
 }
+
+# Google Play Services
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.android.gms.**
+
+# Gson
+-keepattributes Signature
+-keepattributes *Annotation*
+-dontwarn sun.misc.**
+-keep class com.google.gson.** { *; }
+-keep class * implements com.google.gson.TypeAdapterFactory
+-keep class * implements com.google.gson.JsonSerializer
+-keep class * implements com.google.gson.JsonDeserializer
+
+# SQLite
+-keep class org.sqlite.** { *; }
+-keep class org.sqlite.database.** { *; }
+
+# Application specific classes
+-keep class com.maztafarma.cbo.** { *; }
 
 # Basic Android rules
 -keepattributes *Annotation*
@@ -40,13 +59,13 @@
 # Keep custom exceptions
 -keep public class * extends java.lang.Exception
 
-# For native methods
+# Keep native methods
 -keepclasseswithmembernames class * {
     native <methods>;
 }
 
 # Keep the BuildConfig
--keep class com.example.test_cbo.BuildConfig { *; }
+-keep class com.maztafarma.cbo.BuildConfig { *; }
 
 # Keep the support library
 -keep class androidx.** { *; }
@@ -55,3 +74,9 @@
 # R8 specific rules
 -allowaccessmodification
 -repackageclasses '' 
+
+# Keep R
+-keep class **.R
+-keep class **.R$* {
+    <fields>;
+} 
