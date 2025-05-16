@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/utils/constants.dart';
 import '../../../../core/utils/logger.dart';
+import '../../domain/entities/approval_filter.dart';
 import '../models/approval_model.dart';
 import '../models/approval_response_model.dart';
 
@@ -12,10 +13,26 @@ abstract class ApprovalRemoteDataSource {
   /// Throws [ServerException] jika terjadi error pada server
   Future<List<ApprovalModel>> getApprovals(int userId);
 
+  /// Memfilter daftar persetujuan
+  /// Throws [ServerException] jika terjadi error pada server
+  Future<List<ApprovalModel>> filterApprovals(ApprovalFilter filter);
+
   /// Mengirim persetujuan (setuju atau tolak)
   /// Throws [ServerException] jika terjadi error pada server
   Future<ApprovalResponseModel> sendApproval(int scheduleId, int userId,
       {required bool isApproved});
+
+  /// Menyetujui permintaan
+  /// Throws [ServerException] jika terjadi error pada server
+  Future<void> approveRequest(int approvalId, String notes);
+
+  /// Menolak permintaan
+  /// Throws [ServerException] jika terjadi error pada server
+  Future<void> rejectRequest(int approvalId, String notes);
+
+  /// Mengambil detail persetujuan
+  /// Throws [ServerException] jika terjadi error pada server
+  Future<ApprovalModel> getApprovalDetail(int approvalId);
 }
 
 class ApprovalRemoteDataSourceImpl implements ApprovalRemoteDataSource {
@@ -27,289 +44,257 @@ class ApprovalRemoteDataSourceImpl implements ApprovalRemoteDataSource {
   ApprovalRemoteDataSourceImpl({
     required this.client,
     required this.sharedPreferences,
-    this.baseUrl = 'https://dev-bco.businesscorporateofficer.com/api',
-  });
+    String? baseUrl,
+  }) : this.baseUrl = baseUrl ?? Constants.baseUrl;
 
   @override
   Future<List<ApprovalModel>> getApprovals(int userId) async {
-    final url = Uri.parse('$baseUrl/list-approval-dadakan/$userId');
-
     try {
-      Logger.info(_tag, '🔄 Memulai request ke API approval');
-      Logger.info(_tag, '🔍 URL: $url');
-      Logger.info(_tag, '👤 User ID: $userId');
-
-      // Debug SharedPreferences
-      final allKeys = sharedPreferences.getKeys();
-      Logger.info(_tag, '🔑 SharedPreferences keys: $allKeys');
-
-      // Ambil token dan data user
       final token = sharedPreferences.getString(Constants.tokenKey);
-      final userDataString = sharedPreferences.getString(Constants.userDataKey);
-
-      Logger.info(_tag, '🎫 Token tersedia: ${token != null ? 'Ya' : 'Tidak'}');
-      Logger.info(_tag,
-          '👤 User data tersedia: ${userDataString != null ? 'Ya' : 'Tidak'}');
-
       if (token == null) {
-        Logger.error(_tag, '❌ Token tidak ditemukan di SharedPreferences');
-        throw ServerException(
-            message: 'Sesi login telah berakhir. Silakan login kembali.');
+        throw UnauthorizedException(message: 'Token tidak ditemukan');
       }
 
-      if (userDataString == null) {
-        Logger.error(_tag, '❌ Data user tidak ditemukan di SharedPreferences');
-        throw ServerException(
-            message: 'Data pengguna tidak ditemukan. Silakan login kembali.');
-      }
-
-      // Validasi data user
-      try {
-        final userData = json.decode(userDataString);
-        final storedUserId = userData['id_user'];
-        Logger.info(
-            _tag, '🔍 Stored user ID: $storedUserId, Request user ID: $userId');
-
-        if (storedUserId != userId) {
-          Logger.warning(_tag, '⚠️ User ID tidak sesuai dengan data tersimpan');
-          throw ServerException(
-              message: 'ID pengguna tidak valid. Silakan login kembali.');
-        }
-      } catch (e) {
-        Logger.error(_tag, '❌ Error saat memvalidasi data user: $e');
-        throw ServerException(
-            message: 'Data pengguna tidak valid. Silakan login kembali.');
-      }
-
-      final headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
-
-      Logger.info(_tag, '📤 Headers request:');
-      headers.forEach((key, value) {
-        if (key == 'Authorization') {
-          Logger.info(
-              _tag, '   $key: Bearer ${value.substring(7, 20)}... (truncated)');
-        } else {
-          Logger.info(_tag, '   $key: $value');
-        }
-      });
-
-      final response = await client.get(
-        url,
-        headers: headers,
+      final uri = Uri.parse(baseUrl).replace(
+        path: '${Uri.parse(baseUrl).path}/list-approval-dadakan/$userId',
       );
 
-      Logger.info(_tag, '📥 Status response: ${response.statusCode}');
-      Logger.info(_tag, '📥 Headers response: ${response.headers}');
+      Logger.info(_tag, 'Mengambil data approval untuk user_id: $userId');
+      Logger.info(_tag, 'URL: $uri');
 
-      if (response.body.isNotEmpty) {
-        final truncatedBody = response.body.length > 100
-            ? '${response.body.substring(0, 100)}...'
-            : response.body;
-        Logger.info(_tag, '📥 Body response (truncated): $truncatedBody');
-      } else {
-        Logger.warning(_tag, '⚠️ Body response kosong');
-      }
+      final response = await client.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
 
-      // Check if response is JSON
-      final contentType = response.headers['content-type'];
-      if (contentType != null && !contentType.contains('application/json')) {
-        Logger.error(_tag, '❌ Content-Type tidak sesuai: $contentType');
-        throw ServerException(
-          message:
-              'Server mengembalikan data bukan dalam format JSON: $contentType',
-        );
-      }
+      Logger.info(_tag, 'Status Code: ${response.statusCode}');
+      Logger.info(_tag, 'Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
-        try {
-          Logger.info(_tag, '🔄 Mencoba parse JSON response');
-          final Map<String, dynamic> jsonResponse = json.decode(response.body);
-          Logger.info(_tag, '✅ Status dari JSON: ${jsonResponse['status']}');
+        final Map<String, dynamic> jsonResponse = json.decode(response.body);
 
-          if (jsonResponse['status'] == true && jsonResponse['data'] != null) {
-            final List<dynamic> approvalData = jsonResponse['data'];
-            Logger.info(
-                _tag, '✅ Jumlah data persetujuan: ${approvalData.length}');
+        Logger.info(_tag, 'Response Structure: ${jsonResponse.keys}');
 
-            final result = approvalData
-                .map((data) => ApprovalModel.fromJson(data))
-                .toList();
-
-            Logger.success(_tag,
-                '✅ Berhasil mendapatkan ${result.length} data persetujuan');
-            return result;
-          } else {
-            Logger.info(_tag, '⚠️ Data persetujuan kosong atau status false');
-            return [];
-          }
-        } catch (e) {
-          Logger.error(_tag, '❌ Error saat parsing JSON: $e');
+        if (!jsonResponse.containsKey('data')) {
           throw ServerException(
-            message: 'Gagal memproses data JSON: ${e.toString()}',
-          );
+              message: 'Format response tidak valid: data tidak ditemukan');
         }
+
+        final data = jsonResponse['data'];
+        if (data is! List) {
+          throw ServerException(
+              message: 'Format response tidak valid: data bukan array');
+        }
+
+        final List<dynamic> approvalsJson = data;
+        return approvalsJson
+            .map((json) => ApprovalModel.fromJson(json))
+            .toList();
       } else if (response.statusCode == 401) {
-        Logger.error(_tag, '❌ Error 401 Unauthorized');
-        throw UnauthorizedException(
-            message: 'Sesi login telah berakhir. Silakan login kembali.');
+        throw UnauthorizedException(message: 'Sesi telah berakhir');
       } else {
-        Logger.error(
-            _tag, '❌ Error dengan status code: ${response.statusCode}');
+        Logger.error(_tag, 'Error response',
+            'Status: ${response.statusCode}, Body: ${response.body}');
         throw ServerException(
-          message: _getErrorMessage(response) ??
-              'Gagal mendapatkan data persetujuan (${response.statusCode})',
-        );
+            message: 'Gagal memuat data persetujuan: ${response.statusCode}');
       }
     } catch (e) {
-      Logger.error(_tag, '❌ Error dalam getApprovals: $e');
-      if (e is ServerException || e is UnauthorizedException) rethrow;
-      throw ServerException(message: 'Error: ${e.toString()}');
+      Logger.error(_tag, 'getApprovals', e.toString());
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<ApprovalModel>> filterApprovals(ApprovalFilter filter) async {
+    try {
+      final token = sharedPreferences.getString(Constants.tokenKey);
+      if (token == null) {
+        throw UnauthorizedException(message: 'Token tidak ditemukan');
+      }
+
+      final queryParams = <String, String>{};
+      if (filter.searchQuery != null && filter.searchQuery!.isNotEmpty) {
+        queryParams['search'] = filter.searchQuery!;
+      }
+      if (filter.month != null) {
+        queryParams['month'] = filter.month.toString();
+      }
+      if (filter.year != null) {
+        queryParams['year'] = filter.year.toString();
+      }
+      if (filter.status != null) {
+        queryParams['status'] = filter.status.toString();
+      }
+      if (filter.userId != null) {
+        queryParams['user_id'] = filter.userId.toString();
+      }
+
+      final uri = Uri.parse(baseUrl).replace(
+        path: '${Uri.parse(baseUrl).path}/list-approval-dadakan',
+        queryParameters: queryParams,
+      );
+
+      Logger.info(
+          _tag, 'Memfilter data approval dengan parameter: $queryParams');
+      Logger.info(_tag, 'URL: $uri');
+
+      final response = await client.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      Logger.info(_tag, 'Status Code: ${response.statusCode}');
+      Logger.info(_tag, 'Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+
+        if (!jsonResponse.containsKey('data')) {
+          throw ServerException(
+              message: 'Format response tidak valid: data tidak ditemukan');
+        }
+
+        final data = jsonResponse['data'];
+        if (data is! List) {
+          throw ServerException(
+              message: 'Format response tidak valid: data bukan array');
+        }
+
+        final List<dynamic> approvalsJson = data;
+        return approvalsJson
+            .map((json) => ApprovalModel.fromJson(json))
+            .toList();
+      } else if (response.statusCode == 401) {
+        throw UnauthorizedException(message: 'Sesi telah berakhir');
+      } else {
+        Logger.error(_tag, 'Error response',
+            'Status: ${response.statusCode}, Body: ${response.body}');
+        throw ServerException(
+            message:
+                'Gagal memfilter data persetujuan: ${response.statusCode}');
+      }
+    } catch (e) {
+      Logger.error(_tag, 'filterApprovals', e.toString());
+      rethrow;
     }
   }
 
   @override
   Future<ApprovalResponseModel> sendApproval(int scheduleId, int userId,
       {required bool isApproved}) async {
-    final url = Uri.parse(
-        '$baseUrl/approved-suddenly/$scheduleId/$userId?approved=${isApproved ? 1 : 0}');
-
     try {
-      Logger.info(_tag, '🔄 Memulai request persetujuan');
-      Logger.info(_tag, '🔍 URL: $url');
-      Logger.info(_tag, '👤 User ID: $userId');
-      Logger.info(_tag, '📅 Schedule ID: $scheduleId');
-      Logger.info(_tag, '✅ isApproved: $isApproved');
-
-      // Debug SharedPreferences
-      final allKeys = sharedPreferences.getKeys();
-      Logger.info(_tag, '🔑 SharedPreferences keys: $allKeys');
-
-      // Ambil token dan data user
       final token = sharedPreferences.getString(Constants.tokenKey);
-      final userDataString = sharedPreferences.getString(Constants.userDataKey);
-
-      Logger.info(_tag, '🎫 Token tersedia: ${token != null ? 'Ya' : 'Tidak'}');
-      Logger.info(_tag,
-          '👤 User data tersedia: ${userDataString != null ? 'Ya' : 'Tidak'}');
-
       if (token == null) {
-        Logger.error(_tag, '❌ Token tidak ditemukan di SharedPreferences');
-        throw ServerException(
-            message: 'Sesi login telah berakhir. Silakan login kembali.');
+        throw UnauthorizedException(message: 'Token tidak ditemukan');
       }
 
-      if (userDataString == null) {
-        Logger.error(_tag, '❌ Data user tidak ditemukan di SharedPreferences');
-        throw ServerException(
-            message: 'Data pengguna tidak ditemukan. Silakan login kembali.');
-      }
-
-      // Validasi data user
-      try {
-        final userData = json.decode(userDataString);
-        final storedUserId = userData['id_user'];
-        Logger.info(
-            _tag, '🔍 Stored user ID: $storedUserId, Request user ID: $userId');
-
-        if (storedUserId != userId) {
-          Logger.warning(_tag, '⚠️ User ID tidak sesuai dengan data tersimpan');
-          throw ServerException(
-              message: 'ID pengguna tidak valid. Silakan login kembali.');
-        }
-      } catch (e) {
-        Logger.error(_tag, '❌ Error saat memvalidasi data user: $e');
-        throw ServerException(
-            message: 'Data pengguna tidak valid. Silakan login kembali.');
-      }
-
-      final headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
-
-      Logger.info(_tag, '📤 Headers request:');
-      headers.forEach((key, value) {
-        if (key == 'Authorization') {
-          Logger.info(
-              _tag, '   $key: Bearer ${value.substring(7, 20)}... (truncated)');
-        } else {
-          Logger.info(_tag, '   $key: $value');
-        }
-      });
-
-      final response = await client.get(
-        url,
-        headers: headers,
+      final uri = Uri.parse(baseUrl).replace(
+        path:
+            '${Uri.parse(baseUrl).path}/approved-suddenly/$scheduleId/$userId',
+        queryParameters: {
+          'is_approved': isApproved.toString(),
+        },
       );
 
-      Logger.info(_tag, '📥 Status response: ${response.statusCode}');
-      Logger.info(_tag, '📥 Headers response: ${response.headers}');
+      Logger.info(_tag, 'URL: $uri');
 
-      if (response.body.isNotEmpty) {
-        final truncatedBody = response.body.length > 100
-            ? '${response.body.substring(0, 100)}...'
-            : response.body;
-        Logger.info(_tag, '📥 Body response (truncated): $truncatedBody');
-      } else {
-        Logger.warning(_tag, '⚠️ Body response kosong');
-      }
+      final response = await client.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
 
-      // Check if response is JSON
-      final contentType = response.headers['content-type'];
-      if (contentType != null && !contentType.contains('application/json')) {
-        Logger.error(_tag, '❌ Content-Type tidak sesuai: $contentType');
-        throw ServerException(
-          message:
-              'Server mengembalikan data bukan dalam format JSON: $contentType',
-        );
-      }
+      Logger.info(_tag, 'Status Code: ${response.statusCode}');
+      Logger.info(_tag, 'Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
-        try {
-          Logger.info(_tag, '🔄 Mencoba parse JSON response');
-          final Map<String, dynamic> jsonResponse = json.decode(response.body);
-          Logger.success(_tag, '✅ Berhasil mengirim persetujuan');
-          return ApprovalResponseModel.fromJson(jsonResponse);
-        } catch (e) {
-          Logger.error(_tag, '❌ Error saat parsing JSON: $e');
-          throw ServerException(
-            message: 'Gagal memproses data JSON: ${e.toString()}',
-          );
-        }
+        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+        return ApprovalResponseModel.fromJson(jsonResponse);
       } else if (response.statusCode == 401) {
-        Logger.error(_tag, '❌ Error 401 Unauthorized');
-        throw UnauthorizedException(
-            message: 'Sesi login telah berakhir. Silakan login kembali.');
+        throw UnauthorizedException(message: 'Sesi telah berakhir');
       } else {
-        Logger.error(
-            _tag, '❌ Error dengan status code: ${response.statusCode}');
+        Logger.error(_tag, 'Error response',
+            'Status: ${response.statusCode}, Body: ${response.body}');
         throw ServerException(
-          message: _getErrorMessage(response) ??
-              'Gagal mengirim persetujuan (${response.statusCode})',
-        );
+            message: 'Gagal mengirim persetujuan: ${response.statusCode}');
       }
     } catch (e) {
-      Logger.error(_tag, '❌ Error dalam sendApproval: $e');
-      if (e is ServerException || e is UnauthorizedException) rethrow;
-      throw ServerException(message: 'Error: ${e.toString()}');
+      Logger.error(_tag, 'sendApproval', e.toString());
+      rethrow;
     }
   }
 
-  String? _getErrorMessage(http.Response response) {
+  @override
+  Future<void> approveRequest(int approvalId, String notes) async {
+    await sendApproval(approvalId, approvalId, isApproved: true);
+  }
+
+  @override
+  Future<void> rejectRequest(int approvalId, String notes) async {
+    await sendApproval(approvalId, approvalId, isApproved: false);
+  }
+
+  @override
+  Future<ApprovalModel> getApprovalDetail(int approvalId) async {
     try {
-      final contentType = response.headers['content-type'];
-      if (contentType != null && contentType.contains('application/json')) {
-        final Map<String, dynamic> jsonResponse = json.decode(response.body);
-        return jsonResponse['message'];
+      final token = sharedPreferences.getString(Constants.tokenKey);
+      if (token == null) {
+        throw UnauthorizedException(message: 'Token tidak ditemukan');
       }
-      return 'Status code: ${response.statusCode}, Body: ${response.body.length > 100 ? response.body.substring(0, 100) + "..." : response.body}';
-    } catch (_) {
-      return null;
+
+      final userDataString = sharedPreferences.getString(Constants.userDataKey);
+      if (userDataString == null) {
+        throw UnauthorizedException(message: 'Data user tidak ditemukan');
+      }
+
+      final userData = json.decode(userDataString);
+      final userId = userData['id_user'] as int;
+
+      final uri = Uri.parse(baseUrl).replace(
+        path: '${Uri.parse(baseUrl).path}/list-approval-dadakan/$userId',
+      );
+
+      Logger.info(_tag, 'URL: $uri');
+
+      final response = await client.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      Logger.info(_tag, 'Status Code: ${response.statusCode}');
+      Logger.info(_tag, 'Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+
+        if (!jsonResponse.containsKey('data')) {
+          throw ServerException(
+              message: 'Format response tidak valid: data tidak ditemukan');
+        }
+
+        return ApprovalModel.fromJson(jsonResponse['data']);
+      } else if (response.statusCode == 401) {
+        throw UnauthorizedException(message: 'Sesi telah berakhir');
+      } else {
+        Logger.error(_tag, 'Error response',
+            'Status: ${response.statusCode}, Body: ${response.body}');
+        throw ServerException(
+            message: 'Gagal memuat detail persetujuan: ${response.statusCode}');
+      }
+    } catch (e) {
+      Logger.error(_tag, 'getApprovalDetail', e.toString());
+      rethrow;
     }
   }
 }

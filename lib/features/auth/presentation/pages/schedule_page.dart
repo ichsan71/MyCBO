@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:test_cbo/core/utils/logger.dart';
-import '../../../../core/util/injection_container.dart';
 import '../../../schedule/domain/entities/schedule.dart';
 import '../../../schedule/presentation/bloc/schedule_bloc.dart';
 import '../../../schedule/presentation/bloc/schedule_event.dart';

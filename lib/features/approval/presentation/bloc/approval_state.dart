@@ -1,6 +1,4 @@
-import 'package:equatable/equatable.dart';
-import '../../domain/entities/approval.dart';
-import '../../domain/entities/approval_response.dart';
+part of 'approval_bloc.dart';
 
 abstract class ApprovalState extends Equatable {
   const ApprovalState();
@@ -13,26 +11,15 @@ class ApprovalInitial extends ApprovalState {}
 
 class ApprovalLoading extends ApprovalState {}
 
-class ApprovalsLoaded extends ApprovalState {
+class ApprovalProcessing extends ApprovalState {}
+
+class ApprovalLoaded extends ApprovalState {
   final List<Approval> approvals;
 
-  const ApprovalsLoaded({required this.approvals});
+  const ApprovalLoaded({required this.approvals});
 
   @override
   List<Object> get props => [approvals];
-}
-
-class ApprovalsEmpty extends ApprovalState {}
-
-class ApprovalSending extends ApprovalState {}
-
-class ApprovalSent extends ApprovalState {
-  final ApprovalResponse response;
-
-  const ApprovalSent({required this.response});
-
-  @override
-  List<Object> get props => [response];
 }
 
 class ApprovalError extends ApprovalState {
@@ -43,3 +30,14 @@ class ApprovalError extends ApprovalState {
   @override
   List<Object> get props => [message];
 }
+
+class ApprovalSent extends ApprovalState {
+  final ApprovalResponse response;
+
+  const ApprovalSent({required this.response});
+
+  @override
+  List<Object> get props => [response];
+}
+
+class ApprovalSending extends ApprovalState {}

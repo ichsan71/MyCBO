@@ -13,13 +13,13 @@ class ShimmerHomeLoading extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Welcome text
-            ShimmerBox(
+            const ShimmerBox(
               width: 180,
               height: 24,
               borderRadius: 4,
             ),
             const SizedBox(height: 8),
-            ShimmerBox(
+            const ShimmerBox(
               width: 220,
               height: 30,
               borderRadius: 4,
@@ -51,7 +51,7 @@ class ShimmerHomeLoading extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
+      child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           ShimmerBox(
@@ -59,7 +59,7 @@ class ShimmerHomeLoading extends StatelessWidget {
             height: 64,
             borderRadius: 32,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           ShimmerBox(
             width: 80,
             height: 16,

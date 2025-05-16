@@ -38,8 +38,9 @@
         }
     },
     "pendingApproval": "Waiting for Approval",
-    "checkedIn": "Checked In",
-    "notCheckedOut": "Not Checked Out",
+    "notCheckedIn": "Not Checked-in",
+    "checkedIn": "Checked-in",
+    "notCheckedOut": "Not Checked-out",
     "completed": "Completed",
     "cancelled": "Cancelled",
     "rejected": "Rejected",

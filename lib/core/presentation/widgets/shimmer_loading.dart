@@ -124,7 +124,7 @@ class ShimmerListTile extends StatelessWidget {
           ),
           if (hasTrailing) ...[
             const SizedBox(width: 8),
-            ShimmerBox(
+            const ShimmerBox(
               width: 24,
               height: 24,
             ),
@@ -165,11 +165,11 @@ class ShimmerForm extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (hasLabels) ...[
-                  ShimmerBox(
+                  const ShimmerBox(
                     width: 120,
                     height: 16,
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                 ],
                 ShimmerBox(
                   width: double.infinity,

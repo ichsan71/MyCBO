@@ -8,7 +8,6 @@ import 'package:image/image.dart' as img;
 import '../../data/models/checkout_request_model.dart';
 import '../bloc/schedule_bloc.dart';
 import '../bloc/schedule_event.dart';
-import 'package:test_cbo/core/presentation/widgets/shimmer_loading.dart';
 import 'package:test_cbo/core/presentation/widgets/shimmer_form_loading.dart';
 import 'package:test_cbo/core/presentation/widgets/shimmer_button_loading.dart';
 
@@ -395,17 +394,17 @@ class _CheckoutFormState extends State<CheckoutForm> {
               disabledBackgroundColor: Colors.blue.shade200,
             ),
             child: _isLoading
-                ? Row(
+                ? const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const ShimmerButtonLoading(
+                      ShimmerButtonLoading(
                         width: 80,
                         height: 20,
                         baseColor: Colors.white70,
                         highlightColor: Colors.white,
                       ),
-                      const SizedBox(width: 16),
-                      const Text(
+                      SizedBox(width: 16),
+                      Text(
                         'Memproses...',
                         style: TextStyle(
                           fontSize: 16,

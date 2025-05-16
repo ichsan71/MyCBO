@@ -13,13 +13,13 @@ class ShimmerApprovalLoading extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            ShimmerBox(
+            const ShimmerBox(
               width: 180,
               height: 28,
               borderRadius: 4,
             ),
             const SizedBox(height: 8),
-            ShimmerBox(
+            const ShimmerBox(
               width: 250,
               height: 16,
               borderRadius: 4,
@@ -59,7 +59,7 @@ class ShimmerApprovalLoading extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header with date
@@ -78,9 +78,9 @@ class ShimmerApprovalLoading extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Divider(color: Colors.white, height: 1),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // Requester info
           Row(
@@ -90,7 +90,7 @@ class ShimmerApprovalLoading extends StatelessWidget {
                 height: 48,
                 borderRadius: 24,
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,7 +100,7 @@ class ShimmerApprovalLoading extends StatelessWidget {
                       height: 16,
                       borderRadius: 4,
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     ShimmerBox(
                       width: 180,
                       height: 14,
@@ -111,7 +111,7 @@ class ShimmerApprovalLoading extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // Schedule details
           Row(
@@ -121,7 +121,7 @@ class ShimmerApprovalLoading extends StatelessWidget {
                 height: 20,
                 borderRadius: 4,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               ShimmerBox(
                 width: 200,
                 height: 16,
@@ -129,7 +129,7 @@ class ShimmerApprovalLoading extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
 
           // Buttons
           Row(
@@ -141,7 +141,7 @@ class ShimmerApprovalLoading extends StatelessWidget {
                   borderRadius: 8,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: ShimmerBox(
                   width: double.infinity,

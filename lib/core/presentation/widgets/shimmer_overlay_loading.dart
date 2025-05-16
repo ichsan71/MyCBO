@@ -29,14 +29,14 @@ class ShimmerOverlayLoading extends StatelessWidget {
                 child: Container(
                   width: 60,
                   height: 60,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'Memproses...',
                 style: TextStyle(
                   fontSize: 16,

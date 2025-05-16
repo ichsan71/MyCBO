@@ -61,7 +61,7 @@ class Detail extends Equatable {
     required this.shift,
     required this.productData,
     required this.tujuanData,
-    this.approved = 0,
+    required this.approved,
   });
 
   @override
@@ -96,12 +96,14 @@ class ProductData extends Equatable {
 class TujuanData extends Equatable {
   final int idDokter;
   final String namaDokter;
+  final String namaKlinik;
 
   const TujuanData({
     required this.idDokter,
     required this.namaDokter,
+    required this.namaKlinik,
   });
 
   @override
-  List<Object?> get props => [idDokter, namaDokter];
+  List<Object?> get props => [idDokter, namaDokter, namaKlinik];
 }

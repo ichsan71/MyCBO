@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:test_cbo/core/presentation/widgets/shimmer_loading.dart';
+import 'package:test_cbo/core/theme/app_theme.dart';
 
-enum AppButtonType { primary, secondary, outline, text }
+enum AppButtonType {
+  primary,
+  secondary,
+  outline,
+  text,
+  success,
+  warning,
+  error
+}
 
 class AppButton extends StatelessWidget {
   final String text;
@@ -18,6 +27,8 @@ class AppButton extends StatelessWidget {
   final Widget? suffixIcon;
   final Color? backgroundColor;
   final Color? textColor;
+  final double? fontSize;
+  final FontWeight? fontWeight;
 
   const AppButton({
     Key? key,
@@ -29,11 +40,13 @@ class AppButton extends StatelessWidget {
     this.width,
     this.height,
     this.padding,
-    this.borderRadius = 12.0,
+    this.borderRadius = AppTheme.borderRadiusSmall,
     this.prefixIcon,
     this.suffixIcon,
     this.backgroundColor,
     this.textColor,
+    this.fontSize,
+    this.fontWeight,
   }) : super(key: key);
 
   @override
@@ -42,44 +55,73 @@ class AppButton extends StatelessWidget {
 
     // Determine button style based on type
     ButtonStyle buttonStyle;
+    Color bgColor;
+    Color fgColor;
 
     switch (type) {
       case AppButtonType.primary:
-        buttonStyle = ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor ?? theme.colorScheme.primary,
-          foregroundColor: textColor ?? theme.colorScheme.onPrimary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(borderRadius),
-          ),
-          padding: padding ??
-              const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-        );
+        bgColor = backgroundColor ?? AppTheme.primaryColor;
+        fgColor = textColor ?? Colors.white;
         break;
       case AppButtonType.secondary:
+        bgColor = backgroundColor ?? AppTheme.secondaryColor;
+        fgColor = textColor ?? Colors.white;
+        break;
+      case AppButtonType.success:
+        bgColor = backgroundColor ?? AppTheme.successColor;
+        fgColor = textColor ?? Colors.white;
+        break;
+      case AppButtonType.warning:
+        bgColor = backgroundColor ?? AppTheme.warningColor;
+        fgColor = textColor ?? Colors.white;
+        break;
+      case AppButtonType.error:
+        bgColor = backgroundColor ?? AppTheme.errorColor;
+        fgColor = textColor ?? Colors.white;
+        break;
+      case AppButtonType.outline:
+        bgColor = Colors.transparent;
+        fgColor = textColor ?? AppTheme.primaryColor;
+        break;
+      case AppButtonType.text:
+        bgColor = Colors.transparent;
+        fgColor = textColor ?? AppTheme.primaryColor;
+        break;
+    }
+
+    switch (type) {
+      case AppButtonType.primary:
+      case AppButtonType.secondary:
+      case AppButtonType.success:
+      case AppButtonType.warning:
+      case AppButtonType.error:
         buttonStyle = ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor ?? theme.colorScheme.secondary,
-          foregroundColor: textColor ?? theme.colorScheme.onSecondary,
+          backgroundColor: bgColor,
+          foregroundColor: fgColor,
+          elevation: AppTheme.elevationSmall,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
           ),
           padding: padding ??
-              const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+              const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+          disabledBackgroundColor: bgColor.withOpacity(0.6),
+          disabledForegroundColor: fgColor.withOpacity(0.6),
         );
         break;
       case AppButtonType.outline:
         buttonStyle = OutlinedButton.styleFrom(
-          foregroundColor: textColor ?? theme.colorScheme.primary,
-          side: BorderSide(color: backgroundColor ?? theme.colorScheme.primary),
+          foregroundColor: fgColor,
+          side: BorderSide(color: backgroundColor ?? AppTheme.primaryColor),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
           ),
           padding: padding ??
-              const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+              const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
         );
         break;
       case AppButtonType.text:
         buttonStyle = TextButton.styleFrom(
-          foregroundColor: textColor ?? theme.colorScheme.primary,
+          foregroundColor: fgColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
           ),
@@ -99,21 +141,15 @@ class AppButton extends StatelessWidget {
           const SizedBox(width: 8),
         ],
         if (isLoading)
-          ShimmerLoading(
-            baseColor:
-                type == AppButtonType.primary || type == AppButtonType.secondary
-                    ? theme.colorScheme.onPrimary.withOpacity(0.2)
-                    : theme.colorScheme.primary.withOpacity(0.2),
-            highlightColor:
-                type == AppButtonType.primary || type == AppButtonType.secondary
-                    ? theme.colorScheme.onPrimary.withOpacity(0.5)
-                    : theme.colorScheme.primary.withOpacity(0.5),
-            child: Container(
-              width: 80,
-              height: 16,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(4),
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.0,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                type == AppButtonType.outline || type == AppButtonType.text
+                    ? fgColor
+                    : Colors.white,
               ),
             ),
           )
@@ -121,9 +157,10 @@ class AppButton extends StatelessWidget {
           Text(
             text,
             style: GoogleFonts.poppins(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
+              fontWeight: fontWeight ?? FontWeight.w500,
+              fontSize: fontSize ?? 16,
             ),
+            textAlign: TextAlign.center,
           ),
         if (suffixIcon != null && !isLoading) ...[
           const SizedBox(width: 8),
@@ -137,6 +174,9 @@ class AppButton extends StatelessWidget {
     switch (type) {
       case AppButtonType.primary:
       case AppButtonType.secondary:
+      case AppButtonType.success:
+      case AppButtonType.warning:
+      case AppButtonType.error:
         button = ElevatedButton(
           style: buttonStyle,
           onPressed: isLoading ? null : onPressed,

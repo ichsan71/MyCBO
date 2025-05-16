@@ -530,17 +530,17 @@ class _CheckinFormState extends State<CheckinForm> {
               disabledBackgroundColor: Colors.blue.shade200,
             ),
             child: _isLoading
-                ? Row(
+                ? const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const ShimmerButtonLoading(
+                      ShimmerButtonLoading(
                         width: 80,
                         height: 20,
                         baseColor: Colors.white70,
                         highlightColor: Colors.white,
                       ),
-                      const SizedBox(width: 16),
-                      const Text(
+                      SizedBox(width: 16),
+                      Text(
                         'Memproses...',
                         style: TextStyle(
                           fontSize: 16,
@@ -549,12 +549,12 @@ class _CheckinFormState extends State<CheckinForm> {
                       ),
                     ],
                   )
-                : Row(
+                : const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.check_circle, size: 20),
-                      const SizedBox(width: 8),
-                      const Text(
+                      Icon(Icons.check_circle, size: 20),
+                      SizedBox(width: 8),
+                      Text(
                         'Check-in',
                         style: TextStyle(
                           fontSize: 16,

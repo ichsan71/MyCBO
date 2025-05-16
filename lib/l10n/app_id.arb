@@ -38,10 +38,11 @@
         }
     },
     "pendingApproval": "Menunggu Persetujuan",
+    "notCheckedIn": "Belum Check-in",
     "checkedIn": "Sudah Check-in",
     "notCheckedOut": "Belum Check-out",
     "completed": "Selesai",
-    "cancelled": "Batal",
+    "cancelled": "Dibatalkan",
     "rejected": "Ditolak",
     "userInfo": "Informasi Pengguna",
     "logout": "Keluar",

@@ -1,4 +1,5 @@
 import '../../domain/entities/approval.dart';
+import '../../../../core/error/exceptions.dart';
 
 class ApprovalModel extends Approval {
   const ApprovalModel({
@@ -24,19 +25,37 @@ class ApprovalModel extends Approval {
         );
 
   factory ApprovalModel.fromJson(Map<String, dynamic> json) {
-    return ApprovalModel(
-      idBawahan: json['id_bawahan'],
-      namaBawahan: json['nama_bawahan'],
-      totalSchedule: json['total_schedule'],
-      year: json['year'],
-      month: json['month'],
-      jumlahDokter: json['jumlah_dokter'],
-      jumlahKlinik: json['jumlah_klinik'],
-      approved: json['approved'],
-      details: (json['details'] as List)
-          .map((detail) => DetailModel.fromJson(detail))
-          .toList(),
-    );
+    try {
+      return ApprovalModel(
+        idBawahan: json['id_bawahan'] as int? ??
+            (throw ServerException(
+                message: 'id_bawahan tidak ditemukan atau invalid')),
+        namaBawahan: json['nama_bawahan'] as String? ??
+            (throw ServerException(
+                message: 'nama_bawahan tidak ditemukan atau invalid')),
+        totalSchedule: json['total_schedule'] as int? ??
+            (throw ServerException(
+                message: 'total_schedule tidak ditemukan atau invalid')),
+        year: json['year'] as int? ??
+            (throw ServerException(
+                message: 'year tidak ditemukan atau invalid')),
+        month: json['month'] as int? ??
+            (throw ServerException(
+                message: 'month tidak ditemukan atau invalid')),
+        jumlahDokter: (json['jumlah_dokter'] ?? '0').toString(),
+        jumlahKlinik: (json['jumlah_klinik'] ?? '0').toString(),
+        approved: json['approved'] as int? ?? 0,
+        details: json.containsKey('details') && json['details'] != null
+            ? (json['details'] as List)
+                .map((detail) => DetailModel.fromJson(detail))
+                .toList()
+            : [],
+      );
+    } catch (e) {
+      if (e is ServerException) rethrow;
+      throw ServerException(
+          message: 'Error parsing ApprovalModel: ${e.toString()}');
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -67,7 +86,7 @@ class DetailModel extends Detail {
     required String shift,
     required List<ProductDataModel> productData,
     required TujuanDataModel tujuanData,
-    int approved = 0,
+    required int approved,
   }) : super(
           id: id,
           typeSchedule: typeSchedule,
@@ -83,21 +102,40 @@ class DetailModel extends Detail {
         );
 
   factory DetailModel.fromJson(Map<String, dynamic> json) {
-    return DetailModel(
-      id: json['id'],
-      typeSchedule: json['type_schedule'],
-      tujuan: json['tujuan'],
-      idTujuan: json['id_tujuan'],
-      tglVisit: json['tgl_visit'],
-      product: json['product'],
-      note: json['note'],
-      shift: json['shift'],
-      productData: (json['product_data'] as List)
-          .map((product) => ProductDataModel.fromJson(product))
-          .toList(),
-      tujuanData: TujuanDataModel.fromJson(json['tujuan_data']),
-      approved: json['approved'] ?? 0,
-    );
+    try {
+      return DetailModel(
+        id: json['id'] as int? ??
+            (throw ServerException(message: 'id tidak ditemukan atau invalid')),
+        typeSchedule: (json['type_schedule'] ?? '').toString(),
+        tujuan: (json['tujuan'] ?? '').toString(),
+        idTujuan: json['id_tujuan'] as int? ??
+            (throw ServerException(
+                message: 'id_tujuan tidak ditemukan atau invalid')),
+        tglVisit: (json['tgl_visit'] ?? '').toString(),
+        product: (json['product'] ?? '[]').toString(),
+        note: (json['note'] ?? '').toString(),
+        shift: (json['shift'] ?? '').toString(),
+        productData:
+            json.containsKey('product_data') && json['product_data'] != null
+                ? (json['product_data'] as List)
+                    .map((product) => ProductDataModel.fromJson(product))
+                    .toList()
+                : [],
+        tujuanData:
+            json.containsKey('tujuan_data') && json['tujuan_data'] != null
+                ? TujuanDataModel.fromJson(json['tujuan_data'])
+                : TujuanDataModel(
+                    idDokter: json['id_tujuan'] as int? ?? 0,
+                    namaDokter: '',
+                    namaKlinik: '',
+                  ),
+        approved: json['approved'] as int? ?? 0,
+      );
+    } catch (e) {
+      if (e is ServerException) rethrow;
+      throw ServerException(
+          message: 'Error parsing DetailModel: ${e.toString()}');
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -129,10 +167,18 @@ class ProductDataModel extends ProductData {
         );
 
   factory ProductDataModel.fromJson(Map<String, dynamic> json) {
-    return ProductDataModel(
-      idProduct: json['id_product'],
-      namaProduct: json['nama_product'],
-    );
+    try {
+      return ProductDataModel(
+        idProduct: json['id_product'] as int? ??
+            (throw ServerException(
+                message: 'id_product tidak ditemukan atau invalid')),
+        namaProduct: (json['nama_product'] ?? '').toString(),
+      );
+    } catch (e) {
+      if (e is ServerException) rethrow;
+      throw ServerException(
+          message: 'Error parsing ProductDataModel: ${e.toString()}');
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -147,22 +193,32 @@ class TujuanDataModel extends TujuanData {
   const TujuanDataModel({
     required int idDokter,
     required String namaDokter,
+    required String namaKlinik,
   }) : super(
           idDokter: idDokter,
           namaDokter: namaDokter,
+          namaKlinik: namaKlinik,
         );
 
   factory TujuanDataModel.fromJson(Map<String, dynamic> json) {
-    return TujuanDataModel(
-      idDokter: json['id_dokter'],
-      namaDokter: json['nama_dokter'],
-    );
+    try {
+      return TujuanDataModel(
+        idDokter: json['id_dokter'] as int? ?? 0,
+        namaDokter: (json['nama_dokter'] ?? '').toString(),
+        namaKlinik: (json['nama_klinik'] ?? '').toString(),
+      );
+    } catch (e) {
+      if (e is ServerException) rethrow;
+      throw ServerException(
+          message: 'Error parsing TujuanDataModel: ${e.toString()}');
+    }
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id_dokter': idDokter,
       'nama_dokter': namaDokter,
+      'nama_klinik': namaKlinik,
     };
   }
 }

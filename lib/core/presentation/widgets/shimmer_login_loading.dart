@@ -31,7 +31,7 @@ class ShimmerLoginLoading extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Column(
+            child: const Column(
               children: [
                 // Username field
                 ShimmerBox(
@@ -39,7 +39,7 @@ class ShimmerLoginLoading extends StatelessWidget {
                   height: 50,
                   borderRadius: 8,
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
 
                 // Password field
                 ShimmerBox(
@@ -47,7 +47,7 @@ class ShimmerLoginLoading extends StatelessWidget {
                   height: 50,
                   borderRadius: 8,
                 ),
-                const SizedBox(height: 30),
+                SizedBox(height: 30),
 
                 // Login button
                 ShimmerBox(

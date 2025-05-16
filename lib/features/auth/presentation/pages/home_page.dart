@@ -9,6 +9,7 @@ import 'package:test_cbo/features/schedule/presentation/pages/add_schedule_page.
 import 'package:test_cbo/core/presentation/widgets/shimmer_home_loading.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_bloc.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_event.dart';
+import '../widgets/menu_card.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -20,167 +21,131 @@ class HomePage extends StatelessWidget {
       body: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, state) {
           if (state is AuthAuthenticated) {
-            final l10n = AppLocalizations.of(context)!;
-            final role = state.user.role.toUpperCase();
-            final hasApprovalAccess = role == 'ADMIN' ||
-                role == 'BCO' ||
-                role == 'RSM' ||
-                role == 'DM';
-
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20.0, 40.0, 20.0, 20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.welcomeMessage,
-                      style: GoogleFonts.poppins(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      state.user.name,
-                      style: GoogleFonts.poppins(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    Expanded(
-                      child: GridView.count(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: 1.1,
-                        children: [
-                          _buildMenuCard(
-                            'Laporan',
-                            Icons.bar_chart,
-                            Colors.blue,
-                            () {},
-                          ),
-                          _buildMenuCard(
-                            'Tambah Jadwal',
-                            Icons.add_circle,
-                            Colors.green,
-                            () async {
-                              final result = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const AddSchedulePage(),
-                                ),
-                              );
-
-                              // Refresh jadwal jika penambahan berhasil
-                              if (result == true) {
-                                final authState =
-                                    context.read<AuthBloc>().state;
-                                if (authState is AuthAuthenticated) {
-                                  context.read<ScheduleBloc>().add(
-                                        RefreshSchedulesEvent(
-                                            userId: authState.user.idUser),
-                                      );
-                                }
-                              }
-                            },
-                          ),
-                          if (hasApprovalAccess)
-                            _buildMenuCard(
-                              'Persetujuan',
-                              Icons.approval,
-                              Colors.red,
-                              () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const ApprovalListPage(),
-                                  ),
-                                );
-                              },
-                            ),
-                          _buildMenuCard(
-                            'Target',
-                            Icons.flag,
-                            Colors.orange,
-                            () {},
-                          ),
-                          _buildMenuCard(
-                            'Tim',
-                            Icons.people,
-                            Colors.purple,
-                            () {},
-                          ),
-                          _buildMenuCard(
-                            'Pengaturan',
-                            Icons.settings,
-                            Colors.grey,
-                            () {},
-                          ),
-                          _buildMenuCard(
-                            'Bantuan',
-                            Icons.help,
-                            Colors.teal,
-                            () {},
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
+            return _HomeContent(user: state);
           }
           return const ShimmerHomeLoading();
         },
       ),
     );
   }
+}
 
-  Widget _buildMenuCard(
-    String title,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+class _HomeContent extends StatelessWidget {
+  final AuthAuthenticated user;
+
+  const _HomeContent({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final role = user.user.role.toUpperCase();
+    final hasApprovalAccess =
+        role == 'ADMIN' || role == 'BCO' || role == 'RSM' || role == 'DM';
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20.0, 40.0, 20.0, 20.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 32,
+            Text(
+              l10n.welcomeMessage,
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[700],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 4),
             Text(
-              title,
+              user.user.name,
               style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue,
+              ),
+            ),
+            const SizedBox(height: 32),
+            Expanded(
+              child: GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.1,
+                children: [
+                  MenuCard(
+                    title: 'Laporan',
+                    icon: Icons.bar_chart,
+                    color: Colors.blue,
+                    onTap: () {},
+                  ),
+                  MenuCard(
+                    title: 'Tambah Jadwal',
+                    icon: Icons.add_circle,
+                    color: Colors.green,
+                    onTap: () => _handleAddSchedule(context),
+                  ),
+                  if (hasApprovalAccess)
+                    MenuCard(
+                      title: 'Persetujuan',
+                      icon: Icons.approval,
+                      color: Colors.red,
+                      onTap: () => _navigateToApproval(context),
+                    ),
+                  MenuCard(
+                    title: 'Target',
+                    icon: Icons.flag,
+                    color: Colors.orange,
+                    onTap: () {},
+                  ),
+                  MenuCard(
+                    title: 'Tim',
+                    icon: Icons.people,
+                    color: Colors.purple,
+                    onTap: () {},
+                  ),
+                  MenuCard(
+                    title: 'Pengaturan',
+                    icon: Icons.settings,
+                    color: Colors.grey,
+                    onTap: () {},
+                  ),
+                  MenuCard(
+                    title: 'Bantuan',
+                    icon: Icons.help,
+                    color: Colors.teal,
+                    onTap: () {},
+                  ),
+                ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _handleAddSchedule(BuildContext context) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AddSchedulePage(),
+      ),
+    );
+
+    if (result == true) {
+      if (!context.mounted) return;
+      context.read<ScheduleBloc>().add(
+            RefreshSchedulesEvent(userId: user.user.idUser),
+          );
+    }
+  }
+
+  void _navigateToApproval(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ApprovalListPage(),
       ),
     );
   }

@@ -30,9 +30,12 @@ import 'package:http/http.dart' as http;
 import '../../features/approval/data/datasources/approval_remote_data_source.dart';
 import '../../features/approval/data/repositories/approval_repository_impl.dart';
 import '../../features/approval/domain/repositories/approval_repository.dart';
-import '../../features/approval/domain/usecases/get_approvals.dart';
 import '../../features/approval/domain/usecases/send_approval.dart';
 import '../../features/approval/presentation/bloc/approval_bloc.dart';
+import '../../features/approval/domain/usecases/get_approvals_usecase.dart';
+import '../../features/approval/domain/usecases/approve_request_usecase.dart';
+import '../../features/approval/domain/usecases/reject_request_usecase.dart';
+import '../../features/approval/domain/usecases/filter_approvals_usecase.dart';
 
 import '../network/network_info.dart';
 
@@ -147,17 +150,23 @@ Future<void> init() async {
   sl.registerLazySingleton(() => http.Client());
   sl.registerLazySingleton(() => InternetConnectionChecker());
 
-  // Approval
-  // BloC
+  //! Features - Approval
+  // BLoC
   sl.registerFactory(
     () => ApprovalBloc(
       getApprovals: sl(),
+      filterApprovals: sl(),
+      approveRequest: sl(),
+      rejectRequest: sl(),
       sendApproval: sl(),
     ),
   );
 
   // Use cases
-  sl.registerLazySingleton(() => GetApprovals(sl()));
+  sl.registerLazySingleton(() => GetApprovalsUseCase(sl()));
+  sl.registerLazySingleton(() => FilterApprovalsUseCase(sl()));
+  sl.registerLazySingleton(() => ApproveRequestUseCase(sl()));
+  sl.registerLazySingleton(() => RejectRequestUseCase(sl()));
   sl.registerLazySingleton(() => SendApproval(sl()));
 
   // Repository

@@ -20,7 +20,7 @@ class ShimmerFormLoading extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Title
-            ShimmerBox(
+            const ShimmerBox(
               width: 200,
               height: 24,
               borderRadius: 4,
@@ -41,7 +41,7 @@ class ShimmerFormLoading extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    ShimmerBox(
+                    const ShimmerBox(
                       width: 150,
                       height: 40,
                       borderRadius: 20,
@@ -54,7 +54,7 @@ class ShimmerFormLoading extends StatelessWidget {
             
             // Form fields
             for (int i = 0; i < (isDetailed ? 5 : 3); i++) ...[
-              Column(
+              const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ShimmerBox(
@@ -62,7 +62,7 @@ class ShimmerFormLoading extends StatelessWidget {
                     height: 16,
                     borderRadius: 4,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   ShimmerBox(
                     width: double.infinity,
                     height: 48,
@@ -75,7 +75,7 @@ class ShimmerFormLoading extends StatelessWidget {
             
             // Additional section for detailed form
             if (isDetailed) ...[
-              ShimmerBox(
+              const ShimmerBox(
                 width: 160,
                 height: 20,
                 borderRadius: 4,
@@ -89,14 +89,14 @@ class ShimmerFormLoading extends StatelessWidget {
               const SizedBox(height: 16),
               
               for (int i = 0; i < 2; i++) ...[
-                Row(
+                const Row(
                   children: [
                     ShimmerBox(
                       width: 24,
                       height: 24,
                       borderRadius: 4,
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     ShimmerBox(
                       width: 200,
                       height: 16,
@@ -110,7 +110,7 @@ class ShimmerFormLoading extends StatelessWidget {
             
             // Submit button
             const SizedBox(height: 16),
-            ShimmerBox(
+            const ShimmerBox(
               width: double.infinity,
               height: 48,
               borderRadius: 24,

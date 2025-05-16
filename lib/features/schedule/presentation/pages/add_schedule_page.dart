@@ -5,6 +5,7 @@ import 'package:test_cbo/core/presentation/widgets/app_button.dart';
 import 'package:test_cbo/core/presentation/widgets/app_card.dart';
 import 'package:test_cbo/core/presentation/widgets/app_dropdown.dart';
 import 'package:test_cbo/core/presentation/widgets/app_text_field.dart';
+import 'package:test_cbo/core/presentation/widgets/app_bar_widget.dart';
 import 'package:test_cbo/core/util/injection_container.dart' as di;
 import 'package:test_cbo/core/utils/logger.dart';
 import 'package:test_cbo/features/auth/presentation/bloc/auth_bloc.dart';
@@ -18,7 +19,6 @@ import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_bloc.d
 import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_event.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_state.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_bloc.dart';
-import 'package:test_cbo/features/schedule/presentation/bloc/schedule_event.dart';
 import 'package:test_cbo/core/presentation/widgets/shimmer_schedule_loading.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -278,23 +278,9 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          AppLocalizations.of(context)?.addSchedule ?? 'Tambah Jadwal',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+      appBar: const AppBarWidget(
+        title: 'Tambah Jadwal',
         elevation: 0,
-        backgroundColor: Colors.transparent,
-        foregroundColor: Theme.of(context).colorScheme.onBackground,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
       ),
       body: BlocConsumer<AddScheduleBloc, AddScheduleState>(
         listener: (context, state) {
@@ -1176,7 +1162,7 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 24.0),
                             child: AppButton(
-                              text: 'Tambah Jadwal',
+                              text: 'Simpan Jadwal',
                               onPressed: () =>
                                   _submitForm(authState.user.idUser),
                               isFullWidth: true,

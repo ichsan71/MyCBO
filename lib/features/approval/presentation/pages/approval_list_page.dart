@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/util/injection_container.dart';
+import '../../../../core/presentation/widgets/app_bar_widget.dart';
+import '../../../../core/presentation/widgets/app_button.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
-import '../../domain/entities/approval.dart';
 import '../bloc/approval_bloc.dart';
-import '../bloc/approval_event.dart';
-import '../bloc/approval_state.dart';
+import '../widgets/approval_card.dart';
+import '../widgets/shimmer_loading.dart';
 import 'approval_detail_page.dart';
-import 'package:test_cbo/core/presentation/widgets/shimmer_approval_loading.dart';
 
 class ApprovalListPage extends StatelessWidget {
   const ApprovalListPage({Key? key}) : super(key: key);
@@ -33,7 +34,7 @@ class ApprovalListView extends StatefulWidget {
 class _ApprovalListViewState extends State<ApprovalListView> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String _selectedFilter = 'all'; // 'all', 'pending', 'approved', 'rejected'
+  int _selectedFilter = 0; // 0: Semua, 1: Menunggu, 2: Disetujui, 3: Ditolak
 
   @override
   void initState() {
@@ -56,429 +57,233 @@ class _ApprovalListViewState extends State<ApprovalListView> {
     }
   }
 
-  List<Approval> _filterApprovals(List<Approval> approvals) {
-    return approvals.where((approval) {
-      // Filter berdasarkan status
-      bool matchesFilter = true;
-      switch (_selectedFilter) {
-        case 'pending':
-          matchesFilter = approval.approved == 0;
-          break;
-        case 'approved':
-          matchesFilter = approval.approved == 1;
-          break;
-        case 'rejected':
-          matchesFilter = approval.approved == 2;
-          break;
-        default:
-          matchesFilter = true;
-      }
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query.toLowerCase();
+    });
+  }
 
-      // Filter berdasarkan pencarian
-      bool matchesSearch = _searchQuery.isEmpty ||
-          approval.namaBawahan
-              .toLowerCase()
-              .contains(_searchQuery.toLowerCase()) ||
-          approval.details.any((detail) =>
-              detail.tujuanData.namaDokter
-                  .toLowerCase()
-                  .contains(_searchQuery.toLowerCase()) ||
-              detail.tglVisit.contains(_searchQuery));
+  void _onFilterChanged(int value) {
+    setState(() {
+      _selectedFilter = value;
+    });
+  }
 
-      return matchesFilter && matchesSearch;
-    }).toList();
+  List<Widget> _buildFilterChips() {
+    return [
+      FilterChip(
+        label: const Text('Semua'),
+        selected: _selectedFilter == 0,
+        onSelected: (bool selected) {
+          if (selected) _onFilterChanged(0);
+        },
+        backgroundColor: Colors.grey[200],
+        selectedColor: AppTheme.primaryColor.withOpacity(0.2),
+        checkmarkColor: AppTheme.primaryColor,
+        labelStyle: GoogleFonts.poppins(
+          color: _selectedFilter == 0
+              ? AppTheme.primaryColor
+              : AppTheme.primaryTextColor,
+          fontWeight:
+              _selectedFilter == 0 ? FontWeight.w500 : FontWeight.normal,
+        ),
+      ),
+      const SizedBox(width: 8),
+      FilterChip(
+        label: const Text('Menunggu'),
+        selected: _selectedFilter == 1,
+        onSelected: (bool selected) {
+          if (selected) _onFilterChanged(1);
+        },
+        backgroundColor: Colors.grey[200],
+        selectedColor: AppTheme.warningColor.withOpacity(0.2),
+        checkmarkColor: AppTheme.warningColor,
+        labelStyle: GoogleFonts.poppins(
+          color: _selectedFilter == 1
+              ? AppTheme.warningColor
+              : AppTheme.primaryTextColor,
+          fontWeight:
+              _selectedFilter == 1 ? FontWeight.w500 : FontWeight.normal,
+        ),
+      ),
+      const SizedBox(width: 8),
+      FilterChip(
+        label: const Text('Disetujui'),
+        selected: _selectedFilter == 2,
+        onSelected: (bool selected) {
+          if (selected) _onFilterChanged(2);
+        },
+        backgroundColor: Colors.grey[200],
+        selectedColor: AppTheme.successColor.withOpacity(0.2),
+        checkmarkColor: AppTheme.successColor,
+        labelStyle: GoogleFonts.poppins(
+          color: _selectedFilter == 2
+              ? AppTheme.successColor
+              : AppTheme.primaryTextColor,
+          fontWeight:
+              _selectedFilter == 2 ? FontWeight.w500 : FontWeight.normal,
+        ),
+      ),
+      const SizedBox(width: 8),
+      FilterChip(
+        label: const Text('Ditolak'),
+        selected: _selectedFilter == 3,
+        onSelected: (bool selected) {
+          if (selected) _onFilterChanged(3);
+        },
+        backgroundColor: Colors.grey[200],
+        selectedColor: AppTheme.errorColor.withOpacity(0.2),
+        checkmarkColor: AppTheme.errorColor,
+        labelStyle: GoogleFonts.poppins(
+          color: _selectedFilter == 3
+              ? AppTheme.errorColor
+              : AppTheme.primaryTextColor,
+          fontWeight:
+              _selectedFilter == 3 ? FontWeight.w500 : FontWeight.normal,
+        ),
+      ),
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Persetujuan Jadwal',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        elevation: 0,
+      appBar: const AppBarWidget(
+        title: 'Daftar Persetujuan',
       ),
       body: Column(
         children: [
-          // Search and Filter Section
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.white,
+          Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                // Search Bar
                 TextField(
                   controller: _searchController,
+                  onChanged: _onSearchChanged,
                   decoration: InputDecoration(
-                    hintText: 'Cari berdasarkan nama atau tanggal...',
+                    hintText: 'Cari nama bawahan...',
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius:
+                          BorderRadius.circular(AppTheme.borderRadiusSmall),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  },
                 ),
                 const SizedBox(height: 16),
-                // Filter Chips
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: [
-                      _buildFilterChip('Semua', 'all'),
-                      const SizedBox(width: 8),
-                      _buildFilterChip('Belum Disetujui', 'pending'),
-                      const SizedBox(width: 8),
-                      _buildFilterChip('Disetujui', 'approved'),
-                      const SizedBox(width: 8),
-                      _buildFilterChip('Ditolak', 'rejected'),
-                    ],
+                    children: _buildFilterChips(),
                   ),
                 ),
               ],
             ),
           ),
-          // List Content
           Expanded(
             child: BlocBuilder<AuthBloc, AuthState>(
               builder: (context, authState) {
                 if (authState is AuthAuthenticated) {
-                  return BlocConsumer<ApprovalBloc, ApprovalState>(
-                    listener: (context, state) {
-                      if (state is ApprovalSent) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(state.response.message),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                        _loadApprovals();
-                      } else if (state is ApprovalError) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(state.message),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    },
+                  return BlocBuilder<ApprovalBloc, ApprovalState>(
                     builder: (context, state) {
                       if (state is ApprovalLoading) {
-                        return const ShimmerApprovalLoading();
-                      } else if (state is ApprovalsLoaded) {
-                        final filteredApprovals =
-                            _filterApprovals(state.approvals);
-                        return _buildApprovalList(filteredApprovals);
-                      } else if (state is ApprovalsEmpty) {
-                        return _buildEmptyState();
+                        return ListView.builder(
+                          itemCount: 5,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemBuilder: (context, index) {
+                            return const ShimmerApprovalCard();
+                          },
+                        );
                       } else if (state is ApprovalError) {
                         return Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.error_outline,
-                                size: 80,
-                                color: Colors.red[300],
-                              ),
-                              const SizedBox(height: 16),
                               Text(
-                                'Terjadi Kesalahan',
+                                state.message,
+                                textAlign: TextAlign.center,
                                 style: GoogleFonts.poppins(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
                                   color: Colors.grey[600],
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                state.message,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: Colors.grey[500],
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
                               const SizedBox(height: 16),
-                              ElevatedButton.icon(
+                              AppButton(
+                                text: 'Coba Lagi',
                                 onPressed: _loadApprovals,
-                                icon: const Icon(Icons.refresh),
-                                label: const Text('Coba Lagi'),
+                                type: AppButtonType.primary,
                               ),
                             ],
                           ),
                         );
+                      } else if (state is ApprovalLoaded) {
+                        final approvals = state.approvals.where((approval) {
+                          final matchesSearch = approval.namaBawahan
+                              .toLowerCase()
+                              .contains(_searchQuery);
+                          final matchesFilter = _selectedFilter == 0 ||
+                              (_selectedFilter == 1 &&
+                                  approval.approved == 0) ||
+                              (_selectedFilter == 2 &&
+                                  approval.approved == 1) ||
+                              (_selectedFilter == 3 && approval.approved == 2);
+                          return matchesSearch && matchesFilter;
+                        }).toList();
+
+                        if (approvals.isEmpty) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Tidak ada data persetujuan',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                AppButton(
+                                  text: 'Muat Ulang',
+                                  onPressed: _loadApprovals,
+                                  type: AppButtonType.primary,
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        return ListView.builder(
+                          itemCount: approvals.length,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemBuilder: (context, index) {
+                            final approval = approvals[index];
+                            return ApprovalCard(
+                              approval: approval,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ApprovalDetailPage(
+                                      approval: approval,
+                                      userId: authState.user.idUser,
+                                    ),
+                                  ),
+                                ).then((_) => _loadApprovals());
+                              },
+                            );
+                          },
+                        );
                       }
-                      return const SizedBox();
+                      return const Center(child: CircularProgressIndicator());
                     },
                   );
-                } else {
-                  return const Center(
-                    child: Text('Silakan login terlebih dahulu'),
-                  );
                 }
+                return const Center(child: CircularProgressIndicator());
               },
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(String label, String value) {
-    final isSelected = _selectedFilter == value;
-    return FilterChip(
-      label: Text(
-        label,
-        style: GoogleFonts.poppins(
-          color: isSelected ? Colors.white : Colors.grey[800],
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-        ),
-      ),
-      selected: isSelected,
-      onSelected: (bool selected) {
-        setState(() {
-          _selectedFilter = selected ? value : 'all';
-        });
-      },
-      backgroundColor: Colors.grey[200],
-      selectedColor: Colors.blue,
-      checkmarkColor: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.check_circle_outline,
-            size: 80,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Tidak Ada Persetujuan',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Semua jadwal sudah disetujui',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildApprovalList(List<Approval> approvals) {
-    return approvals.isEmpty
-        ? _buildEmptyState()
-        : RefreshIndicator(
-            onRefresh: () async {
-              _loadApprovals();
-            },
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: approvals.length,
-              itemBuilder: (context, index) {
-                final approval = approvals[index];
-                return _buildApprovalCard(approval);
-              },
-            ),
-          );
-  }
-
-  Widget _buildApprovalCard(Approval approval) {
-    String statusText;
-    Color statusColor;
-    IconData statusIcon;
-
-    switch (approval.approved) {
-      case 1:
-        statusText = 'Disetujui';
-        statusColor = Colors.green;
-        statusIcon = Icons.check_circle;
-        break;
-      case 2:
-        statusText = 'Ditolak';
-        statusColor = Colors.red;
-        statusIcon = Icons.cancel;
-        break;
-      default:
-        statusText = 'Belum Disetujui';
-        statusColor = Colors.orange;
-        statusIcon = Icons.pending;
-    }
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: () {
-          final authState = context.read<AuthBloc>().state;
-          if (authState is AuthAuthenticated) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ApprovalDetailPage(
-                  approval: approval,
-                  userId: authState.user.idUser,
-                ),
-              ),
-            ).then((_) => _loadApprovals());
-          }
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border(
-              left: BorderSide(
-                color: statusColor,
-                width: 6,
-              ),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        approval.namaBawahan,
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: statusColor),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            statusIcon,
-                            size: 16,
-                            color: statusColor,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            statusText,
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: statusColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.medical_services_outlined,
-                      size: 16,
-                      color: Colors.grey[600],
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Total Jadwal: ${approval.totalSchedule}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 16,
-                      color: Colors.grey[600],
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Periode: ${approval.month}/${approval.year}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                const Divider(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        final authState = context.read<AuthBloc>().state;
-                        if (authState is AuthAuthenticated) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ApprovalDetailPage(
-                                approval: approval,
-                                userId: authState.user.idUser,
-                              ),
-                            ),
-                          ).then((_) => _loadApprovals());
-                        }
-                      },
-                      icon: const Icon(Icons.visibility),
-                      label: const Text('Lihat Detail'),
-                      style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

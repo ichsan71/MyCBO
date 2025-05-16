@@ -1,78 +1,116 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:test_cbo/core/theme/app_theme.dart';
 
 class AppCard extends StatelessWidget {
   final Widget child;
+  final String? title;
+  final String? subtitle;
+  final Widget? leading;
+  final List<Widget>? actions;
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
-  final Color? backgroundColor;
   final double? elevation;
-  final double borderRadius;
-  final BorderSide? borderSide;
+  final Color? backgroundColor;
+  final BorderRadius? borderRadius;
+  final bool hasBorder;
+  final Color? borderColor;
   final VoidCallback? onTap;
-  final bool isOutlined;
-  final Color? shadowColor;
 
   const AppCard({
     Key? key,
     required this.child,
+    this.title,
+    this.subtitle,
+    this.leading,
+    this.actions,
     this.padding,
     this.margin,
-    this.backgroundColor,
     this.elevation,
-    this.borderRadius = 12.0,
-    this.borderSide,
+    this.backgroundColor,
+    this.borderRadius,
+    this.hasBorder = false,
+    this.borderColor,
     this.onTap,
-    this.isOutlined = false,
-    this.shadowColor,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    final BoxDecoration decoration = BoxDecoration(
-      color: backgroundColor ?? theme.cardTheme.color ?? theme.cardColor,
-      borderRadius: BorderRadius.circular(borderRadius),
-      border: isOutlined || borderSide != null
-          ? Border.all(
-              color: borderSide?.color ?? theme.dividerColor,
-              width: borderSide?.width ?? 1.0,
-              style: borderSide?.style ?? BorderStyle.solid,
-            )
-          : null,
-      boxShadow: elevation != null && elevation! > 0 && !isOutlined
-          ? [
-              BoxShadow(
-                color: shadowColor ?? Colors.black.withOpacity(0.1),
-                blurRadius: elevation! * 2,
-                spreadRadius: elevation! * 0.2,
-                offset: Offset(0, elevation! * 0.5),
-              ),
-            ]
-          : null,
+    final cardContent = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (title != null || leading != null || actions != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: Row(
+              children: [
+                if (leading != null) ...[
+                  leading!,
+                  const SizedBox(width: 12),
+                ],
+                if (title != null)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title!,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primaryTextColor,
+                          ),
+                        ),
+                        if (subtitle != null)
+                          Text(
+                            subtitle!,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: AppTheme.secondaryTextColor,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                if (actions != null) ...actions!,
+              ],
+            ),
+          ),
+        child,
+      ],
     );
 
-    final Widget cardContent = Padding(
-      padding: padding ?? const EdgeInsets.all(16.0),
-      child: child,
+    final card = Card(
+      elevation: elevation ?? AppTheme.elevationSmall,
+      margin: margin ?? const EdgeInsets.all(0),
+      shape: RoundedRectangleBorder(
+        borderRadius:
+            borderRadius ?? BorderRadius.circular(AppTheme.borderRadiusMedium),
+        side: hasBorder
+            ? BorderSide(
+                color:
+                    borderColor ?? AppTheme.secondaryTextColor.withOpacity(0.3),
+                width: 1.0,
+              )
+            : BorderSide.none,
+      ),
+      color: backgroundColor ?? AppTheme.cardBackgroundColor,
+      child: Padding(
+        padding: padding ?? const EdgeInsets.all(16.0),
+        child: cardContent,
+      ),
     );
 
     if (onTap != null) {
       return InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: Container(
-          margin: margin ?? theme.cardTheme.margin ?? EdgeInsets.zero,
-          decoration: decoration,
-          child: cardContent,
-        ),
+        borderRadius:
+            borderRadius ?? BorderRadius.circular(AppTheme.borderRadiusMedium),
+        child: card,
       );
     }
 
-    return Container(
-      margin: margin ?? theme.cardTheme.margin ?? EdgeInsets.zero,
-      decoration: decoration,
-      child: cardContent,
-    );
+    return card;
   }
 }

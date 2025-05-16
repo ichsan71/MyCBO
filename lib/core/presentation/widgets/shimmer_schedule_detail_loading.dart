@@ -13,7 +13,7 @@ class ShimmerScheduleDetailLoading extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            Row(
+            const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 ShimmerBox(
@@ -41,7 +41,7 @@ class ShimmerScheduleDetailLoading extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ShimmerBox(
+                  const ShimmerBox(
                     width: 120,
                     height: 20,
                     borderRadius: 4,
@@ -55,7 +55,7 @@ class ShimmerScheduleDetailLoading extends StatelessWidget {
                   const SizedBox(height: 12),
 
                   // Status details
-                  Row(
+                  const Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
@@ -66,7 +66,7 @@ class ShimmerScheduleDetailLoading extends StatelessWidget {
                             height: 16,
                             borderRadius: 4,
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4),
                           ShimmerBox(
                             width: 80,
                             height: 16,
@@ -97,7 +97,7 @@ class ShimmerScheduleDetailLoading extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ShimmerBox(
+                  const ShimmerBox(
                     width: 140,
                     height: 20,
                     borderRadius: 4,
@@ -112,14 +112,14 @@ class ShimmerScheduleDetailLoading extends StatelessWidget {
 
                   // Info rows
                   for (int i = 0; i < 5; i++) ...[
-                    Row(
+                    const Row(
                       children: [
                         ShimmerBox(
                           width: 24,
                           height: 24,
                           borderRadius: 12,
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -128,7 +128,7 @@ class ShimmerScheduleDetailLoading extends StatelessWidget {
                               height: 14,
                               borderRadius: 4,
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: 4),
                             ShimmerBox(
                               width: 200,
                               height: 16,
@@ -156,7 +156,7 @@ class ShimmerScheduleDetailLoading extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ShimmerBox(
+                  const ShimmerBox(
                     width: 100,
                     height: 20,
                     borderRadius: 4,
@@ -178,14 +178,14 @@ class ShimmerScheduleDetailLoading extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: Colors.white, width: 1),
                       ),
-                      child: Row(
+                      child: const Row(
                         children: [
                           ShimmerBox(
                             width: 40,
                             height: 40,
                             borderRadius: 20,
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,7 +195,7 @@ class ShimmerScheduleDetailLoading extends StatelessWidget {
                                   height: 16,
                                   borderRadius: 4,
                                 ),
-                                const SizedBox(height: 4),
+                                SizedBox(height: 4),
                                 ShimmerBox(
                                   width: 100,
                                   height: 14,
@@ -215,7 +215,7 @@ class ShimmerScheduleDetailLoading extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Action buttons
-            Row(
+            const Row(
               children: [
                 Expanded(
                   child: ShimmerBox(
@@ -224,7 +224,7 @@ class ShimmerScheduleDetailLoading extends StatelessWidget {
                     borderRadius: 8,
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Expanded(
                   child: ShimmerBox(
                     width: double.infinity,
