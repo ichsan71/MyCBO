@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
@@ -108,7 +109,17 @@ class ScheduleDetailPage extends StatelessWidget {
       // Dapatkan token dari AuthBloc
       final authState = context.read<AuthBloc>().state;
       if (authState is! AuthAuthenticated) {
-        throw Exception('User tidak terautentikasi');
+        // Log error dan tampilkan pesan yang lebih spesifik
+        Logger.error('ScheduleDetailPage',
+            'User tidak terautentikasi, state: ${authState.runtimeType}');
+        throw Exception('User tidak terautentikasi. Silakan login kembali.');
+      }
+
+      // Pastikan user dan token tidak null
+      if (authState.user.token.isEmpty) {
+        Logger.error('ScheduleDetailPage', 'Token user kosong');
+        throw Exception(
+            'Token autentikasi tidak valid. Silakan login kembali.');
       }
 
       // Kompres gambar terlebih dahulu
@@ -197,7 +208,7 @@ class ScheduleDetailPage extends StatelessWidget {
       }
 
       // Tutup dialog loading
-      if (context.mounted) {
+      if (context.mounted && Navigator.canPop(context)) {
         Navigator.of(context).pop();
       }
 
@@ -221,6 +232,14 @@ class ScheduleDetailPage extends StatelessWidget {
 
           // Tutup bottom sheet
           Navigator.pop(context);
+
+          // Gunakan scheduler untuk menunggu frame selesai sebelum navigasi kedua
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) {
+              // Kembali ke halaman sebelumnya
+              Navigator.of(context).pop();
+            }
+          });
         }
       } else {
         if (context.mounted) {
@@ -247,31 +266,31 @@ class ScheduleDetailPage extends StatelessWidget {
       Logger.error('ScheduleDetailPage', 'Timeout during check-in: $e');
 
       // Tutup dialog loading
-      if (context.mounted) {
+      if (context.mounted && Navigator.canPop(context)) {
         Navigator.of(context).pop();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'Request timeout. Koneksi internet terlalu lambat atau server tidak merespon.'),
-            backgroundColor: Colors.red,
-          ),
-        );
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Request timeout. Koneksi internet terlalu lambat atau server tidak merespon.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     } catch (e) {
       Logger.error('ScheduleDetailPage', 'Error during check-in: $e');
 
       // Tutup dialog loading
-      if (context.mounted) {
+      if (context.mounted && Navigator.canPop(context)) {
         Navigator.of(context).pop();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Terjadi kesalahan: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Terjadi kesalahan: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -309,7 +328,17 @@ class ScheduleDetailPage extends StatelessWidget {
       // Dapatkan token dari AuthBloc
       final authState = context.read<AuthBloc>().state;
       if (authState is! AuthAuthenticated) {
-        throw Exception('User tidak terautentikasi');
+        // Log error dan tampilkan pesan yang lebih spesifik
+        Logger.error('ScheduleDetailPage',
+            'User tidak terautentikasi, state: ${authState.runtimeType}');
+        throw Exception('User tidak terautentikasi. Silakan login kembali.');
+      }
+
+      // Pastikan user dan token tidak null
+      if (authState.user.token.isEmpty) {
+        Logger.error('ScheduleDetailPage', 'Token user kosong');
+        throw Exception(
+            'Token autentikasi tidak valid. Silakan login kembali.');
       }
 
       // Kompres gambar terlebih dahulu
@@ -400,7 +429,7 @@ class ScheduleDetailPage extends StatelessWidget {
       }
 
       // Tutup dialog loading
-      if (context.mounted) {
+      if (context.mounted && Navigator.canPop(context)) {
         Navigator.of(context).pop();
       }
 
@@ -422,15 +451,18 @@ class ScheduleDetailPage extends StatelessWidget {
             ),
           );
 
-          // Tutup bottom sheet
-          Navigator.pop(context);
+          // Tutup bottom sheet dengan pengecekan aman
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
 
-          // Kembali ke halaman sebelumnya setelah delay singkat
-          Future.delayed(const Duration(seconds: 1), () {
-            if (context.mounted) {
-              Navigator.pop(context); // Kembali ke halaman jadwal
-            }
-          });
+            // Gunakan scheduler untuk menunggu frame selesai sebelum navigasi kedua
+            SchedulerBinding.instance.addPostFrameCallback((_) {
+              if (context.mounted && Navigator.canPop(context)) {
+                // Kembali ke halaman sebelumnya
+                Navigator.of(context).pop();
+              }
+            });
+          }
         }
       } else {
         if (context.mounted) {
@@ -457,31 +489,31 @@ class ScheduleDetailPage extends StatelessWidget {
       Logger.error('ScheduleDetailPage', 'Timeout during check-out: $e');
 
       // Tutup dialog loading
-      if (context.mounted) {
+      if (context.mounted && Navigator.canPop(context)) {
         Navigator.of(context).pop();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'Request timeout. Koneksi internet terlalu lambat atau server tidak merespon.'),
-            backgroundColor: Colors.red,
-          ),
-        );
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Request timeout. Koneksi internet terlalu lambat atau server tidak merespon.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     } catch (e) {
       Logger.error('ScheduleDetailPage', 'Error during check-out: $e');
 
       // Tutup dialog loading
-      if (context.mounted) {
+      if (context.mounted && Navigator.canPop(context)) {
         Navigator.of(context).pop();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Terjadi kesalahan: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Terjadi kesalahan: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

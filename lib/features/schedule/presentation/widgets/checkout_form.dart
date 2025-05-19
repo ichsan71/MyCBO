@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -189,11 +190,20 @@ class _CheckoutFormState extends State<CheckoutForm> {
       );
 
       // Atur timeout untuk menghindari request yang berjalan terlalu lama
-      await Future.delayed(const Duration(seconds: 1), () {
-        return widget.onSubmit(request);
-      }).timeout(const Duration(seconds: 30), onTimeout: () {
-        throw Exception('Timeout saat melakukan check-out. Mohon coba lagi.');
-      });
+      try {
+        await Future.delayed(const Duration(seconds: 1), () {
+          return widget.onSubmit(request);
+        }).timeout(const Duration(seconds: 30), onTimeout: () {
+          throw Exception('Timeout saat melakukan check-out. Mohon coba lagi.');
+        });
+      } catch (e) {
+        developer.log(
+          'Error saat mengirim request check-out: ${e.toString()}',
+          name: 'CheckoutForm',
+          error: e,
+        );
+        rethrow; // Lempar kembali error untuk ditangani di blok catch utama
+      }
 
       if (mounted) {
         // Tutup dialog loading
@@ -215,15 +225,18 @@ class _CheckoutFormState extends State<CheckoutForm> {
           ),
         );
 
-        // Tutup form
-        Navigator.pop(context);
+        // Tutup form bottom sheet dengan pengecekan aman
+        if (Navigator.canPop(context)) {
+          Navigator.of(context).pop();
 
-        // Kembali ke halaman sebelumnya setelah delay singkat
-        Future.delayed(const Duration(seconds: 1), () {
-          if (context.mounted) {
-            Navigator.pop(context); // Kembali ke halaman jadwal
-          }
-        });
+          // Gunakan scheduler untuk menunggu frame selesai sebelum navigasi kedua
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted && Navigator.canPop(context)) {
+              // Kembali ke halaman jadwal
+              Navigator.of(context).pop();
+            }
+          });
+        }
       }
     } catch (e) {
       developer.log(

@@ -37,15 +37,27 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
   ) async {
     final currentState = state;
     if (currentState is ScheduleLoaded) {
-      final updatedSchedules = currentState.schedules.map((schedule) {
-        if (schedule.id == event.scheduleId) {
-          return schedule.copyWith(statusCheckin: event.newStatus);
-        }
-        return schedule;
-      }).toList();
+      try {
+        final updatedSchedules = currentState.schedules.map((schedule) {
+          if (schedule.id == event.scheduleId) {
+            return schedule.copyWith(statusCheckin: event.newStatus);
+          }
+          return schedule;
+        }).toList();
 
-      emit(ScheduleLoaded(updatedSchedules));
-      await _fetchSchedules(event.userId, emit);
+        emit(ScheduleLoaded(updatedSchedules));
+
+        // Tambahkan penanganan error saat fetch schedules
+        try {
+          await _fetchSchedules(event.userId, emit);
+        } catch (e) {
+          // Jika terjadi error saat fetch, tetap gunakan data yang sudah diupdate
+          emit(ScheduleLoaded(updatedSchedules));
+        }
+      } catch (e) {
+        // Jika terjadi error, log dan jangan ubah state
+        print('Error updating schedule status: $e');
+      }
     }
   }
 
