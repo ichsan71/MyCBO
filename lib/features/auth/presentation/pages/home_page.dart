@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../approval/presentation/pages/approval_list_page.dart';
+import '../../../realisasi_visit/presentation/pages/realisasi_visit_list_page.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -41,6 +42,12 @@ class _HomeContent extends StatelessWidget {
     final role = user.user.role.toUpperCase();
     final hasApprovalAccess =
         role == 'ADMIN' || role == 'BCO' || role == 'RSM' || role == 'DM';
+    final hasRealisasiVisitAccess = role == 'ADMIN' ||
+        role == 'GM' ||
+        role == 'BCO' ||
+        role == 'RSM' ||
+        role == 'DM' ||
+        role == 'AM';
 
     return SafeArea(
       child: Padding(
@@ -91,6 +98,13 @@ class _HomeContent extends StatelessWidget {
                       icon: Icons.approval,
                       color: Colors.red,
                       onTap: () => _navigateToApproval(context),
+                    ),
+                  if (hasRealisasiVisitAccess)
+                    MenuCard(
+                      title: 'Realisasi Visit',
+                      icon: Icons.check_circle,
+                      color: Colors.amber,
+                      onTap: () => _navigateToRealisasiVisit(context),
                     ),
                   MenuCard(
                     title: 'Target',
@@ -146,6 +160,15 @@ class _HomeContent extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (context) => const ApprovalListPage(),
+      ),
+    );
+  }
+
+  void _navigateToRealisasiVisit(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const RealisasiVisitListPage(),
       ),
     );
   }

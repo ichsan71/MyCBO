@@ -332,16 +332,16 @@ class AppTheme {
   }
 
   static ThemeData darkTheme() {
-    final ColorScheme colorScheme = ColorScheme(
-      primary: const Color(0xFF90CAF9), // Biru yang lebih terang
-      primaryContainer: const Color(0xFF1976D2), // Biru yang lebih gelap
-      secondary: const Color(0xFF80CBC4), // Teal yang lebih terang
-      secondaryContainer: const Color(0xFF00796B), // Teal yang lebih gelap
-      tertiary: const Color(0xFFCE93D8), // Ungu yang lebih terang
-      tertiaryContainer: const Color(0xFF7B1FA2), // Ungu yang lebih gelap
-      surface: const Color(0xFF1F1F1F),
-      background: const Color(0xFF121212),
-      error: const Color(0xFFEF5350), // Merah yang lebih terang
+    const ColorScheme colorScheme = ColorScheme(
+      primary:  Color(0xFF90CAF9), // Biru yang lebih terang
+      primaryContainer:  Color(0xFF1976D2), // Biru yang lebih gelap
+      secondary:  Color(0xFF80CBC4), // Teal yang lebih terang
+      secondaryContainer:  Color(0xFF00796B), // Teal yang lebih gelap
+      tertiary:  Color(0xFFCE93D8), // Ungu yang lebih terang
+      tertiaryContainer:  Color(0xFF7B1FA2), // Ungu yang lebih gelap
+      surface:  Color(0xFF1F1F1F),
+      background:  Color(0xFF121212),
+      error:  Color(0xFFEF5350), // Merah yang lebih terang
       onPrimary: Colors.black,
       onSecondary: Colors.black,
       onTertiary: Colors.black,

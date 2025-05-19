@@ -133,7 +133,7 @@ class ShimmerScheduleListLoading extends StatelessWidget {
                 height: 20,
                 borderRadius: 4,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               ShimmerBox(
                 width: 200,
                 height: 16,

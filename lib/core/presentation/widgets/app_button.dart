@@ -128,7 +128,7 @@ class AppButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(borderRadius),
           ),
           padding: padding ??
-              EdgeInsets.symmetric(
+              const EdgeInsets.symmetric(
                   vertical: AppTheme.spacingMedium,
                   horizontal: AppTheme.spacingLarge),
           disabledBackgroundColor: bgColor.withOpacity(0.6),
@@ -145,7 +145,7 @@ class AppButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(borderRadius),
           ),
           padding: padding ??
-              EdgeInsets.symmetric(
+              const EdgeInsets.symmetric(
                   vertical: AppTheme.spacingMedium,
                   horizontal: AppTheme.spacingLarge),
           minimumSize: const Size(88, 48),
@@ -158,7 +158,7 @@ class AppButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(borderRadius),
           ),
           padding: padding ??
-              EdgeInsets.symmetric(
+              const EdgeInsets.symmetric(
                   vertical: AppTheme.spacingSmall,
                   horizontal: AppTheme.spacingMedium),
         );
@@ -172,7 +172,7 @@ class AppButton extends StatelessWidget {
       children: [
         if (prefixIcon != null && !isLoading) ...[
           prefixIcon!,
-          SizedBox(width: AppTheme.spacingSmall),
+          const SizedBox(width: AppTheme.spacingSmall),
         ],
         if (isLoading)
           SizedBox(
@@ -197,7 +197,7 @@ class AppButton extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         if (suffixIcon != null && !isLoading) ...[
-          SizedBox(width: AppTheme.spacingSmall),
+          const SizedBox(width: AppTheme.spacingSmall),
           suffixIcon!,
         ],
       ],

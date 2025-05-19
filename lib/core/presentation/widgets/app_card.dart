@@ -57,7 +57,7 @@ class AppCard extends StatelessWidget {
               children: [
                 if (leading != null) ...[
                   leading!,
-                  SizedBox(width: AppTheme.spacingMedium),
+                  const SizedBox(width: AppTheme.spacingMedium),
                 ],
                 if (title != null)
                   Expanded(

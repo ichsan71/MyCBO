@@ -8,6 +8,7 @@ import 'package:test_cbo/core/network/network_info.dart';
 import '../../features/auth/di/auth_injection.dart';
 import '../../features/schedule/di/schedule_injection.dart';
 import '../../features/approval/di/approval_injection.dart';
+import '../../features/realisasi_visit/di/realisasi_visit_injection.dart';
 
 /// Service locator instance
 final sl = GetIt.instance;
@@ -33,6 +34,7 @@ Future<void> init() async {
   await initAuthDependencies();
   await initScheduleDependencies();
   await initApprovalDependencies();
+  await initRealisasiVisitDependencies();
 }
 
 /// Inisialisasi external dependencies seperti shared preferences, http client, dll
