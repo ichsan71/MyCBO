@@ -46,27 +46,33 @@ class ApprovalCard extends StatelessWidget {
                           '${approval.month}/${approval.year}',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Colors.grey[600]
+                                    : Colors.grey[400],
                           ),
                         ),
                       ],
                     ),
                   ),
-                  _buildStatusChip(),
+                  _buildStatusChip(context),
                 ],
               ),
               const SizedBox(height: 16),
               _buildInfoRow(
+                context,
                 Icons.calendar_today,
                 'Total Jadwal: ${approval.totalSchedule}',
               ),
               const SizedBox(height: 8),
               _buildInfoRow(
+                context,
                 Icons.local_hospital_outlined,
                 'Dokter: ${approval.jumlahDokter}',
               ),
               const SizedBox(height: 8),
               _buildInfoRow(
+                context,
                 Icons.location_on_outlined,
                 'Klinik: ${approval.jumlahKlinik}',
               ),
@@ -77,26 +83,51 @@ class ApprovalCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusChip() {
+  Widget _buildStatusChip(BuildContext context) {
     String statusText;
     Color backgroundColor;
     Color textColor;
+    Color borderColor;
 
     switch (approval.approved) {
       case 1:
         statusText = 'Disetujui';
-        backgroundColor = Colors.green[100]!;
+        backgroundColor = Colors.green[50]!;
         textColor = Colors.green[800]!;
+        borderColor = Colors.green[300]!;
         break;
       case 2:
         statusText = 'Ditolak';
-        backgroundColor = Colors.red[100]!;
+        backgroundColor = Colors.red[50]!;
         textColor = Colors.red[800]!;
+        borderColor = Colors.red[300]!;
         break;
       default:
         statusText = 'Menunggu';
-        backgroundColor = Colors.orange[100]!;
+        backgroundColor = Colors.orange[50]!;
         textColor = Colors.orange[800]!;
+        borderColor = Colors.orange[300]!;
+    }
+
+    // Sesuaikan warna untuk mode gelap
+    final brightness = Theme.of(context).brightness;
+    if (brightness == Brightness.dark) {
+      switch (approval.approved) {
+        case 1:
+          backgroundColor = Colors.green[900]!;
+          textColor = Colors.green[100]!;
+          borderColor = Colors.green[700]!;
+          break;
+        case 2:
+          backgroundColor = Colors.red[900]!;
+          textColor = Colors.red[100]!;
+          borderColor = Colors.red[700]!;
+          break;
+        default:
+          backgroundColor = Colors.orange[900]!;
+          textColor = Colors.orange[100]!;
+          borderColor = Colors.orange[700]!;
+      }
     }
 
     return Container(
@@ -104,32 +135,37 @@ class ApprovalCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor, width: 1.0),
       ),
       child: Text(
         statusText,
         style: GoogleFonts.poppins(
           fontSize: 12,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
           color: textColor,
         ),
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String text) {
+  Widget _buildInfoRow(BuildContext context, IconData icon, String text) {
     return Row(
       children: [
         Icon(
           icon,
           size: 16,
-          color: Colors.grey[600],
+          color: Theme.of(context).brightness == Brightness.light
+              ? Colors.grey[600]
+              : Colors.grey[400],
         ),
         const SizedBox(width: 8),
         Text(
           text,
           style: GoogleFonts.poppins(
             fontSize: 14,
-            color: Colors.grey[600],
+            color: Theme.of(context).brightness == Brightness.light
+                ? Colors.grey[600]
+                : Colors.grey[400],
           ),
         ),
       ],

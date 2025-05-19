@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:test_cbo/core/theme/app_theme.dart';
+import 'package:test_cbo/core/presentation/theme/app_theme.dart';
 
 class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -11,6 +11,8 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   final PreferredSizeWidget? bottom;
   final double elevation;
   final Color? backgroundColor;
+  final Widget? flexibleSpace;
+  final bool? showShadow;
 
   const AppBarWidget({
     Key? key,
@@ -22,17 +24,20 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
     this.bottom,
     this.elevation = 0,
     this.backgroundColor,
+    this.flexibleSpace,
+    this.showShadow = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return AppBar(
       title: Text(
         title,
-        style: GoogleFonts.poppins(
-          fontSize: 18,
+        style: theme.textTheme.headlineMedium?.copyWith(
+          color: theme.colorScheme.onPrimary,
           fontWeight: FontWeight.w600,
-          color: Colors.white,
         ),
       ),
       centerTitle: centerTitle,
@@ -40,13 +45,17 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
       leading: leading,
       actions: actions,
       bottom: bottom,
-      elevation: elevation,
-      backgroundColor: backgroundColor ?? AppTheme.primaryColor,
+      elevation: showShadow == true ? AppTheme.elevationMedium : elevation,
+      backgroundColor: backgroundColor ?? theme.colorScheme.primary,
+      flexibleSpace: flexibleSpace,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(AppTheme.borderRadiusMedium),
+          bottom: Radius.circular(16),
         ),
       ),
+      shadowColor: showShadow == true
+          ? Colors.black.withOpacity(0.3)
+          : Colors.transparent,
     );
   }
 

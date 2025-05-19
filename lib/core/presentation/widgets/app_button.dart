@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:test_cbo/core/presentation/widgets/shimmer_loading.dart';
-import 'package:test_cbo/core/theme/app_theme.dart';
+import 'package:test_cbo/core/presentation/theme/app_theme.dart';
 
 enum AppButtonType {
   primary,
@@ -29,6 +28,7 @@ class AppButton extends StatelessWidget {
   final Color? textColor;
   final double? fontSize;
   final FontWeight? fontWeight;
+  final bool showShadow;
 
   const AppButton({
     Key? key,
@@ -40,18 +40,20 @@ class AppButton extends StatelessWidget {
     this.width,
     this.height,
     this.padding,
-    this.borderRadius = AppTheme.borderRadiusSmall,
+    this.borderRadius = 12,
     this.prefixIcon,
     this.suffixIcon,
     this.backgroundColor,
     this.textColor,
     this.fontSize,
     this.fontWeight,
+    this.showShadow = true,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final brightness = Theme.of(context).brightness;
 
     // Determine button style based on type
     ButtonStyle buttonStyle;
@@ -60,34 +62,55 @@ class AppButton extends StatelessWidget {
 
     switch (type) {
       case AppButtonType.primary:
-        bgColor = backgroundColor ?? AppTheme.primaryColor;
-        fgColor = textColor ?? Colors.white;
+        bgColor = backgroundColor ?? theme.colorScheme.primary;
+        fgColor = textColor ?? theme.colorScheme.onPrimary;
         break;
       case AppButtonType.secondary:
-        bgColor = backgroundColor ?? AppTheme.secondaryColor;
-        fgColor = textColor ?? Colors.white;
+        bgColor = backgroundColor ?? theme.colorScheme.secondary;
+        fgColor = textColor ?? theme.colorScheme.onSecondary;
         break;
       case AppButtonType.success:
-        bgColor = backgroundColor ?? AppTheme.successColor;
+        // Menggunakan warna yang lebih terang untuk mode normal
+        bgColor = backgroundColor ??
+            (brightness == Brightness.light
+                ? const Color(0xFF4CAF50) // Hijau yang lebih terang
+                : AppTheme.successColor);
         fgColor = textColor ?? Colors.white;
         break;
       case AppButtonType.warning:
         bgColor = backgroundColor ?? AppTheme.warningColor;
-        fgColor = textColor ?? Colors.white;
+        fgColor = textColor ?? Colors.black;
         break;
       case AppButtonType.error:
-        bgColor = backgroundColor ?? AppTheme.errorColor;
-        fgColor = textColor ?? Colors.white;
+        // Menggunakan warna yang lebih terang untuk mode normal
+        bgColor = backgroundColor ??
+            (brightness == Brightness.light
+                ? const Color(0xFFE57373) // Merah yang lebih terang
+                : theme.colorScheme.error);
+        fgColor = textColor ??
+            (brightness == Brightness.light
+                ? Colors.white
+                : theme.colorScheme.onError);
         break;
       case AppButtonType.outline:
         bgColor = Colors.transparent;
-        fgColor = textColor ?? AppTheme.primaryColor;
+        fgColor = textColor ?? theme.colorScheme.primary;
         break;
       case AppButtonType.text:
         bgColor = Colors.transparent;
-        fgColor = textColor ?? AppTheme.primaryColor;
+        fgColor = textColor ?? theme.colorScheme.primary;
         break;
     }
+
+    // Apply elevation based on button type and showShadow flag
+    final double elevation = (showShadow &&
+            (type == AppButtonType.primary ||
+                type == AppButtonType.secondary ||
+                type == AppButtonType.success ||
+                type == AppButtonType.warning ||
+                type == AppButtonType.error))
+        ? AppTheme.elevationSmall
+        : 0;
 
     switch (type) {
       case AppButtonType.primary:
@@ -98,25 +121,34 @@ class AppButton extends StatelessWidget {
         buttonStyle = ElevatedButton.styleFrom(
           backgroundColor: bgColor,
           foregroundColor: fgColor,
-          elevation: AppTheme.elevationSmall,
+          elevation: elevation,
+          shadowColor:
+              showShadow ? bgColor.withOpacity(0.4) : Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
           ),
           padding: padding ??
-              const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+              EdgeInsets.symmetric(
+                  vertical: AppTheme.spacingMedium,
+                  horizontal: AppTheme.spacingLarge),
           disabledBackgroundColor: bgColor.withOpacity(0.6),
           disabledForegroundColor: fgColor.withOpacity(0.6),
+          minimumSize: const Size(88, 48),
         );
         break;
       case AppButtonType.outline:
         buttonStyle = OutlinedButton.styleFrom(
           foregroundColor: fgColor,
-          side: BorderSide(color: backgroundColor ?? AppTheme.primaryColor),
+          side: BorderSide(
+              color: backgroundColor ?? theme.colorScheme.primary, width: 1.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
           ),
           padding: padding ??
-              const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+              EdgeInsets.symmetric(
+                  vertical: AppTheme.spacingMedium,
+                  horizontal: AppTheme.spacingLarge),
+          minimumSize: const Size(88, 48),
         );
         break;
       case AppButtonType.text:
@@ -126,7 +158,9 @@ class AppButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(borderRadius),
           ),
           padding: padding ??
-              const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              EdgeInsets.symmetric(
+                  vertical: AppTheme.spacingSmall,
+                  horizontal: AppTheme.spacingMedium),
         );
         break;
     }
@@ -138,7 +172,7 @@ class AppButton extends StatelessWidget {
       children: [
         if (prefixIcon != null && !isLoading) ...[
           prefixIcon!,
-          const SizedBox(width: 8),
+          SizedBox(width: AppTheme.spacingSmall),
         ],
         if (isLoading)
           SizedBox(
@@ -157,13 +191,13 @@ class AppButton extends StatelessWidget {
           Text(
             text,
             style: GoogleFonts.poppins(
-              fontWeight: fontWeight ?? FontWeight.w500,
+              fontWeight: fontWeight ?? FontWeight.w600,
               fontSize: fontSize ?? 16,
             ),
             textAlign: TextAlign.center,
           ),
         if (suffixIcon != null && !isLoading) ...[
-          const SizedBox(width: 8),
+          SizedBox(width: AppTheme.spacingSmall),
           suffixIcon!,
         ],
       ],

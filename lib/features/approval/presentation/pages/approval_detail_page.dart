@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../core/util/injection_container.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/presentation/widgets/app_bar_widget.dart';
 import '../../../../core/presentation/widgets/app_button.dart';
 import '../../../../core/presentation/widgets/app_card.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/presentation/theme/app_theme.dart';
 import '../../domain/entities/approval.dart';
 import '../bloc/approval_bloc.dart';
-import 'package:test_cbo/core/presentation/widgets/shimmer_overlay_loading.dart';
 
 class ApprovalDetailPage extends StatelessWidget {
   final Approval approval;
@@ -83,8 +82,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
               decoration: InputDecoration(
                 labelText: 'Catatan (opsional)',
                 border: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.borderRadiusSmall),
+                  borderRadius: AppTheme.borderRadiusSmall,
                 ),
               ),
               maxLines: 3,
@@ -92,7 +90,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
           ],
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+          borderRadius: AppTheme.borderRadiusMedium,
         ),
         actions: [
           AppButton(
@@ -159,7 +157,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
                   isApprove ? AppTheme.successColor : AppTheme.errorColor,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+                borderRadius: AppTheme.borderRadiusSmall,
               ),
             ),
           );
@@ -172,7 +170,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBarWidget(
+      appBar: const AppBarWidget(
         title: 'Detail Persetujuan',
       ),
       body: BlocConsumer<ApprovalBloc, ApprovalState>(
@@ -185,8 +183,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
                 backgroundColor: AppTheme.successColor,
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.borderRadiusSmall),
+                  borderRadius: AppTheme.borderRadiusSmall,
                 ),
               ),
             );
@@ -199,8 +196,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
                 backgroundColor: AppTheme.errorColor,
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.borderRadiusSmall),
+                  borderRadius: AppTheme.borderRadiusSmall,
                 ),
               ),
             );
@@ -263,6 +259,9 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
   }
 
   Widget _buildHeaderSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return AppCard(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -292,13 +291,14 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : Colors.black,
                       ),
                     ),
                     Text(
                       'ID: ${widget.approval.idBawahan}',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: AppTheme.secondaryTextColor,
+                        color: isDark ? Colors.white70 : Colors.black54,
                       ),
                     ),
                   ],
@@ -335,13 +335,16 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
   }
 
   Widget _buildInfoItem(String label, String value) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Column(
       children: [
         Text(
           label,
           style: GoogleFonts.poppins(
             fontSize: 12,
-            color: AppTheme.secondaryTextColor,
+            color: isDark ? Colors.white70 : Colors.black54,
           ),
         ),
         Text(
@@ -349,6 +352,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
           style: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white : Colors.black,
           ),
         ),
       ],
@@ -358,36 +362,74 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
   Widget _buildStatusBadge() {
     Color color;
     String text;
+    Color backgroundColor;
+    Color borderColor;
+
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
 
     switch (widget.approval.approved) {
       case 0:
-        color = AppTheme.warningColor;
         text = 'Menunggu';
+        if (isDark) {
+          color = Colors.orange[300]!;
+          backgroundColor = Colors.orange[900]!;
+          borderColor = Colors.orange[700]!;
+        } else {
+          color = AppTheme.warningColor;
+          backgroundColor = color.withOpacity(0.15);
+          borderColor = color.withOpacity(0.3);
+        }
         break;
       case 1:
-        color = AppTheme.successColor;
         text = 'Disetujui';
+        if (isDark) {
+          color = Colors.green[300]!;
+          backgroundColor = Colors.green[900]!;
+          borderColor = Colors.green[700]!;
+        } else {
+          color = AppTheme.successColor;
+          backgroundColor = color.withOpacity(0.15);
+          borderColor = color.withOpacity(0.3);
+        }
         break;
       case 2:
-        color = AppTheme.errorColor;
         text = 'Ditolak';
+        if (isDark) {
+          color = Colors.red[300]!;
+          backgroundColor = Colors.red[900]!;
+          borderColor = Colors.red[700]!;
+        } else {
+          color = AppTheme.errorColor;
+          backgroundColor = color.withOpacity(0.15);
+          borderColor = color.withOpacity(0.3);
+        }
         break;
       default:
-        color = Colors.grey;
         text = 'Tidak Diketahui';
+        if (isDark) {
+          color = Colors.grey[300]!;
+          backgroundColor = Colors.grey[900]!;
+          borderColor = Colors.grey[700]!;
+        } else {
+          color = Colors.grey;
+          backgroundColor = color.withOpacity(0.15);
+          borderColor = color.withOpacity(0.3);
+        }
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+        color: backgroundColor,
+        borderRadius: AppTheme.borderRadiusLarge,
+        border: Border.all(color: borderColor, width: 1.0),
       ),
       child: Text(
         text,
         style: GoogleFonts.poppins(
           fontSize: 12,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
           color: color,
         ),
       ),
@@ -424,23 +466,62 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
 
     Color statusColor;
     String statusText;
+    Color backgroundColor;
+    Color borderColor;
+
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
 
     switch (approvedStatus) {
       case 0:
-        statusColor = AppTheme.warningColor;
         statusText = 'Menunggu';
+        if (isDark) {
+          statusColor = Colors.orange[300]!;
+          backgroundColor = Colors.orange[900]!;
+          borderColor = Colors.orange[700]!;
+        } else {
+          statusColor = AppTheme.warningColor;
+          backgroundColor = Colors.white;
+          borderColor = statusColor.withOpacity(0.3);
+        }
         break;
       case 1:
-        statusColor = AppTheme.successColor;
         statusText = 'Disetujui';
+        if (isDark) {
+          statusColor = Colors.green[300]!;
+          backgroundColor = Colors.green[900]!;
+          borderColor = Colors.green[700]!;
+        } else {
+          statusColor = AppTheme.successColor;
+          backgroundColor = Colors.white;
+          borderColor = statusColor.withOpacity(0.3);
+        }
         break;
       case 2:
-        statusColor = AppTheme.errorColor;
         statusText = 'Ditolak';
+        if (isDark) {
+          statusColor = Colors.red[300]!;
+          backgroundColor = Colors.red[900]!;
+          borderColor = Colors.red[700]!;
+        } else {
+          statusColor = AppTheme.errorColor;
+          backgroundColor = Colors.white;
+          borderColor = statusColor.withOpacity(0.3);
+        }
         break;
       default:
-        statusColor = Colors.grey;
         statusText = 'Tidak Diketahui';
+        if (isDark) {
+          statusColor = Colors.grey[300]!;
+          backgroundColor = Colors.grey[900]!;
+          borderColor = Colors.grey[700]!;
+        } else {
+          statusColor = Colors.grey;
+          backgroundColor = Colors.white;
+          borderColor = statusColor.withOpacity(0.3);
+        }
     }
 
     // Dapatkan informasi dokter dan klinik dari tujuanData dengan null safety
@@ -494,21 +575,22 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
+                    color: textColor,
                   ),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.2),
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.borderRadiusLarge),
+                  color: backgroundColor,
+                  borderRadius: AppTheme.borderRadiusSmall,
+                  border: Border.all(color: borderColor, width: 1.0),
                 ),
                 child: Text(
                   statusText,
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                     color: statusColor,
                   ),
                 ),
@@ -521,7 +603,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
               clinicName,
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: AppTheme.secondaryTextColor,
+                color: secondaryTextColor,
               ),
             ),
           ],
@@ -531,14 +613,14 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
               Icon(
                 Icons.calendar_today,
                 size: 16,
-                color: AppTheme.secondaryTextColor,
+                color: secondaryTextColor,
               ),
               const SizedBox(width: 8),
               Text(
                 'Tanggal: $visitDate',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
-                  color: AppTheme.secondaryTextColor,
+                  color: secondaryTextColor,
                 ),
               ),
             ],
@@ -549,14 +631,14 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
               Icon(
                 Icons.access_time,
                 size: 16,
-                color: AppTheme.secondaryTextColor,
+                color: secondaryTextColor,
               ),
               const SizedBox(width: 8),
               Text(
                 'Shift: $shift',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
-                  color: AppTheme.secondaryTextColor,
+                  color: secondaryTextColor,
                 ),
               ),
             ],
@@ -567,14 +649,14 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
               Icon(
                 Icons.category,
                 size: 16,
-                color: AppTheme.secondaryTextColor,
+                color: secondaryTextColor,
               ),
               const SizedBox(width: 8),
               Text(
                 'Tipe: $scheduleType',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
-                  color: AppTheme.secondaryTextColor,
+                  color: secondaryTextColor,
                 ),
               ),
             ],
@@ -590,6 +672,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
+                color: textColor,
               ),
             ),
             const SizedBox(height: 4),
@@ -600,7 +683,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
                       Icon(
                         Icons.medical_services_outlined,
                         size: 16,
-                        color: AppTheme.secondaryTextColor,
+                        color: secondaryTextColor,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -608,7 +691,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
                           product.namaProduct ?? 'Produk',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
-                            color: AppTheme.secondaryTextColor,
+                            color: secondaryTextColor,
                           ),
                         ),
                       ),
@@ -627,6 +710,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
+                color: textColor,
               ),
             ),
             const SizedBox(height: 4),
@@ -634,7 +718,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
               note,
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: AppTheme.secondaryTextColor,
+                color: secondaryTextColor,
               ),
             ),
           ],
@@ -668,6 +752,32 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(String text, Color color) {
+    // Meningkatkan opacity untuk kontras yang lebih baik
+    final backgroundColor = color.withOpacity(0.15);
+
+    // Pastikan warna teks memiliki kontras yang cukup
+    final textColor = color;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: AppTheme.borderRadiusLarge,
+        // Tambahkan border tipis untuk meningkatkan visibilitas
+        border: Border.all(color: color.withOpacity(0.3), width: 1.0),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.poppins(
+          fontSize: 12,
+          fontWeight: FontWeight.w600, // Meningkatkan ketebalan font
+          color: textColor,
+        ),
       ),
     );
   }

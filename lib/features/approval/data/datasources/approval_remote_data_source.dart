@@ -45,7 +45,7 @@ class ApprovalRemoteDataSourceImpl implements ApprovalRemoteDataSource {
     required this.client,
     required this.sharedPreferences,
     String? baseUrl,
-  }) : this.baseUrl = baseUrl ?? Constants.baseUrl;
+  }) : baseUrl = baseUrl ?? Constants.baseUrl;
 
   @override
   Future<List<ApprovalModel>> getApprovals(int userId) async {

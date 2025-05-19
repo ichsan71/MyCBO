@@ -24,10 +24,10 @@ class ShimmerScheduleLoading extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Header
-                  Row(
+                  const Row(
                     children: [
                       ShimmerBox(width: 24, height: 24, borderRadius: 4),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       ShimmerBox(width: 160, height: 24, borderRadius: 4),
                     ],
                   ),
@@ -65,10 +65,10 @@ class ShimmerScheduleLoading extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Header
-                  Row(
+                  const Row(
                     children: [
                       ShimmerBox(width: 24, height: 24, borderRadius: 4),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       ShimmerBox(width: 100, height: 24, borderRadius: 4),
                     ],
                   ),
@@ -81,7 +81,7 @@ class ShimmerScheduleLoading extends StatelessWidget {
                   const SizedBox(height: 16),
                   
                   // Search Field
-                  ShimmerBox(
+                  const ShimmerBox(
                     width: double.infinity,
                     height: 48,
                     borderRadius: 12,
@@ -90,7 +90,7 @@ class ShimmerScheduleLoading extends StatelessWidget {
                   
                   // Doctor List
                   for (int i = 0; i < 5; i++) ...[
-                    ShimmerListTile(
+                    const ShimmerListTile(
                       height: 70,
                       hasTrailing: true,
                       subtitleLines: 1,
@@ -115,10 +115,10 @@ class ShimmerScheduleLoading extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Header
-                  Row(
+                  const Row(
                     children: [
                       ShimmerBox(width: 24, height: 24, borderRadius: 4),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       ShimmerBox(width: 120, height: 24, borderRadius: 4),
                     ],
                   ),
@@ -131,7 +131,7 @@ class ShimmerScheduleLoading extends StatelessWidget {
                   const SizedBox(height: 16),
                   
                   // Search Field
-                  ShimmerBox(
+                  const ShimmerBox(
                     width: double.infinity,
                     height: 48, 
                     borderRadius: 12,
@@ -140,7 +140,7 @@ class ShimmerScheduleLoading extends StatelessWidget {
                   
                   // Product List
                   for (int i = 0; i < 5; i++) ...[
-                    ShimmerListTile(
+                    const ShimmerListTile(
                       hasTrailing: true,
                       subtitleLines: 1,
                     ),
@@ -164,10 +164,10 @@ class ShimmerScheduleLoading extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Header
-                  Row(
+                  const Row(
                     children: [
                       ShimmerBox(width: 24, height: 24, borderRadius: 4),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       ShimmerBox(width: 80, height: 24, borderRadius: 4),
                     ],
                   ),
@@ -180,7 +180,7 @@ class ShimmerScheduleLoading extends StatelessWidget {
                   const SizedBox(height: 16),
                   
                   // Note Field
-                  ShimmerBox(
+                  const ShimmerBox(
                     width: double.infinity,
                     height: 100,
                     borderRadius: 12,
@@ -192,7 +192,7 @@ class ShimmerScheduleLoading extends StatelessWidget {
             const SizedBox(height: 32),
             
             // Submit Button
-            ShimmerBox(
+            const ShimmerBox(
               width: double.infinity,
               height: 56,
               borderRadius: 12,
@@ -204,11 +204,11 @@ class ShimmerScheduleLoading extends StatelessWidget {
   }
   
   Widget _buildFormField() {
-    return Column(
+    return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ShimmerBox(width: 100, height: 16, borderRadius: 4),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         ShimmerBox(
           width: double.infinity,
           height: 48,

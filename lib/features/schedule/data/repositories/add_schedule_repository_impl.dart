@@ -403,7 +403,7 @@ class AddScheduleRepositoryImpl implements AddScheduleRepository {
         return Right(DoctorResponse(dokter: doctorModels, klinik: []));
       } on CacheException catch (e) {
         Logger.error(_tag, 'No cached doctors data available: ${e.message}');
-        return Left(CacheFailure(
+        return const Left(CacheFailure(
             message:
                 'Tidak ada data dokter tersimpan. Periksa koneksi internet Anda.'));
       }

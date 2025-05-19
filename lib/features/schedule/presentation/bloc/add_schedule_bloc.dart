@@ -60,12 +60,12 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
           if (failure is ServerFailure) {
             emit(AddScheduleError(message: 'Server error: ${failure.message}'));
           } else if (failure is NetworkFailure) {
-            emit(AddScheduleError(
+            emit(const AddScheduleError(
                 message:
                     'Tidak ada koneksi internet. Silakan coba lagi saat koneksi tersedia.'));
           } else if (failure is CacheFailure) {
             // Pesan error yang lebih spesifik untuk CacheFailure
-            emit(AddScheduleError(
+            emit(const AddScheduleError(
                 message:
                     'Data dokter dan klinik belum tersedia secara offline. Sambungkan ke internet untuk mengunduh data.'));
             Logger.warning(_tag,
@@ -107,12 +107,12 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
           if (failure is ServerFailure) {
             emit(AddScheduleError(message: 'Server error: ${failure.message}'));
           } else if (failure is NetworkFailure) {
-            emit(AddScheduleError(
+            emit(const AddScheduleError(
                 message:
                     'Tidak ada koneksi internet. Silakan coba lagi saat koneksi tersedia.'));
           } else if (failure is CacheFailure) {
             // Pesan error yang lebih spesifik untuk CacheFailure
-            emit(AddScheduleError(
+            emit(const AddScheduleError(
                 message:
                     'Data tipe jadwal belum tersedia secara offline. Sambungkan ke internet untuk mengunduh data.'));
             Logger.warning(_tag,
@@ -153,12 +153,12 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
           if (failure is ServerFailure) {
             emit(AddScheduleError(message: 'Server error: ${failure.message}'));
           } else if (failure is NetworkFailure) {
-            emit(AddScheduleError(
+            emit(const AddScheduleError(
                 message:
                     'Tidak ada koneksi internet. Silakan coba lagi saat koneksi tersedia.'));
           } else if (failure is CacheFailure) {
             // Pesan error yang lebih spesifik untuk CacheFailure
-            emit(AddScheduleError(
+            emit(const AddScheduleError(
                 message:
                     'Data produk belum tersedia secara offline. Sambungkan ke internet untuk mengunduh data.'));
             Logger.warning(
@@ -214,12 +214,12 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
           if (failure is ServerFailure) {
             emit(AddScheduleError(message: 'Server error: ${failure.message}'));
           } else if (failure is NetworkFailure) {
-            emit(AddScheduleError(
+            emit(const AddScheduleError(
                 message:
                     'Tidak ada koneksi internet. Silakan coba lagi saat koneksi tersedia.'));
           } else if (failure is CacheFailure) {
             // Pesan error yang lebih spesifik untuk CacheFailure
-            emit(AddScheduleError(
+            emit(const AddScheduleError(
                 message:
                     'Data dokter belum tersedia secara offline. Sambungkan ke internet untuk mengunduh data.'));
             Logger.warning(

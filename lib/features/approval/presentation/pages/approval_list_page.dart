@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../core/util/injection_container.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/presentation/widgets/app_bar_widget.dart';
 import '../../../../core/presentation/widgets/app_button.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../../core/presentation/theme/app_theme.dart';
 import '../bloc/approval_bloc.dart';
 import '../widgets/approval_card.dart';
 import '../widgets/shimmer_loading.dart';
 import 'approval_detail_page.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 
 class ApprovalListPage extends StatelessWidget {
   const ApprovalListPage({Key? key}) : super(key: key);
@@ -78,14 +78,19 @@ class _ApprovalListViewState extends State<ApprovalListView> {
           if (selected) _onFilterChanged(0);
         },
         backgroundColor: Colors.grey[200],
-        selectedColor: AppTheme.primaryColor.withOpacity(0.2),
+        selectedColor: AppTheme.primaryColor.withOpacity(0.15),
         checkmarkColor: AppTheme.primaryColor,
         labelStyle: GoogleFonts.poppins(
           color: _selectedFilter == 0
               ? AppTheme.primaryColor
               : AppTheme.primaryTextColor,
           fontWeight:
-              _selectedFilter == 0 ? FontWeight.w500 : FontWeight.normal,
+              _selectedFilter == 0 ? FontWeight.w600 : FontWeight.normal,
+        ),
+        side: BorderSide(
+          color: _selectedFilter == 0
+              ? AppTheme.primaryColor.withOpacity(0.5)
+              : Colors.transparent,
         ),
       ),
       const SizedBox(width: 8),
@@ -96,14 +101,19 @@ class _ApprovalListViewState extends State<ApprovalListView> {
           if (selected) _onFilterChanged(1);
         },
         backgroundColor: Colors.grey[200],
-        selectedColor: AppTheme.warningColor.withOpacity(0.2),
+        selectedColor: AppTheme.warningColor.withOpacity(0.15),
         checkmarkColor: AppTheme.warningColor,
         labelStyle: GoogleFonts.poppins(
           color: _selectedFilter == 1
               ? AppTheme.warningColor
               : AppTheme.primaryTextColor,
           fontWeight:
-              _selectedFilter == 1 ? FontWeight.w500 : FontWeight.normal,
+              _selectedFilter == 1 ? FontWeight.w600 : FontWeight.normal,
+        ),
+        side: BorderSide(
+          color: _selectedFilter == 1
+              ? AppTheme.warningColor.withOpacity(0.5)
+              : Colors.transparent,
         ),
       ),
       const SizedBox(width: 8),
@@ -114,14 +124,19 @@ class _ApprovalListViewState extends State<ApprovalListView> {
           if (selected) _onFilterChanged(2);
         },
         backgroundColor: Colors.grey[200],
-        selectedColor: AppTheme.successColor.withOpacity(0.2),
+        selectedColor: AppTheme.successColor.withOpacity(0.15),
         checkmarkColor: AppTheme.successColor,
         labelStyle: GoogleFonts.poppins(
           color: _selectedFilter == 2
               ? AppTheme.successColor
               : AppTheme.primaryTextColor,
           fontWeight:
-              _selectedFilter == 2 ? FontWeight.w500 : FontWeight.normal,
+              _selectedFilter == 2 ? FontWeight.w600 : FontWeight.normal,
+        ),
+        side: BorderSide(
+          color: _selectedFilter == 2
+              ? AppTheme.successColor.withOpacity(0.5)
+              : Colors.transparent,
         ),
       ),
       const SizedBox(width: 8),
@@ -132,14 +147,19 @@ class _ApprovalListViewState extends State<ApprovalListView> {
           if (selected) _onFilterChanged(3);
         },
         backgroundColor: Colors.grey[200],
-        selectedColor: AppTheme.errorColor.withOpacity(0.2),
+        selectedColor: AppTheme.errorColor.withOpacity(0.15),
         checkmarkColor: AppTheme.errorColor,
         labelStyle: GoogleFonts.poppins(
           color: _selectedFilter == 3
               ? AppTheme.errorColor
               : AppTheme.primaryTextColor,
           fontWeight:
-              _selectedFilter == 3 ? FontWeight.w500 : FontWeight.normal,
+              _selectedFilter == 3 ? FontWeight.w600 : FontWeight.normal,
+        ),
+        side: BorderSide(
+          color: _selectedFilter == 3
+              ? AppTheme.errorColor.withOpacity(0.5)
+              : Colors.transparent,
         ),
       ),
     ];
@@ -164,8 +184,7 @@ class _ApprovalListViewState extends State<ApprovalListView> {
                     hintText: 'Cari nama bawahan...',
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.borderRadiusSmall),
+                      borderRadius: AppTheme.borderRadiusSmall,
                     ),
                     contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   ),

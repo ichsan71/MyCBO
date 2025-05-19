@@ -13,13 +13,13 @@ class ShimmerScheduleListLoading extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Title area
-            ShimmerBox(
+            const ShimmerBox(
               width: 200,
               height: 28,
               borderRadius: 4,
             ),
             const SizedBox(height: 8),
-            ShimmerBox(
+            const ShimmerBox(
               width: 250,
               height: 16,
               borderRadius: 4,
@@ -33,7 +33,7 @@ class ShimmerScheduleListLoading extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Row(
+              child: const Row(
                 children: [
                   Expanded(
                     child: ShimmerBox(
@@ -42,7 +42,7 @@ class ShimmerScheduleListLoading extends StatelessWidget {
                       borderRadius: 8,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   ShimmerBox(
                     width: 48,
                     height: 48,
@@ -71,7 +71,7 @@ class ShimmerScheduleListLoading extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header with date
@@ -90,9 +90,9 @@ class ShimmerScheduleListLoading extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Divider(color: Colors.white, height: 1),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // Doctor info
           Row(
@@ -102,7 +102,7 @@ class ShimmerScheduleListLoading extends StatelessWidget {
                 height: 48,
                 borderRadius: 24,
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,7 +112,7 @@ class ShimmerScheduleListLoading extends StatelessWidget {
                       height: 16,
                       borderRadius: 4,
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
                     ShimmerBox(
                       width: 100,
                       height: 14,
@@ -123,7 +123,7 @@ class ShimmerScheduleListLoading extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // Location
           Row(
@@ -141,7 +141,7 @@ class ShimmerScheduleListLoading extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
 
           // Status
           Row(

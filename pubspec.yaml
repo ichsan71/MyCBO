@@ -37,6 +37,7 @@ dependencies:
     sdk: flutter
   sqflite: ^2.3.0
   path: ^1.8.3
+  flutter_native_splash: ^2.3.7
 
 dev_dependencies:
   flutter_test:
@@ -51,3 +52,27 @@ flutter:
     - assets/images/product.png
     - assets/images/report.png
   generate: true
+
+# Konfigurasi Splash Screen
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/images/mazta_logo.png
+  android: true
+  ios: true
+  web: false
+  android_gravity: center
+  ios_content_mode: center
+  fullscreen: true
+  android_12:
+    # Icon untuk Android 12, pastikan ukurannya sesuai dengan pedoman
+    image: assets/images/mazta_logo.png
+    icon_background_color: "#FFFFFF"
+    # Konfigurasi untuk mode gelap (opsional)
+    image_dark: assets/images/mazta_logo.png
+    icon_background_color_dark: "#FFFFFF"
+  branding: assets/images/mazta_logo.png
+  branding_mode: bottom
+  info_plist_files:
+    - "ios/Runner/Info.plist"
+  # Tambahan konfigurasi untuk mengatasi masalah
+  android_screen_orientation: portrait

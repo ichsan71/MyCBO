@@ -6,7 +6,7 @@ import 'package:test_cbo/core/presentation/widgets/app_card.dart';
 import 'package:test_cbo/core/presentation/widgets/app_dropdown.dart';
 import 'package:test_cbo/core/presentation/widgets/app_text_field.dart';
 import 'package:test_cbo/core/presentation/widgets/app_bar_widget.dart';
-import 'package:test_cbo/core/util/injection_container.dart' as di;
+import 'package:test_cbo/core/di/injection_container.dart' as di;
 import 'package:test_cbo/core/utils/logger.dart';
 import 'package:test_cbo/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:test_cbo/features/auth/presentation/bloc/auth_state.dart';
@@ -20,8 +20,6 @@ import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_event.
 import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_state.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_bloc.dart';
 import 'package:test_cbo/core/presentation/widgets/shimmer_schedule_loading.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AddSchedulePage extends StatelessWidget {
   const AddSchedulePage({super.key});
@@ -281,6 +279,7 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
       appBar: const AppBarWidget(
         title: 'Tambah Jadwal',
         elevation: 0,
+        backgroundColor: null,
       ),
       body: BlocConsumer<AddScheduleBloc, AddScheduleState>(
         listener: (context, state) {
@@ -680,7 +679,7 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                             decoration: BoxDecoration(
                                               color: theme
                                                   .colorScheme.errorContainer
-                                                  .withAlpha(51),
+                                                  .withOpacity(0.2),
                                               borderRadius:
                                                   BorderRadius.circular(12),
                                               border: Border.all(
@@ -803,8 +802,8 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                                                     : theme
                                                                         .colorScheme
                                                                         .primary
-                                                                        .withAlpha(
-                                                                            51),
+                                                                        .withOpacity(
+                                                                            0.2),
                                                                 child: Icon(
                                                                   Icons.person,
                                                                   color: isSelected
@@ -952,7 +951,7 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
                                       color: theme.colorScheme.errorContainer
-                                          .withAlpha(51),
+                                          .withOpacity(0.2),
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
                                         color: theme.colorScheme.errorContainer,
@@ -1040,7 +1039,7 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                                             .tertiary
                                                         : theme.colorScheme
                                                             .tertiary
-                                                            .withAlpha(51),
+                                                            .withOpacity(0.2),
                                                     child: Icon(
                                                       Icons.medical_services,
                                                       color: isSelected
@@ -1085,8 +1084,8 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                                                   ? theme
                                                                       .colorScheme
                                                                       .onTertiaryContainer
-                                                                      .withAlpha(
-                                                                          230)
+                                                                      .withOpacity(
+                                                                          0.7)
                                                                   : theme
                                                                       .colorScheme
                                                                       .onSurfaceVariant,

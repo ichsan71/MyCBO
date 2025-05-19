@@ -7,7 +7,7 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 import 'package:image/image.dart' as img;
-import '../../../../core/util/injection_container.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../domain/entities/schedule.dart';
 import '../../data/models/checkin_request_model.dart';
 import '../../data/models/checkout_request_model.dart';

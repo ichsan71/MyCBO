@@ -77,3 +77,8 @@ class ShimmerApprovalCard extends StatelessWidget {
     );
   }
 }
+
+// Alias untuk ShimmerApprovalCard
+class ShimmerLoading extends ShimmerApprovalCard {
+  const ShimmerLoading({Key? key}) : super(key: key);
+}
