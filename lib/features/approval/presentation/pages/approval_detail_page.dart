@@ -776,9 +776,6 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
       delegate: SliverChildBuilderDelegate(
         (context, index) {
           final detail = widget.approval.details[index];
-          if (detail == null || detail.tujuanData == null) {
-            return const SizedBox.shrink();
-          }
 
           return ScheduleCard(
             detail: detail,
