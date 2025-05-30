@@ -187,8 +187,6 @@ class AddScheduleRemoteDataSourceImpl implements AddScheduleRemoteDataSource {
       ];
 
       Response? response;
-      String? usedUrl;
-      DioException? lastError;
 
       // Coba setiap URL secara berurutan sampai berhasil
       for (final url in possibleUrls) {
@@ -204,38 +202,24 @@ class AddScheduleRemoteDataSourceImpl implements AddScheduleRemoteDataSource {
                 'Accept': 'application/json',
                 'Authorization': 'Bearer $token',
               },
+              sendTimeout: const Duration(seconds: 10),
+              receiveTimeout: const Duration(seconds: 10),
             ),
           );
 
           if (response.statusCode == 200) {
-            usedUrl = url;
-            Logger.info(_tag, '✅ DataSource: Berhasil dengan URL: $url');
+            Logger.info(_tag, '✅ DataSource: Berhasil menggunakan URL: $url');
             break;
           }
-        } on DioException catch (e) {
-          Logger.warning(
-              _tag, '⚠️ DataSource: URL $url gagal dengan error: ${e.message}');
-          lastError = e;
+        } catch (e) {
+          Logger.warning(_tag, '⚠️ DataSource: URL $url tidak berhasil: $e');
           continue;
         }
       }
 
-      // Jika semua URL gagal
-      if (response == null) {
-        Logger.warning(
-            _tag, '❌ DataSource: Semua URL endpoint tipe jadwal gagal');
-        Logger.warning(
-            _tag, '❌ DataSource: Mengembalikan data dummy untuk tipe jadwal');
-
-        // Kembalikan data dummy jika semua endpoint gagal
-        return [
-          const ScheduleTypeModel(id: 1, nama: 'DETAILING', keterangan: ''),
-          const ScheduleTypeModel(id: 2, nama: 'FOLLOW UP', keterangan: ''),
-          const ScheduleTypeModel(id: 3, nama: 'ENTERTAINT', keterangan: ''),
-          const ScheduleTypeModel(id: 4, nama: 'SERVICE', keterangan: ''),
-          const ScheduleTypeModel(id: 5, nama: 'JOIN VISIT', keterangan: ''),
-          const ScheduleTypeModel(id: 6, nama: 'REMINDING', keterangan: ''),
-        ];
+      if (response == null || response.statusCode != 200) {
+        throw ServerException(
+            message: 'Gagal mengambil data tipe jadwal dari semua endpoint');
       }
 
       Logger.info(_tag,
@@ -441,7 +425,7 @@ class AddScheduleRemoteDataSourceImpl implements AddScheduleRemoteDataSource {
             Logger.info(
                 _tag, '✅ DataSource: Berhasil parse ${products.length} produk');
             Logger.info(_tag,
-                '✅ DataSource: Contoh produk pertama: ${products.first.nama}');
+                '✅ DataSource: Contoh produk pertama: ${products.first.namaProduct}');
             return products;
           }
 
@@ -619,7 +603,6 @@ class AddScheduleRemoteDataSourceImpl implements AddScheduleRemoteDataSource {
               Logger.info(_tag,
                   '✅ DataSource: Berhasil parse ${doctors.length} dokter');
               // Ambil data klinik jika ada (dari response Postman tidak terlihat ada data klinik)
-              final List<dynamic> klinikList = responseData['klinik'] ?? [];
               return DoctorResponse(dokter: doctors, klinik: []);
             } else {
               Logger.warning(

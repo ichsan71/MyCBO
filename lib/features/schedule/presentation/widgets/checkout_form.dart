@@ -1,7 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'dart:developer' as developer;
@@ -9,8 +7,8 @@ import 'package:image/image.dart' as img;
 import '../../data/models/checkout_request_model.dart';
 import '../bloc/schedule_bloc.dart';
 import '../bloc/schedule_event.dart';
-import 'package:test_cbo/core/presentation/widgets/shimmer_form_loading.dart';
 import 'package:test_cbo/core/presentation/widgets/shimmer_button_loading.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class CheckoutForm extends StatefulWidget {
   final int scheduleId;
@@ -34,9 +32,12 @@ class _CheckoutFormState extends State<CheckoutForm> {
   String? _compressedImagePath;
   String? _imageTimestamp;
   bool _isLoading = false;
-  DateTime? _selectedDate;
   final _statusOptions = ['Selesai', 'Ditolak'];
   String _selectedStatus = 'Selesai';
+  String? _noteError;
+
+  // Konstanta untuk validasi
+  static const int _minimumNoteCharacters = 100;
 
   Future<String?> _compressImage(String imagePath) async {
     try {
@@ -119,6 +120,20 @@ class _CheckoutFormState extends State<CheckoutForm> {
     }
   }
 
+  // Validasi untuk catatan
+  bool _validateNote() {
+    if (_noteController.text.trim().length < _minimumNoteCharacters) {
+      setState(() {
+        _noteError = 'Catatan harus minimal $_minimumNoteCharacters karakter';
+      });
+      return false;
+    }
+    setState(() {
+      _noteError = null;
+    });
+    return true;
+  }
+
   void _submitForm() async {
     if (_isLoading) {
       return;
@@ -127,6 +142,17 @@ class _CheckoutFormState extends State<CheckoutForm> {
     if (_imageFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Silakan ambil foto terlebih dahulu')),
+      );
+      return;
+    }
+
+    // Validasi catatan
+    if (!_validateNote()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_noteError!),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
@@ -142,21 +168,71 @@ class _CheckoutFormState extends State<CheckoutForm> {
           barrierDismissible: false,
           builder: (BuildContext context) {
             return Dialog(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.0),
+              ),
+              elevation: 8,
+              child: Container(
+                padding: const EdgeInsets.all(24.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20.0),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white,
+                      Colors.green.shade50,
+                    ],
+                  ),
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const SizedBox(
+                    Container(
                       height: 80,
-                      child: ShimmerFormLoading(
-                        isDetailed: false,
-                        hasImage: false,
+                      width: 80,
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: SizedBox(
+                          width: 50,
+                          height: 50,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.green,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      "Memproses Check-out",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green[700],
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Text("Memproses check-out...",
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      "Mohon tunggu sebentar, kami sedang memproses data Anda",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
+                      backgroundColor: Colors.grey[200],
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        Colors.green,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -188,6 +264,10 @@ class _CheckoutFormState extends State<CheckoutForm> {
         'Path foto: $imagePath',
         name: 'CheckoutForm',
       );
+      developer.log(
+        'Panjang catatan: ${_noteController.text.length} karakter',
+        name: 'CheckoutForm',
+      );
 
       // Atur timeout untuk menghindari request yang berjalan terlalu lama
       try {
@@ -210,13 +290,13 @@ class _CheckoutFormState extends State<CheckoutForm> {
         Navigator.pop(context);
 
         // Update status jadwal
-        context.read<ScheduleBloc>().add(
-              UpdateScheduleStatusEvent(
-                scheduleId: widget.scheduleId,
-                newStatus: _selectedStatus,
-                userId: widget.userId,
-              ),
-            );
+        BlocProvider.of<ScheduleBloc>(context, listen: false).add(
+          UpdateScheduleStatusEvent(
+            scheduleId: widget.scheduleId,
+            newStatus: _selectedStatus,
+            userId: widget.userId,
+          ),
+        );
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -228,14 +308,6 @@ class _CheckoutFormState extends State<CheckoutForm> {
         // Tutup form bottom sheet dengan pengecekan aman
         if (Navigator.canPop(context)) {
           Navigator.of(context).pop();
-
-          // Gunakan scheduler untuk menunggu frame selesai sebelum navigasi kedua
-          SchedulerBinding.instance.addPostFrameCallback((_) {
-            if (context.mounted && Navigator.canPop(context)) {
-              // Kembali ke halaman jadwal
-              Navigator.of(context).pop();
-            }
-          });
         }
       }
     } catch (e) {
@@ -340,19 +412,71 @@ class _CheckoutFormState extends State<CheckoutForm> {
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.file(
-                          File(_compressedImagePath ?? _imageFile!.path),
-                          height: 200,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                        ),
+                    GestureDetector(
+                      onTap: () {
+                        // Menampilkan preview gambar full screen saat diklik
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => Scaffold(
+                              appBar: AppBar(
+                                title: const Text('Preview Foto'),
+                                backgroundColor: Colors.black,
+                              ),
+                              body: Container(
+                                color: Colors.black,
+                                child: Center(
+                                  child: InteractiveViewer(
+                                    panEnabled: true,
+                                    boundaryMargin: const EdgeInsets.all(20),
+                                    minScale: 0.5,
+                                    maxScale: 4,
+                                    child: Image.file(
+                                      File(_compressedImagePath ??
+                                          _imageFile!.path),
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      child: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(
+                                File(_compressedImagePath ?? _imageFile!.path),
+                                height: 200,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            right: 8,
+                            bottom: 8,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.6),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Icon(
+                                Icons.zoom_in,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -392,12 +516,25 @@ class _CheckoutFormState extends State<CheckoutForm> {
           const SizedBox(height: 16),
           TextField(
             controller: _noteController,
-            decoration: const InputDecoration(
-              labelText: 'Catatan (opsional)',
-              border: OutlineInputBorder(),
-              hintText: 'Tambahkan catatan jika diperlukan',
+            decoration: InputDecoration(
+              labelText: 'Catatan',
+              border: const OutlineInputBorder(),
+              hintText:
+                  'Tulis catatan minimal $_minimumNoteCharacters karakter',
+              errorText: _noteError,
+              helperText:
+                  'Sisa karakter: ${_minimumNoteCharacters - _noteController.text.length} dari minimum $_minimumNoteCharacters',
+              counterText: '${_noteController.text.length} karakter',
             ),
-            maxLines: 3,
+            maxLines: 4,
+            onChanged: (value) {
+              setState(() {
+                // Update helper text saat mengetik
+                if (_noteError != null) {
+                  _validateNote();
+                }
+              });
+            },
           ),
           const SizedBox(height: 24),
           ElevatedButton(

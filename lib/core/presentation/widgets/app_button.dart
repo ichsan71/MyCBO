@@ -56,7 +56,6 @@ class AppButton extends StatelessWidget {
     final brightness = Theme.of(context).brightness;
 
     // Determine button style based on type
-    ButtonStyle buttonStyle;
     Color bgColor;
     Color fgColor;
 
@@ -97,6 +96,7 @@ class AppButton extends StatelessWidget {
         fgColor = textColor ?? theme.colorScheme.primary;
         break;
       case AppButtonType.text:
+      default:
         bgColor = Colors.transparent;
         fgColor = textColor ?? theme.colorScheme.primary;
         break;
@@ -112,6 +112,11 @@ class AppButton extends StatelessWidget {
         ? AppTheme.elevationSmall
         : 0;
 
+    // Pastikan warna button tidak null untuk shadow
+    final Color shadowColor =
+        bgColor != Colors.transparent ? bgColor : (theme.colorScheme.primary);
+
+    ButtonStyle buttonStyle;
     switch (type) {
       case AppButtonType.primary:
       case AppButtonType.secondary:
@@ -123,7 +128,7 @@ class AppButton extends StatelessWidget {
           foregroundColor: fgColor,
           elevation: elevation,
           shadowColor:
-              showShadow ? bgColor.withOpacity(0.4) : Colors.transparent,
+              showShadow ? shadowColor.withOpacity(0.4) : Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
           ),
@@ -140,7 +145,7 @@ class AppButton extends StatelessWidget {
         buttonStyle = OutlinedButton.styleFrom(
           foregroundColor: fgColor,
           side: BorderSide(
-              color: backgroundColor ?? theme.colorScheme.primary, width: 1.5),
+              color: textColor ?? theme.colorScheme.primary, width: 1.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
           ),
@@ -152,6 +157,7 @@ class AppButton extends StatelessWidget {
         );
         break;
       case AppButtonType.text:
+      default:
         buttonStyle = TextButton.styleFrom(
           foregroundColor: fgColor,
           shape: RoundedRectangleBorder(
@@ -188,13 +194,16 @@ class AppButton extends StatelessWidget {
             ),
           )
         else
-          Text(
-            text,
-            style: GoogleFonts.poppins(
-              fontWeight: fontWeight ?? FontWeight.w600,
-              fontSize: fontSize ?? 16,
+          Flexible(
+            child: Text(
+              text,
+              style: GoogleFonts.poppins(
+                fontWeight: fontWeight ?? FontWeight.w600,
+                fontSize: fontSize ?? 16,
+              ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
             ),
-            textAlign: TextAlign.center,
           ),
         if (suffixIcon != null && !isLoading) ...[
           const SizedBox(width: AppTheme.spacingSmall),
@@ -225,6 +234,7 @@ class AppButton extends StatelessWidget {
         );
         break;
       case AppButtonType.text:
+      default:
         button = TextButton(
           style: buttonStyle,
           onPressed: isLoading ? null : onPressed,

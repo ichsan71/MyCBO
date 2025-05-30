@@ -87,6 +87,7 @@ class DetailModel extends Detail {
     required List<ProductDataModel> productData,
     required TujuanDataModel tujuanData,
     required int approved,
+    int? realisasiApprove,
   }) : super(
           id: id,
           typeSchedule: typeSchedule,
@@ -99,10 +100,38 @@ class DetailModel extends Detail {
           productData: productData,
           tujuanData: tujuanData,
           approved: approved,
+          realisasiApprove: realisasiApprove,
         );
 
   factory DetailModel.fromJson(Map<String, dynamic> json) {
     try {
+      // Memastikan bahwa product_data adalah array yang valid
+      List<ProductDataModel> productDataList = [];
+      if (json.containsKey('product_data') && json['product_data'] != null) {
+        if (json['product_data'] is List) {
+          productDataList = (json['product_data'] as List)
+              .where((item) => item != null)
+              .map((product) => product is Map<String, dynamic>
+                  ? ProductDataModel.fromJson(product)
+                  : ProductDataModel(idProduct: 0, namaProduct: 'Unknown'))
+              .toList();
+        }
+      }
+
+      // Memastikan bahwa tujuan_data adalah object yang valid
+      TujuanDataModel tujuanDataModel;
+      if (json.containsKey('tujuan_data') &&
+          json['tujuan_data'] != null &&
+          json['tujuan_data'] is Map<String, dynamic>) {
+        tujuanDataModel = TujuanDataModel.fromJson(json['tujuan_data']);
+      } else {
+        tujuanDataModel = TujuanDataModel(
+          idDokter: json['id_tujuan'] as int? ?? 0,
+          namaDokter: '',
+          namaKlinik: '',
+        );
+      }
+
       return DetailModel(
         id: json['id'] as int? ??
             (throw ServerException(message: 'id tidak ditemukan atau invalid')),
@@ -115,21 +144,10 @@ class DetailModel extends Detail {
         product: (json['product'] ?? '[]').toString(),
         note: (json['note'] ?? '').toString(),
         shift: (json['shift'] ?? '').toString(),
-        productData:
-            json.containsKey('product_data') && json['product_data'] != null
-                ? (json['product_data'] as List)
-                    .map((product) => ProductDataModel.fromJson(product))
-                    .toList()
-                : [],
-        tujuanData:
-            json.containsKey('tujuan_data') && json['tujuan_data'] != null
-                ? TujuanDataModel.fromJson(json['tujuan_data'])
-                : TujuanDataModel(
-                    idDokter: json['id_tujuan'] as int? ?? 0,
-                    namaDokter: '',
-                    namaKlinik: '',
-                  ),
+        productData: productDataList,
+        tujuanData: tujuanDataModel,
         approved: json['approved'] as int? ?? 0,
+        realisasiApprove: json['realisasi_approve'] as int?,
       );
     } catch (e) {
       if (e is ServerException) rethrow;
@@ -153,6 +171,7 @@ class DetailModel extends Detail {
           .toList(),
       'tujuan_data': (tujuanData as TujuanDataModel).toJson(),
       'approved': approved,
+      if (realisasiApprove != null) 'realisasi_approve': realisasiApprove,
     };
   }
 }
@@ -168,16 +187,30 @@ class ProductDataModel extends ProductData {
 
   factory ProductDataModel.fromJson(Map<String, dynamic> json) {
     try {
+      int productId = 0;
+      try {
+        if (json['id_product'] != null) {
+          if (json['id_product'] is int) {
+            productId = json['id_product'];
+          } else if (json['id_product'] is String) {
+            productId = int.tryParse(json['id_product']) ?? 0;
+          }
+        }
+      } catch (e) {
+        // Fallback ke default jika parsing gagal
+      }
+
       return ProductDataModel(
-        idProduct: json['id_product'] as int? ??
-            (throw ServerException(
-                message: 'id_product tidak ditemukan atau invalid')),
+        idProduct: productId,
         namaProduct: (json['nama_product'] ?? '').toString(),
       );
     } catch (e) {
       if (e is ServerException) rethrow;
-      throw ServerException(
-          message: 'Error parsing ProductDataModel: ${e.toString()}');
+      // Sebagai fallback, kembalikan objek default
+      return const ProductDataModel(
+        idProduct: 0,
+        namaProduct: 'Error parsing product',
+      );
     }
   }
 
@@ -202,15 +235,32 @@ class TujuanDataModel extends TujuanData {
 
   factory TujuanDataModel.fromJson(Map<String, dynamic> json) {
     try {
+      int dokterId = 0;
+      try {
+        if (json['id_dokter'] != null) {
+          if (json['id_dokter'] is int) {
+            dokterId = json['id_dokter'];
+          } else if (json['id_dokter'] is String) {
+            dokterId = int.tryParse(json['id_dokter']) ?? 0;
+          }
+        }
+      } catch (e) {
+        // Fallback ke default jika parsing gagal
+      }
+
       return TujuanDataModel(
-        idDokter: json['id_dokter'] as int? ?? 0,
+        idDokter: dokterId,
         namaDokter: (json['nama_dokter'] ?? '').toString(),
         namaKlinik: (json['nama_klinik'] ?? '').toString(),
       );
     } catch (e) {
       if (e is ServerException) rethrow;
-      throw ServerException(
-          message: 'Error parsing TujuanDataModel: ${e.toString()}');
+      // Sebagai fallback, kembalikan objek default
+      return const TujuanDataModel(
+        idDokter: 0,
+        namaDokter: 'Error parsing dokter data',
+        namaKlinik: '',
+      );
     }
   }
 

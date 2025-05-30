@@ -40,8 +40,11 @@ class _HomeContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final role = user.user.role.toUpperCase();
-    final hasApprovalAccess =
-        role == 'ADMIN' || role == 'BCO' || role == 'RSM' || role == 'DM';
+    final hasApprovalAccess = role == 'ADMIN' ||
+        role == 'BCO' ||
+        role == 'RSM' ||
+        role == 'DM' ||
+        role == 'GM';
     final hasRealisasiVisitAccess = role == 'ADMIN' ||
         role == 'GM' ||
         role == 'BCO' ||

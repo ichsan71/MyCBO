@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/presentation/theme/app_theme.dart';
 import '../../domain/entities/approval.dart';
 
 class ApprovalCard extends StatelessWidget {
@@ -14,21 +15,27 @@ class ApprovalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Hitung jumlah jadwal untuk setiap status
+    final int totalMenunggu = approval.details.where((d) => d.approved == 0).length;
+    final int totalDisetujui = approval.details.where((d) => d.approved == 1).length;
+    final int totalDitolak = approval.details.where((d) => d.approved == 2).length;
+
     return Card(
-      elevation: 4,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppTheme.borderRadiusMedium,
       ),
+      elevation: 2,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppTheme.borderRadiusMedium,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
                     child: Column(
@@ -40,41 +47,52 @@ class ApprovalCard extends StatelessWidget {
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${approval.month}/${approval.year}',
+                          'Periode: ${approval.month}/${approval.year}',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
-                            color:
-                                Theme.of(context).brightness == Brightness.light
-                                    ? Colors.grey[600]
-                                    : Colors.grey[400],
+                            color: Colors.grey[600],
                           ),
                         ),
                       ],
                     ),
                   ),
-                  _buildStatusChip(context),
+                  _buildStatusBadge(totalMenunggu),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+              const Divider(),
+              const SizedBox(height: 12),
               _buildInfoRow(
-                context,
+                'Total Jadwal',
+                approval.totalSchedule.toString(),
                 Icons.calendar_today,
-                'Total Jadwal: ${approval.totalSchedule}',
               ),
               const SizedBox(height: 8),
               _buildInfoRow(
-                context,
-                Icons.local_hospital_outlined,
-                'Dokter: ${approval.jumlahDokter}',
+                'Dokter',
+                approval.jumlahDokter,
+                Icons.medical_services,
               ),
               const SizedBox(height: 8),
               _buildInfoRow(
-                context,
-                Icons.location_on_outlined,
-                'Klinik: ${approval.jumlahKlinik}',
+                'Klinik',
+                approval.jumlahKlinik,
+                Icons.local_hospital,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _buildStatusIndicator('Menunggu', totalMenunggu, Colors.orange),
+                  const SizedBox(width: 16),
+                  _buildStatusIndicator('Disetujui', totalDisetujui, Colors.green),
+                  const SizedBox(width: 16),
+                  _buildStatusIndicator('Ditolak', totalDitolak, Colors.red),
+                ],
               ),
             ],
           ),
@@ -83,92 +101,85 @@ class ApprovalCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusChip(BuildContext context) {
-    String statusText;
-    Color backgroundColor;
-    Color textColor;
-    Color borderColor;
-
-    switch (approval.approved) {
-      case 1:
-        statusText = 'Disetujui';
-        backgroundColor = Colors.green[50]!;
-        textColor = Colors.green[800]!;
-        borderColor = Colors.green[300]!;
-        break;
-      case 2:
-        statusText = 'Ditolak';
-        backgroundColor = Colors.red[50]!;
-        textColor = Colors.red[800]!;
-        borderColor = Colors.red[300]!;
-        break;
-      default:
-        statusText = 'Menunggu';
-        backgroundColor = Colors.orange[50]!;
-        textColor = Colors.orange[800]!;
-        borderColor = Colors.orange[300]!;
-    }
-
-    // Sesuaikan warna untuk mode gelap
-    final brightness = Theme.of(context).brightness;
-    if (brightness == Brightness.dark) {
-      switch (approval.approved) {
-        case 1:
-          backgroundColor = Colors.green[900]!;
-          textColor = Colors.green[100]!;
-          borderColor = Colors.green[700]!;
-          break;
-        case 2:
-          backgroundColor = Colors.red[900]!;
-          textColor = Colors.red[100]!;
-          borderColor = Colors.red[700]!;
-          break;
-        default:
-          backgroundColor = Colors.orange[900]!;
-          textColor = Colors.orange[100]!;
-          borderColor = Colors.orange[700]!;
-      }
-    }
-
+  Widget _buildStatusBadge(int totalMenunggu) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor, width: 1.0),
+        color: totalMenunggu > 0
+            ? AppTheme.warningColor.withOpacity(0.15)
+            : AppTheme.successColor.withOpacity(0.15),
+        borderRadius: AppTheme.borderRadiusSmall,
+        border: Border.all(
+          color: totalMenunggu > 0
+              ? AppTheme.warningColor.withOpacity(0.3)
+              : AppTheme.successColor.withOpacity(0.3),
+        ),
       ),
       child: Text(
-        statusText,
+        totalMenunggu > 0 ? 'Menunggu' : 'Diproses',
         style: GoogleFonts.poppins(
           fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: textColor,
+          fontWeight: FontWeight.w500,
+          color: totalMenunggu > 0 ? AppTheme.warningColor : AppTheme.successColor,
         ),
       ),
     );
   }
 
-  Widget _buildInfoRow(BuildContext context, IconData icon, String text) {
+  Widget _buildInfoRow(String label, String value, IconData icon) {
     return Row(
       children: [
         Icon(
           icon,
           size: 16,
-          color: Theme.of(context).brightness == Brightness.light
-              ? Colors.grey[600]
-              : Colors.grey[400],
+          color: Colors.grey[600],
         ),
         const SizedBox(width: 8),
         Text(
-          text,
+          '$label:',
           style: GoogleFonts.poppins(
             fontSize: 14,
-            color: Theme.of(context).brightness == Brightness.light
-                ? Colors.grey[600]
-                : Colors.grey[400],
+            color: Colors.grey[600],
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          value,
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildStatusIndicator(String label, int count, Color color) {
+    return Expanded(
+      child: Row(
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              '$label: $count',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.grey[700],
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

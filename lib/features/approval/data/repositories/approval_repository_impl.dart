@@ -89,10 +89,10 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
 
   @override
   Future<Either<Failure, void>> rejectRequest(
-      int approvalId, String notes) async {
+      String idSchedule, String idRejecter, String comment) async {
     if (await networkInfo.isConnected) {
       try {
-        await remoteDataSource.rejectRequest(approvalId, notes);
+        await remoteDataSource.rejectRequest(idSchedule, idRejecter, comment);
         return const Right(null);
       } on ServerException catch (e) {
         return Left(ServerFailure(message: e.message));
@@ -118,5 +118,10 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
     } else {
       return const Left(NetworkFailure());
     }
+  }
+
+  @override
+  Future<List<RejectedSchedule>> getRejectedSchedules(int userId) async {
+    return await remoteDataSource.getRejectedSchedules(userId);
   }
 }

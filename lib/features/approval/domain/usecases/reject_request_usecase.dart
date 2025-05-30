@@ -10,16 +10,19 @@ class RejectRequestUseCase implements UseCase<void, RejectRequestParams> {
 
   @override
   Future<Either<Failure, void>> call(RejectRequestParams params) async {
-    return await repository.rejectRequest(params.approvalId, params.notes);
+    return await repository.rejectRequest(
+        params.idSchedule, params.idRejecter, params.comment);
   }
 }
 
 class RejectRequestParams {
-  final int approvalId;
-  final String notes;
+  final String idSchedule;
+  final String idRejecter;
+  final String comment;
 
   RejectRequestParams({
-    required this.approvalId,
-    required this.notes,
+    required this.idSchedule,
+    required this.idRejecter,
+    required this.comment,
   });
 }

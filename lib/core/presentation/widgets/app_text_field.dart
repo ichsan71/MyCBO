@@ -18,6 +18,8 @@ class AppTextField extends StatelessWidget {
   final bool filled;
   final Color? fillColor;
   final EdgeInsetsGeometry? contentPadding;
+  final String? errorText;
+  final String? helperText;
 
   const AppTextField({
     Key? key,
@@ -37,6 +39,8 @@ class AppTextField extends StatelessWidget {
     this.filled = false,
     this.fillColor,
     this.contentPadding,
+    this.errorText,
+    this.helperText,
   }) : super(key: key);
 
   @override
@@ -74,6 +78,8 @@ class AppTextField extends StatelessWidget {
             width: 2,
           ),
         ),
+        errorText: errorText,
+        helperText: helperText,
       ),
     );
   }

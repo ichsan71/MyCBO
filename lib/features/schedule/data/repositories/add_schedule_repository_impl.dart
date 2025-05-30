@@ -5,7 +5,8 @@ import 'package:test_cbo/core/network/network_info.dart';
 import 'package:test_cbo/core/utils/logger.dart';
 import 'package:test_cbo/features/schedule/data/datasources/add_schedule_remote_data_source.dart';
 import 'package:test_cbo/features/schedule/data/datasources/local/add_schedule_local_data_source.dart';
-import 'package:test_cbo/features/schedule/data/models/doctor_clinic_model.dart';
+import 'package:test_cbo/features/schedule/data/models/doctor_clinic_model.dart'
+    as model;
 import 'package:test_cbo/features/schedule/data/models/doctor_model.dart';
 import 'package:test_cbo/features/schedule/data/models/responses/doctor_response.dart';
 import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic.dart';
@@ -29,79 +30,90 @@ class AddScheduleRepositoryImpl implements AddScheduleRepository {
   @override
   Future<Either<Failure, List<DoctorClinic>>> getDoctorsAndClinics(
       int userId) async {
-    Logger.info(_tag, 'Getting doctors and clinics for user $userId');
-
     if (await networkInfo.isConnected) {
-      Logger.info(_tag, 'Network connected, checking if sync needed');
-
       try {
-        // Cek apakah perlu sinkronisasi
-        final syncNeeded = await localDataSource.isDoctorsSyncNeeded();
-
-        if (syncNeeded) {
-          Logger.info(_tag, 'Doctors sync needed, fetching from remote');
-          try {
-            final remoteDoctorsAndClinics =
-                await remoteDataSource.getDoctorsAndClinics(userId);
-            Logger.success(_tag,
-                'Successfully fetched ${remoteDoctorsAndClinics.length} doctors from remote');
-
-            // Cache data yang baru diambil
-            await localDataSource.cacheDoctors(remoteDoctorsAndClinics);
-
-            return Right(remoteDoctorsAndClinics);
-          } on ServerException catch (e) {
-            Logger.error(
-                _tag, 'Server error when fetching doctors: ${e.message}');
-
-            // Jika gagal dari remote, coba ambil dari cache
-            try {
-              final localDoctors = await localDataSource.getDoctorsAndClinics();
-              Logger.info(_tag,
-                  'Falling back to local data: ${localDoctors.length} doctors');
-              return Right(localDoctors);
-            } on CacheException {
-              Logger.error(_tag, 'No local doctors data available');
-              return Left(ServerFailure(message: e.message));
-            }
-          }
-        } else {
-          Logger.info(_tag, 'Using cached doctors data');
-          final localDoctors = await localDataSource.getDoctorsAndClinics();
-          return Right(localDoctors);
-        }
-      } on CacheException {
-        Logger.warning(_tag, 'No cached doctors data, fetching from remote');
+        final doctorClinicModels =
+            await remoteDataSource.getDoctorsAndClinics(userId);
+        await localDataSource.cacheDoctors(doctorClinicModels);
+        final doctors = doctorClinicModels
+            .map((model) => DoctorClinic(
+                  id: model.id,
+                  nama: model.nama,
+                  alamat: model.alamat ?? '',
+                  noTelp: model.noTelp ?? '',
+                  email: model.email ?? '',
+                  spesialis: model.spesialis,
+                  tipeDokter: model.tipeDokter ?? '',
+                  tipeKlinik: model.tipeKlinik ?? '',
+                  kodeRayon: model.kodeRayon ?? '',
+                ))
+            .toList();
+        return Right(doctors);
+      } on ServerException catch (e) {
         try {
-          final remoteDoctorsAndClinics =
-              await remoteDataSource.getDoctorsAndClinics(userId);
-          await localDataSource.cacheDoctors(remoteDoctorsAndClinics);
-          return Right(remoteDoctorsAndClinics);
-        } on ServerException catch (e) {
+          final cachedDoctors = await localDataSource.getDoctorsAndClinics();
+          final doctors = cachedDoctors
+              .map((model) => DoctorClinic(
+                    id: model.id,
+                    nama: model.nama,
+                    alamat: model.alamat ?? '',
+                    noTelp: model.noTelp ?? '',
+                    email: model.email ?? '',
+                    spesialis: model.spesialis,
+                    tipeDokter: model.tipeDokter ?? '',
+                    tipeKlinik: model.tipeKlinik ?? '',
+                    kodeRayon: model.kodeRayon ?? '',
+                  ))
+              .toList();
+          return Right(doctors);
+        } on CacheException {
           return Left(ServerFailure(message: e.message));
         }
+      } on UnauthorizedException catch (e) {
+        return Left(ServerFailure(message: e.message));
       } catch (e) {
-        Logger.error(_tag, 'Unexpected error checking sync status: $e');
         try {
-          final remoteDoctorsAndClinics =
-              await remoteDataSource.getDoctorsAndClinics(userId);
-          await localDataSource.cacheDoctors(remoteDoctorsAndClinics);
-          return Right(remoteDoctorsAndClinics);
-        } on ServerException catch (e) {
-          return Left(ServerFailure(message: e.message));
+          final cachedDoctors = await localDataSource.getDoctorsAndClinics();
+          final doctors = cachedDoctors
+              .map((model) => DoctorClinic(
+                    id: model.id,
+                    nama: model.nama,
+                    alamat: model.alamat ?? '',
+                    noTelp: model.noTelp ?? '',
+                    email: model.email ?? '',
+                    spesialis: model.spesialis,
+                    tipeDokter: model.tipeDokter ?? '',
+                    tipeKlinik: model.tipeKlinik ?? '',
+                    kodeRayon: model.kodeRayon ?? '',
+                  ))
+              .toList();
+          return Right(doctors);
+        } on CacheException {
+          return Left(CacheFailure(message: 'Failed to get doctors: $e'));
         }
       }
     } else {
-      Logger.warning(
-          _tag, 'No network connection, trying to get cached doctors');
       try {
-        final localDoctors = await localDataSource.getDoctorsAndClinics();
-        return Right(localDoctors);
+        final cachedDoctors = await localDataSource.getDoctorsAndClinics();
+        final doctors = cachedDoctors
+            .map((model) => DoctorClinic(
+                  id: model.id,
+                  nama: model.nama,
+                  alamat: model.alamat ?? '',
+                  noTelp: model.noTelp ?? '',
+                  email: model.email ?? '',
+                  spesialis: model.spesialis,
+                  tipeDokter: model.tipeDokter ?? '',
+                  tipeKlinik: model.tipeKlinik ?? '',
+                  kodeRayon: model.kodeRayon ?? '',
+                ))
+            .toList();
+        return Right(doctors);
       } on CacheException {
-        Logger.error(_tag, 'No cached doctors data available');
         return const Left(CacheFailure(
-            message:
-                'Tidak ada data dokter tersimpan. Periksa koneksi internet Anda.'));
+          message:
+              'No cached doctors data available. Please check your internet connection.',
+        ));
       }
     }
   }
@@ -264,149 +276,19 @@ class AddScheduleRepositoryImpl implements AddScheduleRepository {
   Future<Either<Failure, DoctorResponse>> getDoctors() async {
     if (await networkInfo.isConnected) {
       try {
-        // Memeriksa apakah perlu sinkronisasi terlebih dahulu
-        final syncNeeded = await localDataSource.isDoctorsSyncNeeded();
-
-        if (syncNeeded) {
-          Logger.info(_tag, 'Doctors sync needed, fetching from remote');
-          try {
-            final doctorResponse = await remoteDataSource.getDoctors();
-
-            // Konversi dari DoctorModel ke DoctorClinicModel untuk penyimpanan lokal
-            final doctorClinicModels = doctorResponse.dokter
-                .map((doctor) => DoctorClinicModel(
-                      id: doctor.id,
-                      nama: doctor.nama,
-                      alamat: '',
-                      noTelp: '',
-                      email: '',
-                      spesialis: doctor.spesialis.toString(),
-                      tipeDokter: '',
-                      tipeKlinik: '',
-                      kodeRayon: doctor.kodeRayon,
-                    ))
-                .toList();
-
-            // Simpan data dokter ke cache lokal
-            await localDataSource.cacheDoctors(doctorClinicModels);
-
-            return Right(doctorResponse);
-          } on ServerException catch (e) {
-            Logger.error(
-                _tag, 'Server error when fetching doctors: ${e.message}');
-
-            // Jika gagal dari remote, coba ambil dari cache
-            try {
-              final localDoctors = await localDataSource.getDoctorsAndClinics();
-              Logger.info(_tag,
-                  'Falling back to local doctor data: ${localDoctors.length} doctors');
-
-              // Konversi data DoctorClinicModel ke DoctorModel untuk digunakan di DoctorResponse
-              final doctorModels = localDoctors
-                  .map((doctor) => DoctorModel(
-                        id: doctor.id,
-                        nama: doctor.nama,
-                        spesialis: int.tryParse(doctor.spesialis) ?? 0,
-                        kodeRayon: doctor.kodeRayon,
-                        kodePelanggan: '', // Default value
-                        rayonDokter: [], // Default empty list
-                        statusDokter: 1, // Default active status
-                        createdAt: DateTime.now(), // Current time as default
-                      ))
-                  .toList();
-
-              return Right(DoctorResponse(dokter: doctorModels, klinik: []));
-            } on CacheException {
-              Logger.error(_tag, 'No local doctors data available');
-              return Left(ServerFailure(message: e.message));
-            }
-          }
-        } else {
-          Logger.info(_tag, 'Using cached doctor data');
-          try {
-            // Coba ambil data dari local cache
-            final localDoctors = await localDataSource.getDoctorsAndClinics();
-
-            // Konversi data DoctorClinicModel ke DoctorModel untuk digunakan di DoctorResponse
-            final doctorModels = localDoctors
-                .map((doctor) => DoctorModel(
-                      id: doctor.id,
-                      nama: doctor.nama,
-                      spesialis: int.tryParse(doctor.spesialis) ?? 0,
-                      kodeRayon: doctor.kodeRayon,
-                      kodePelanggan: '', // Default value
-                      rayonDokter: [], // Default empty list
-                      statusDokter: 1, // Default active status
-                      createdAt: DateTime.now(), // Current time as default
-                    ))
-                .toList();
-
-            return Right(DoctorResponse(dokter: doctorModels, klinik: []));
-          } on CacheException {
-            // Jika tidak ada cache, coba ambil dari remote
-            try {
-              final doctorResponse = await remoteDataSource.getDoctors();
-
-              // Konversi dari DoctorModel ke DoctorClinicModel untuk penyimpanan lokal
-              final doctorClinicModels = doctorResponse.dokter
-                  .map((doctor) => DoctorClinicModel(
-                        id: doctor.id,
-                        nama: doctor.nama,
-                        alamat: '',
-                        noTelp: '',
-                        email: '',
-                        spesialis: doctor.spesialis.toString(),
-                        tipeDokter: '',
-                        tipeKlinik: '',
-                        kodeRayon: doctor.kodeRayon,
-                      ))
-                  .toList();
-
-              // Simpan data dokter ke cache lokal
-              await localDataSource.cacheDoctors(doctorClinicModels);
-
-              return Right(doctorResponse);
-            } on ServerException catch (e) {
-              return Left(ServerFailure(message: e.message));
-            }
-          }
-        }
+        final response = await remoteDataSource.getDoctors();
+        return Right(response);
+      } on ServerException catch (e) {
+        return Left(ServerFailure(message: e.message));
+      } on UnauthorizedException catch (e) {
+        return Left(ServerFailure(message: e.message));
       } catch (e) {
-        Logger.error(_tag, 'Unexpected error in getDoctors: $e');
-        return Left(ServerFailure(message: e.toString()));
+        return Left(ServerFailure(message: 'Failed to get doctors: $e'));
       }
     } else {
-      Logger.warning(_tag,
-          'No network connection, trying to get cached doctors for DoctorResponse');
-      try {
-        // Coba ambil data dokter dari lokal dan konversi ke DoctorResponse
-        final localDoctors = await localDataSource.getDoctorsAndClinics();
-
-        if (localDoctors.isEmpty) {
-          throw CacheException(message: 'Tidak ada data dokter tersimpan');
-        }
-
-        // Konversi data DoctorClinicModel ke DoctorModel untuk digunakan di DoctorResponse
-        final doctorModels = localDoctors
-            .map((doctor) => DoctorModel(
-                  id: doctor.id,
-                  nama: doctor.nama,
-                  spesialis: int.tryParse(doctor.spesialis) ?? 0,
-                  kodeRayon: doctor.kodeRayon,
-                  kodePelanggan: '', // Default value
-                  rayonDokter: [], // Default empty list
-                  statusDokter: 1, // Default active status
-                  createdAt: DateTime.now(), // Current time as default
-                ))
-            .toList();
-
-        return Right(DoctorResponse(dokter: doctorModels, klinik: []));
-      } on CacheException catch (e) {
-        Logger.error(_tag, 'No cached doctors data available: ${e.message}');
-        return const Left(CacheFailure(
-            message:
-                'Tidak ada data dokter tersimpan. Periksa koneksi internet Anda.'));
-      }
+      return const Left(CacheFailure(
+        message: 'No internet connection available.',
+      ));
     }
   }
 

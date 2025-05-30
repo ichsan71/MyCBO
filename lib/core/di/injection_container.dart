@@ -1,14 +1,26 @@
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
+import 'package:http/http.dart' as http;
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test_cbo/core/database/app_database.dart';
 import 'package:test_cbo/core/network/network_info.dart';
+import 'package:test_cbo/features/schedule/presentation/bloc/tipe_schedule_bloc.dart';
 
 import '../../features/auth/di/auth_injection.dart';
 import '../../features/schedule/di/schedule_injection.dart';
 import '../../features/approval/di/approval_injection.dart';
 import '../../features/realisasi_visit/di/realisasi_visit_injection.dart';
+import '../../features/schedule/data/datasources/tipe_schedule_remote_data_source.dart';
+import '../../features/schedule/data/repositories/tipe_schedule_repository_impl.dart';
+import '../../features/schedule/domain/repositories/tipe_schedule_repository.dart';
+import '../../features/schedule/domain/usecases/get_tipe_schedules.dart';
+import '../../features/schedule/domain/usecases/get_edit_schedule_data.dart';
+import '../../features/schedule/presentation/bloc/edit_schedule_bloc.dart';
+import '../../features/schedule/domain/usecases/get_schedules.dart';
+import '../../features/schedule/domain/usecases/get_schedules_by_range_date.dart';
+import '../../features/schedule/domain/usecases/update_schedule.dart';
+import '../../features/schedule/domain/usecases/get_rejected_schedules.dart';
 
 /// Service locator instance
 final sl = GetIt.instance;
@@ -35,6 +47,48 @@ Future<void> init() async {
   await initScheduleDependencies();
   await initApprovalDependencies();
   await initRealisasiVisitDependencies();
+
+  // Inisialisasi Tipe Schedule
+  _initTipeScheduleDependencies();
+
+  // Edit Schedule
+  sl.registerFactory(
+    () => EditScheduleBloc(
+      getEditScheduleData: sl(),
+    ),
+  );
+
+  // Use cases
+  sl.registerLazySingleton(() => GetSchedules(sl()));
+  sl.registerLazySingleton(() => GetSchedulesByRangeDate(sl()));
+  sl.registerLazySingleton(() => GetEditScheduleData(sl()));
+  sl.registerLazySingleton(() => UpdateSchedule(sl()));
+  sl.registerLazySingleton(() => GetRejectedSchedules(sl()));
+}
+
+/// Inisialisasi dependencies untuk fitur Tipe Schedule
+void _initTipeScheduleDependencies() {
+  // UseCases
+  sl.registerLazySingleton(() => GetTipeSchedules(sl()));
+
+  // Repository
+  sl.registerLazySingleton<TipeScheduleRepository>(
+    () => TipeScheduleRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+
+  // Data sources
+  sl.registerLazySingleton<TipeScheduleRemoteDataSource>(
+    () => TipeScheduleRemoteDataSourceImpl(
+      client: sl<http.Client>(),
+      sharedPreferences: sl<SharedPreferences>(),
+    ),
+  );
+
+  // Bloc
+  sl.registerLazySingleton(
+      () => TipeScheduleBloc(getTipeSchedules: sl<GetTipeSchedules>()));
 }
 
 /// Inisialisasi external dependencies seperti shared preferences, http client, dll
@@ -44,6 +98,7 @@ Future<void> _initExternalDependencies() async {
   sl.registerLazySingleton(() => sharedPreferences);
 
   // HTTP Clients untuk komunikasi dengan API
+  sl.registerLazySingleton(() => http.Client());
   sl.registerLazySingleton(() => Dio());
   sl.registerLazySingleton(() => InternetConnectionChecker());
 }

@@ -24,3 +24,24 @@ class ScheduleParams extends Equatable {
   @override
   List<Object?> get props => [userId];
 }
+
+class GetSchedulesByRangeDateUseCase
+    implements UseCase<List<Schedule>, ScheduleByRangeDateParams> {
+  final ScheduleRepository repository;
+  GetSchedulesByRangeDateUseCase(this.repository);
+  @override
+  Future<Either<Failure, List<Schedule>>> call(
+      ScheduleByRangeDateParams params) async {
+    return await repository.getSchedulesByRangeDate(
+        params.userId, params.rangeDate);
+  }
+}
+
+class ScheduleByRangeDateParams extends Equatable {
+  final int userId;
+  final String rangeDate;
+  const ScheduleByRangeDateParams(
+      {required this.userId, required this.rangeDate});
+  @override
+  List<Object?> get props => [userId, rangeDate];
+}

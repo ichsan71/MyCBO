@@ -1,17 +1,34 @@
 import 'package:test_cbo/core/utils/logger.dart';
 import 'package:test_cbo/features/schedule/domain/entities/product.dart';
 
+
 class ProductModel extends Product {
   const ProductModel({
-    required int id,
+    required int idProduct,
+    String? kode,
+    required String namaProduct,
+    String? idDivisiSales,
+    String? idSpesialis,
+    int? hargaNormal,
+    String? desc,
+    String? image,
+    String? createdAt,
     required String nama,
     required String keterangan,
-    required String kodeRayon,
+    required int id,
   }) : super(
-          id: id,
+          idProduct: idProduct,
+          kode: kode,
+          namaProduct: namaProduct,
+          idDivisiSales: idDivisiSales,
+          idSpesialis: idSpesialis,
+          hargaNormal: hargaNormal,
+          desc: desc,
+          image: image,
+          createdAt: createdAt,
           nama: nama,
           keterangan: keterangan,
-          kodeRayon: kodeRayon,
+          id: id,
         );
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -102,30 +119,70 @@ class ProductModel extends Product {
       Logger.info('ProductModel', 'Parsing data - id: $id, nama: $nama');
 
       return ProductModel(
-        id: id,
+        idProduct: id,
+        kode: kodeRayon,
+        namaProduct: nama,
+        idDivisiSales: json['id_divisi_sales']?.toString(),
+        idSpesialis: json['id_spesialis']?.toString(),
+        hargaNormal: json['harga_normal'] as int?,
+        desc: keterangan,
+        image: json['image']?.toString(),
+        createdAt: json['created_at']?.toString(),
         nama: nama,
         keterangan: keterangan,
-        kodeRayon: kodeRayon,
+        id: id,
       );
     } catch (e) {
       Logger.error('ProductModel', 'Error parsing ProductModel: $e');
       Logger.error('ProductModel', 'JSON data: $json');
       // Return a default model if parsing fails
       return const ProductModel(
+        idProduct: 0,
+        kode: '',
+        namaProduct: 'Error',
+        idDivisiSales: null,
+        idSpesialis: null,
+        hargaNormal: null,
+        desc: 'Gagal memproses data',
+        image: null,
+        createdAt: null,
+        nama: '',
+        keterangan: '',
         id: 0,
-        nama: 'Error',
-        keterangan: 'Gagal memproses data',
-        kodeRayon: '',
       );
     }
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      'id_product': idProduct,
+      'kode': kode,
+      'nama_product': namaProduct,
+      'id_divisi_sales': idDivisiSales,
+      'id_spesialis': idSpesialis,
+      'harga_normal': hargaNormal,
+      'desc': desc,
+      'image': image,
+      'created_at': createdAt,
       'nama': nama,
       'keterangan': keterangan,
-      'kode_rayon': kodeRayon,
+      'id': id,
     };
   }
+
+  @override
+  List<Object?> get props => [
+        idProduct,
+        kode,
+        namaProduct,
+        idDivisiSales,
+        idSpesialis,
+        hargaNormal,
+        desc,
+        image,
+        createdAt,
+        nama,
+        keterangan,
+        id,
+      ];
 }

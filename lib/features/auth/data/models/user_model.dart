@@ -13,14 +13,33 @@ class UserModel extends User {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json, String token) {
+    final String role = json['role'] ?? '';
+
+    // Handle khusus untuk role GM yang memiliki struktur respons berbeda
+    if (role.toUpperCase() == 'GM') {
+      return UserModel(
+        idUser: json['id_user'] ?? 0,
+        name: json['name'] ?? '',
+        email: json['email'] ?? '',
+        role: role,
+        kodeRayon:
+            json['kode_rayon'] ?? 'GM_RAYON', // Nilai default untuk role GM
+        idDivisi: json['id_divisi'] ?? '',
+        kodeRayonAktif: json['kode_rayon_aktif'] ??
+            'GM_RAYON_AKTIF', // Nilai default untuk role GM
+        token: token,
+      );
+    }
+
+    // Untuk role lainnya, gunakan normal parsing
     return UserModel(
-      idUser: json['id_user'],
-      name: json['name'],
-      email: json['email'],
-      role: json['role'],
-      kodeRayon: json['kode_rayon'],
-      idDivisi: json['id_divisi'],
-      kodeRayonAktif: json['kode_rayon_aktif'],
+      idUser: json['id_user'] ?? 0,
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      role: role,
+      kodeRayon: json['kode_rayon'] ?? '',
+      idDivisi: json['id_divisi'] ?? '',
+      kodeRayonAktif: json['kode_rayon_aktif'] ?? '',
       token: token,
     );
   }

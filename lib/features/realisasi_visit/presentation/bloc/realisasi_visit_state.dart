@@ -20,6 +20,15 @@ class RealisasiVisitLoaded extends RealisasiVisitState {
   List<Object> get props => [realisasiVisits];
 }
 
+class RealisasiVisitGMLoaded extends RealisasiVisitState {
+  final List<RealisasiVisitGM> realisasiVisitsGM;
+
+  const RealisasiVisitGMLoaded({required this.realisasiVisitsGM});
+
+  @override
+  List<Object> get props => [realisasiVisitsGM];
+}
+
 class RealisasiVisitError extends RealisasiVisitState {
   final String message;
 

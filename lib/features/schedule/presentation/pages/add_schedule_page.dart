@@ -10,9 +10,11 @@ import 'package:test_cbo/core/di/injection_container.dart' as di;
 import 'package:test_cbo/core/utils/logger.dart';
 import 'package:test_cbo/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:test_cbo/features/auth/presentation/bloc/auth_state.dart';
-import 'package:test_cbo/features/schedule/data/models/doctor_clinic_model.dart';
+import 'package:test_cbo/features/schedule/data/models/doctor_clinic_model.dart'
+    as model;
+import 'package:test_cbo/features/schedule/data/models/doctor_model.dart';
 import 'package:test_cbo/features/schedule/data/models/responses/doctor_response.dart';
-import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic.dart';
+import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic_base.dart';
 import 'package:test_cbo/features/schedule/domain/entities/product.dart';
 import 'package:test_cbo/features/schedule/domain/entities/schedule_type.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_bloc.dart';
@@ -55,14 +57,23 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
   final TextEditingController _tanggalController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
 
+  // Konstanta untuk validasi catatan
+  static const int _minimumNoteCharacters = 50;
+  static const int _maximumNoteCharacters = 500;
+  String? _noteError;
+
   // Selected values
   ScheduleType? _selectedScheduleType;
-  DoctorClinic? _selectedDoctor;
+  DoctorClinicBase? _selectedDoctor;
   String _selectedShift = 'pagi';
   final String _selectedJenis = 'suddenly';
   final List<Product> _selectedProducts = [];
   final List<int> _selectedProductDivisiIds = [];
   final List<int> _selectedProductSpesialisIds = [];
+
+  // Lists for doctors
+  final List<DoctorClinicBase> doctors = [];
+  final List<DoctorClinicBase> filteredDoctors = [];
 
   // Tambahkan variabel untuk menyimpan nama-nama
   final List<String> _selectedProductNames = [];
@@ -199,6 +210,46 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
 
   void _submitForm(int userId) {
     if (_formKey.currentState?.validate() ?? false) {
+      // Validasi catatan
+      if (_noteController.text.trim().isEmpty) {
+        setState(() {
+          _noteError = 'Catatan wajib diisi';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Silakan isi catatan terlebih dahulu'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      if (_noteController.text.trim().length < _minimumNoteCharacters) {
+        setState(() {
+          _noteError = 'Catatan minimal $_minimumNoteCharacters karakter';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Catatan terlalu pendek'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      if (_noteController.text.trim().length > _maximumNoteCharacters) {
+        setState(() {
+          _noteError = 'Catatan maksimal $_maximumNoteCharacters karakter';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Catatan terlalu panjang'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       if (_selectedDoctor == null) {
         // Tampilkan pesan error jika dokter belum dipilih
         ScaffoldMessenger.of(context).showSnackBar(
@@ -255,10 +306,10 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
               tujuan: _selectedDestinationType,
               tglVisit: _tanggalController.text,
               product: _selectedProducts.map((p) => p.id).toList(),
-              note: _noteController.text,
+              note: _noteController.text.trim(),
               idUser: userId,
-              dokter: _selectedDoctor?.id ?? 0,
-              klinik: _selectedDoctor?.tipeKlinik ?? '',
+              dokter: _selectedDoctor!.id!,
+              klinik: _selectedDoctor!.tipeKlinik ?? '',
               productForIdDivisi: _selectedProductDivisiIds,
               productForIdSpesialis: _selectedProductSpesialisIds,
               shift: _selectedShift,
@@ -316,19 +367,43 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
               state is DoctorsLoaded ||
               state is ScheduleTypesLoaded) {
             List<Product> products = [];
-            List<DoctorClinic> doctors = [];
+            List<DoctorClinicBase> doctors = [];
             List<ScheduleType> scheduleTypes = [];
             DoctorResponse? doctorResponse;
 
             if (state is AddScheduleFormLoaded) {
               products = state.products;
-              doctors = state.doctorsAndClinics;
+              // Convert DoctorClinic to DoctorClinicBase
+              doctors.addAll(
+                  state.doctorsAndClinics.map((doctor) => DoctorClinicBase(
+                        id: doctor.id,
+                        nama: doctor.nama,
+                        spesialis: doctor.spesialis,
+                        alamat: doctor.alamat,
+                        noTelp: doctor.noTelp,
+                        email: doctor.email,
+                        tipeDokter: doctor.tipeDokter,
+                        tipeKlinik: doctor.tipeKlinik,
+                        kodeRayon: doctor.kodeRayon,
+                      )));
               scheduleTypes = state.scheduleTypes;
               doctorResponse = state.doctorResponse;
             } else if (state is ProductsLoaded) {
               products = state.products;
             } else if (state is DoctorsAndClinicsLoaded) {
-              doctors = state.doctorsAndClinics;
+              // Convert DoctorClinic to DoctorClinicBase
+              doctors.addAll(
+                  state.doctorsAndClinics.map((doctor) => DoctorClinicBase(
+                        id: doctor.id,
+                        nama: doctor.nama,
+                        spesialis: doctor.spesialis,
+                        alamat: doctor.alamat,
+                        noTelp: doctor.noTelp,
+                        email: doctor.email,
+                        tipeDokter: doctor.tipeDokter,
+                        tipeKlinik: doctor.tipeKlinik,
+                        kodeRayon: doctor.kodeRayon,
+                      )));
             } else if (state is DoctorsLoaded) {
               doctorResponse = state.doctorResponse;
             } else if (state is ScheduleTypesLoaded) {
@@ -338,6 +413,7 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
             // Filter doctors by search query
             final filteredDoctors = doctors.where((doctor) {
               // Filter dokter yang valid (tidak kosong atau null)
+              if (doctor == null) return false;
               return doctor.id > 0 &&
                   doctor.nama.trim().isNotEmpty &&
                   doctor.nama
@@ -353,29 +429,24 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                     '- ID: ${doctor.id}, Nama: ${doctor.nama}, Spesialis: ${doctor.spesialis} (${_getSpesialisName(doctor.spesialis)})');
               }
 
-              // Konversi DoctorModel ke DoctorClinic untuk ditampilkan di ListView
+              // Konversi DoctorModel ke DoctorClinicBase untuk ditampilkan di ListView
               for (var doctor in doctorResponse.dokter) {
                 // Skip dokter jika id atau nama kosong
-                if (doctor.id <= 0 || doctor.nama.trim().isEmpty) {
+                if (doctor.id <= 0 || doctor.nama.isEmpty) {
                   Logger.warning(_tag,
                       'Melewati dokter dengan data tidak valid: ${doctor.id} - ${doctor.nama}');
                   continue;
                 }
 
-                final doctorClinic = DoctorClinicModel(
+                // Buat DoctorClinicBase dari DoctorModel
+                final doctorClinic = DoctorClinicBase(
                   id: doctor.id,
                   nama: doctor.nama,
-                  alamat: 'Dari API',
-                  noTelp: '-',
-                  email: '-',
                   spesialis: _getSpesialisName(doctor.spesialis),
-                  tipeDokter: 'Umum',
-                  tipeKlinik: 'Umum',
-                  kodeRayon: doctor.kodeRayon,
                 );
 
                 // Tambahkan ke daftar dokter untuk ditampilkan
-                if (!doctors.any((d) => d.id == doctorClinic.id)) {
+                if (!doctors.any((d) => d.id == doctor.id)) {
                   doctors.add(doctorClinic);
                 }
               }
@@ -383,8 +454,9 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
               // Filter ulang setelah menambahkan dokter dari API
               filteredDoctors.clear();
               filteredDoctors.addAll(doctors.where((doctor) {
+                if (doctor == null) return false;
                 return doctor.id > 0 &&
-                    doctor.nama.trim().isNotEmpty &&
+                    doctor.nama.isNotEmpty &&
                     doctor.nama
                         .toLowerCase()
                         .contains(_doctorSearchQuery.toLowerCase());
@@ -392,53 +464,31 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
             }
 
             // Gabungkan dokter dari kedua sumber data jika tersedia
-            List<DropdownMenuItem<DoctorClinic>> doctorItems = [];
+            List<DropdownMenuItem<DoctorClinicBase>> doctorItems = [];
 
             // Tambahkan item dari DoctorClinic
             doctorItems.addAll(filteredDoctors
-                .map((doctor) => DropdownMenuItem<DoctorClinic>(
+                .map((doctor) => DropdownMenuItem<DoctorClinicBase>(
                       value: doctor,
                       child: Text(doctor.nama),
                     ))
                 .toList());
 
-            // Tambahkan item dari DoctorResponse jika tersedia
+            // Tambahkan dokter dari API jika tersedia
             if (doctorResponse != null && doctorResponse.dokter.isNotEmpty) {
-              Logger.info(_tag,
-                  'Menambahkan ${doctorResponse.dokter.length} dokter dari API');
-
-              // Konversi DoctorModel ke DoctorClinic untuk konsistensi UI
               doctorItems.addAll(doctorResponse.dokter
+                  .where((doctor) => doctor.id > 0 && doctor.nama.isNotEmpty)
                   .map((doctor) {
-                    // Skip dokter jika id atau nama kosong
-                    if (doctor.id <= 0 || doctor.nama.trim().isEmpty) {
-                      // Return null untuk di-filter
-                      return null;
-                    }
-
-                    // Buat DoctorClinic dari DoctorModel
-                    final doctorClinic = DoctorClinicModel(
-                      id: doctor.id,
-                      nama: doctor.nama,
-                      alamat: 'Dari API',
-                      noTelp: '-',
-                      email: '-',
-                      spesialis: _getSpesialisName(doctor.spesialis),
-                      tipeDokter: 'Umum',
-                      tipeKlinik: 'Umum',
-                      kodeRayon: doctor.kodeRayon,
-                    );
-
-                    return DropdownMenuItem<DoctorClinic>(
-                      value: doctorClinic,
-                      child: Text('${doctor.nama} (API)'),
-                    );
-                  })
-                  .where((item) => item != null) // Filter item yang null
-                  .cast<
-                      DropdownMenuItem<
-                          DoctorClinic>>() // Cast ke tipe yang dibutuhkan
-                  .toList());
+                final doctorClinic = DoctorClinicBase(
+                  id: doctor.id,
+                  nama: doctor.nama,
+                  spesialis: _getSpesialisName(doctor.spesialis),
+                );
+                return DropdownMenuItem<DoctorClinicBase>(
+                  value: doctorClinic,
+                  child: Text(doctor.nama),
+                );
+              }).toList());
             }
 
             // Filter products by search query
@@ -677,14 +727,14 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                           Container(
                                             padding: const EdgeInsets.all(16),
                                             decoration: BoxDecoration(
-                                              color: theme
-                                                  .colorScheme.errorContainer
-                                                  .withOpacity(0.2),
+                                              color: Colors.grey[300]!
+                                                  .withAlpha(
+                                                      (0.3 * 255).round()),
                                               borderRadius:
                                                   BorderRadius.circular(12),
                                               border: Border.all(
-                                                color: theme
-                                                    .colorScheme.errorContainer,
+                                                color: Colors.black.withAlpha(
+                                                    (0.03 * 255).round()),
                                                 width: 1,
                                               ),
                                             ),
@@ -692,8 +742,8 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                               children: [
                                                 Icon(
                                                   Icons.info,
-                                                  color:
-                                                      theme.colorScheme.error,
+                                                  color: Colors.black.withAlpha(
+                                                      (0.03 * 255).round()),
                                                   size: 24,
                                                 ),
                                                 const SizedBox(width: 12),
@@ -702,11 +752,11 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                                     doctors.isEmpty
                                                         ? 'Tidak ada data dokter yang tersedia. Harap pastikan koneksi internet Anda stabil dan coba lagi.'
                                                         : 'Tidak ada dokter yang sesuai dengan pencarian.',
-                                                    style: theme
-                                                        .textTheme.bodyMedium
-                                                        ?.copyWith(
-                                                      color: theme
-                                                          .colorScheme.error,
+                                                    style: TextStyle(
+                                                      color: Colors.black
+                                                          .withAlpha(
+                                                              (0.03 * 255)
+                                                                  .round()),
                                                     ),
                                                   ),
                                                 ),
@@ -729,10 +779,13 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                                     const BoxConstraints(
                                                         maxHeight: 300),
                                                 decoration: BoxDecoration(
-                                                  color: Colors.white,
+                                                  color: theme.primaryColor
+                                                      .withAlpha(
+                                                          (0.1 * 255).round()),
                                                   border: Border.all(
-                                                    color: theme
-                                                        .colorScheme.outline,
+                                                    color: Colors.grey[400]!
+                                                        .withAlpha((0.5 * 255)
+                                                            .round()),
                                                     width: 1.5,
                                                   ),
                                                   borderRadius:
@@ -740,7 +793,9 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                                   boxShadow: [
                                                     BoxShadow(
                                                       color: Colors.black
-                                                          .withOpacity(0.05),
+                                                          .withAlpha(
+                                                              (0.05 * 255)
+                                                                  .round()),
                                                       blurRadius: 5,
                                                       offset:
                                                           const Offset(0, 2),
@@ -759,8 +814,9 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                                             Divider(
                                                       height: 1,
                                                       thickness: 1,
-                                                      color: theme.colorScheme
-                                                          .outlineVariant,
+                                                      color: Colors.grey[400]!
+                                                          .withAlpha((0.5 * 255)
+                                                              .round()),
                                                     ),
                                                     itemBuilder:
                                                         (context, index) {
@@ -783,8 +839,10 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                                         child: Container(
                                                           color: isSelected
                                                               ? theme
-                                                                  .colorScheme
-                                                                  .secondaryContainer
+                                                                  .primaryColor
+                                                                  .withAlpha((0.15 *
+                                                                          255)
+                                                                      .round())
                                                               : null,
                                                           padding:
                                                               const EdgeInsets
@@ -797,19 +855,21 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                                               CircleAvatar(
                                                                 backgroundColor: isSelected
                                                                     ? theme
-                                                                        .colorScheme
-                                                                        .secondary
+                                                                        .primaryColor
+                                                                        .withAlpha((0.15 *
+                                                                                255)
+                                                                            .round())
                                                                     : theme
-                                                                        .colorScheme
-                                                                        .primary
-                                                                        .withOpacity(
-                                                                            0.2),
+                                                                        .primaryColor
+                                                                        .withAlpha((0.1 *
+                                                                                255)
+                                                                            .round()),
                                                                 child: Icon(
                                                                   Icons.person,
                                                                   color: isSelected
                                                                       ? theme
                                                                           .colorScheme
-                                                                          .onSecondary
+                                                                          .onPrimaryContainer
                                                                       : theme
                                                                           .colorScheme
                                                                           .primary,
@@ -825,7 +885,7 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                                                   children: [
                                                                     Text(
                                                                       doctor
-                                                                          .nama,
+                                                                          .nama!,
                                                                       style: theme
                                                                           .textTheme
                                                                           .titleMedium
@@ -833,8 +893,8 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                                                         fontWeight:
                                                                             FontWeight.bold,
                                                                         color: isSelected
-                                                                            ? theme.colorScheme.onSecondaryContainer
-                                                                            : theme.colorScheme.onSurface,
+                                                                            ? theme.colorScheme.onPrimaryContainer
+                                                                            : theme.colorScheme.primary,
                                                                       ),
                                                                     ),
                                                                   ],
@@ -845,8 +905,10 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                                                   Icons
                                                                       .check_circle,
                                                                   color: theme
-                                                                      .colorScheme
-                                                                      .secondary,
+                                                                      .primaryColor
+                                                                      .withAlpha((0.15 *
+                                                                              255)
+                                                                          .round()),
                                                                 ),
                                                             ],
                                                           ),
@@ -950,11 +1012,12 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                   Container(
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: theme.colorScheme.errorContainer
-                                          .withOpacity(0.2),
+                                      color: Colors.grey[300]!
+                                          .withAlpha((0.3 * 255).round()),
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
-                                        color: theme.colorScheme.errorContainer,
+                                        color: Colors.black
+                                            .withAlpha((0.03 * 255).round()),
                                         width: 1,
                                       ),
                                     ),
@@ -962,7 +1025,8 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                       children: [
                                         Icon(
                                           Icons.info,
-                                          color: theme.colorScheme.error,
+                                          color: Colors.black
+                                              .withAlpha((0.03 * 255).round()),
                                           size: 24,
                                         ),
                                         const SizedBox(width: 12),
@@ -971,9 +1035,9 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                             products.isEmpty
                                                 ? 'Tidak ada data produk yang tersedia. Harap pastikan koneksi internet Anda stabil dan coba lagi.'
                                                 : 'Tidak ada produk yang sesuai dengan pencarian.',
-                                            style: theme.textTheme.bodyMedium
-                                                ?.copyWith(
-                                              color: theme.colorScheme.error,
+                                            style: TextStyle(
+                                              color: Colors.black.withAlpha(
+                                                  (0.03 * 255).round()),
                                             ),
                                           ),
                                         ),
@@ -985,15 +1049,18 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                     constraints:
                                         const BoxConstraints(maxHeight: 300),
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
+                                      color: theme.primaryColor
+                                          .withAlpha((0.1 * 255).round()),
                                       border: Border.all(
-                                        color: theme.colorScheme.outline,
+                                        color: Colors.grey[400]!
+                                            .withAlpha((0.5 * 255).round()),
                                         width: 1.5,
                                       ),
                                       borderRadius: BorderRadius.circular(12),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.05),
+                                          color: Colors.black
+                                              .withAlpha((0.05 * 255).round()),
                                           blurRadius: 5,
                                           offset: const Offset(0, 2),
                                         ),
@@ -1009,8 +1076,8 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                             Divider(
                                           height: 1,
                                           thickness: 1,
-                                          color:
-                                              theme.colorScheme.outlineVariant,
+                                          color: Colors.grey[400]!
+                                              .withAlpha((0.5 * 255).round()),
                                         ),
                                         itemBuilder: (context, index) {
                                           final product =
@@ -1023,8 +1090,9 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                                 _onProductSelected(product),
                                             child: Container(
                                               color: isSelected
-                                                  ? theme.colorScheme
-                                                      .tertiaryContainer
+                                                  ? theme.primaryColor
+                                                      .withAlpha(
+                                                          (0.15 * 255).round())
                                                   : null,
                                               padding:
                                                   const EdgeInsets.symmetric(
@@ -1035,16 +1103,19 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                                 children: [
                                                   CircleAvatar(
                                                     backgroundColor: isSelected
-                                                        ? theme.colorScheme
-                                                            .tertiary
-                                                        : theme.colorScheme
-                                                            .tertiary
-                                                            .withOpacity(0.2),
+                                                        ? theme.primaryColor
+                                                            .withAlpha(
+                                                                (0.15 * 255)
+                                                                    .round())
+                                                        : theme.primaryColor
+                                                            .withAlpha(
+                                                                (0.1 * 255)
+                                                                    .round()),
                                                     child: Icon(
                                                       Icons.medical_services,
                                                       color: isSelected
                                                           ? theme.colorScheme
-                                                              .onTertiary
+                                                              .onTertiaryContainer
                                                           : theme.colorScheme
                                                               .tertiary,
                                                     ),
@@ -1101,8 +1172,10 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                                   if (isSelected)
                                                     Icon(
                                                       Icons.check_circle,
-                                                      color: theme
-                                                          .colorScheme.tertiary,
+                                                      color: theme.primaryColor
+                                                          .withAlpha(
+                                                              (0.15 * 255)
+                                                                  .round()),
                                                     ),
                                                 ],
                                               ),
@@ -1142,14 +1215,100 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
                                         color: theme.colorScheme.primary,
                                       ),
                                     ),
+                                    const Text(
+                                      ' *',
+                                      style: TextStyle(
+                                        color: Colors.red,
+                                        fontSize: 18,
+                                      ),
+                                    ),
                                   ],
                                 ),
                                 const Divider(height: 30),
                                 AppTextField(
                                   controller: _noteController,
-                                  hintText: 'Tambahkan catatan (opsional)',
-                                  maxLines: 3,
+                                  hintText:
+                                      'Tulis catatan kunjungan (minimal $_minimumNoteCharacters karakter)',
+                                  maxLines: 5,
                                   keyboardType: TextInputType.multiline,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      if (value.trim().isEmpty) {
+                                        _noteError = 'Catatan wajib diisi';
+                                      } else if (value.trim().length <
+                                          _minimumNoteCharacters) {
+                                        _noteError =
+                                            'Catatan minimal $_minimumNoteCharacters karakter';
+                                      } else if (value.trim().length >
+                                          _maximumNoteCharacters) {
+                                        _noteError =
+                                            'Catatan maksimal $_maximumNoteCharacters karakter';
+                                      } else {
+                                        _noteError = null;
+                                      }
+                                    });
+                                  },
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Catatan wajib diisi';
+                                    }
+                                    if (value.trim().length <
+                                        _minimumNoteCharacters) {
+                                      return 'Catatan minimal $_minimumNoteCharacters karakter';
+                                    }
+                                    if (value.trim().length >
+                                        _maximumNoteCharacters) {
+                                      return 'Catatan maksimal $_maximumNoteCharacters karakter';
+                                    }
+                                    return null;
+                                  },
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  contentPadding: const EdgeInsets.all(16),
+                                  suffixIcon: _noteController.text.isNotEmpty
+                                      ? IconButton(
+                                          icon: const Icon(Icons.clear),
+                                          onPressed: () {
+                                            setState(() {
+                                              _noteController.clear();
+                                              _noteError =
+                                                  'Catatan wajib diisi';
+                                            });
+                                          },
+                                        )
+                                      : null,
+                                ),
+                                if (_noteError != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.error_outline,
+                                            color: Colors.red.shade700,
+                                            size: 16),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          _noteError!,
+                                          style: TextStyle(
+                                              color: Colors.red.shade700,
+                                              fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                // Tambahkan counter karakter
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    'Karakter: ${_noteController.text.length}/$_maximumNoteCharacters',
+                                    style: TextStyle(
+                                      color: _noteController.text.length >
+                                              _maximumNoteCharacters
+                                          ? Colors.red.shade700
+                                          : Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),

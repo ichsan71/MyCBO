@@ -28,11 +28,16 @@ abstract class ApprovalRemoteDataSource {
 
   /// Menolak permintaan
   /// Throws [ServerException] jika terjadi error pada server
-  Future<void> rejectRequest(int approvalId, String notes);
+  Future<void> rejectRequest(
+      String idSchedule, String idRejecter, String comment);
 
   /// Mengambil detail persetujuan
   /// Throws [ServerException] jika terjadi error pada server
   Future<ApprovalModel> getApprovalDetail(int approvalId);
+
+  /// Mengambil daftar rencana yang ditolak
+  /// Throws [ServerException] jika terjadi error pada server
+  Future<List<RejectedSchedule>> getRejectedSchedules(int userId);
 }
 
 class ApprovalRemoteDataSourceImpl implements ApprovalRemoteDataSource {
@@ -238,8 +243,45 @@ class ApprovalRemoteDataSourceImpl implements ApprovalRemoteDataSource {
   }
 
   @override
-  Future<void> rejectRequest(int approvalId, String notes) async {
-    await sendApproval(approvalId, approvalId, isApproved: false);
+  Future<void> rejectRequest(
+      String idSchedule, String idRejecter, String comment) async {
+    final token = sharedPreferences.getString(Constants.tokenKey);
+    if (token == null) {
+      throw UnauthorizedException(message: 'Token tidak ditemukan');
+    }
+
+    final uri = Uri.parse(
+        'https://dev-bco.businesscorporateofficer.com/api/reject-suddenly');
+
+    final request = http.MultipartRequest('POST', uri);
+    request.headers['Authorization'] = 'Bearer $token';
+    request.headers['Accept'] = 'application/json';
+
+    request.fields['id_schedule'] = idSchedule;
+    request.fields['id_rejecter'] = idRejecter;
+    request.fields['comment'] = comment;
+
+    Logger.info(_tag,
+        '[LOG] Akan mengirim request reject ke $uri dengan jadwal: $idSchedule, rejecter: $idRejecter, comment: $comment');
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    Logger.info(_tag, 'Status Code: \\${response.statusCode}');
+    Logger.info(_tag, 'Response Body: \\${response.body}');
+
+    if (response.statusCode == 200) {
+      Logger.info(
+          _tag, '[LOG] API reject berhasil di-hit dan response sukses.');
+    } else {
+      Logger.error(_tag,
+          '[LOG] API reject di-hit, namun response gagal: Status \\${response.statusCode}, Body: \\${response.body}');
+    }
+
+    if (response.statusCode != 200) {
+      throw ServerException(
+          message:
+              'Gagal melakukan reject: Status \\${response.statusCode}, Body: \\${response.body}');
+    }
   }
 
   @override
@@ -296,5 +338,97 @@ class ApprovalRemoteDataSourceImpl implements ApprovalRemoteDataSource {
       Logger.error(_tag, 'getApprovalDetail', e.toString());
       rethrow;
     }
+  }
+
+  @override
+  Future<List<RejectedSchedule>> getRejectedSchedules(int userId) async {
+    final token = sharedPreferences.getString(Constants.tokenKey);
+    final uri = Uri.parse(
+        'https://dev-bco.businesscorporateofficer.com/api/list-rejected-schedule/$userId');
+    final response = await client.get(uri, headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      final List<dynamic> data = jsonResponse['data']['data'];
+      return data.map((e) => RejectedSchedule.fromJson(e)).toList();
+    } else {
+      throw Exception('Failed to load rejected schedules');
+    }
+  }
+}
+
+class RejectedSchedule {
+  final int id;
+  final String draft;
+  final String namaUser;
+  final String tipeSchedule;
+  final String tujuan;
+  final String kodeRayon;
+  final String kodeRayonAktif;
+  final String tglVisit;
+  final String namaProduct;
+  final String note;
+  final String createdAt;
+  final String tglSubmitSchedule;
+  final int approved;
+  final String shift;
+  final String jenis;
+  final String namaTujuan;
+  final String statusCheckin;
+  final String namaDivisi;
+  final String namaSpesialis;
+  final String namaRejecter;
+  final dynamic historyReject;
+
+  RejectedSchedule({
+    required this.id,
+    required this.draft,
+    required this.namaUser,
+    required this.tipeSchedule,
+    required this.tujuan,
+    required this.kodeRayon,
+    required this.kodeRayonAktif,
+    required this.tglVisit,
+    required this.namaProduct,
+    required this.note,
+    required this.createdAt,
+    required this.tglSubmitSchedule,
+    required this.approved,
+    required this.shift,
+    required this.jenis,
+    required this.namaTujuan,
+    required this.statusCheckin,
+    required this.namaDivisi,
+    required this.namaSpesialis,
+    required this.namaRejecter,
+    required this.historyReject,
+  });
+
+  factory RejectedSchedule.fromJson(Map<String, dynamic> json) {
+    return RejectedSchedule(
+      id: json['id'],
+      draft: json['draft'],
+      namaUser: json['nama_user'],
+      tipeSchedule: json['tipe_schedule'],
+      tujuan: json['tujuan'],
+      kodeRayon: json['kode_rayon'],
+      kodeRayonAktif: json['kode_rayon_aktif'],
+      tglVisit: json['tgl_visit'],
+      namaProduct: json['nama_product'],
+      note: json['note'],
+      createdAt: json['created_at'],
+      tglSubmitSchedule: json['tgl_submit_schedule'],
+      approved: json['approved'],
+      shift: json['shift'],
+      jenis: json['jenis'],
+      namaTujuan: json['nama_tujuan'],
+      statusCheckin: json['status_checkin'],
+      namaDivisi: json['nama_divisi'],
+      namaSpesialis: json['nama_spesialis'],
+      namaRejecter: json['nama_rejecter'],
+      historyReject: json['history_reject'],
+    );
   }
 }

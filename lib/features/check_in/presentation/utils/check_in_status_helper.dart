@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../../../core/presentation/theme/app_theme.dart';
 
 class CheckInStatusHelper {
   static Color getStatusColor(String status) {
     final lowerStatus = status.toLowerCase().trim();
-    
+
     switch (lowerStatus) {
       case 'belum checkin':
-        return Colors.orange;
+        return AppTheme.warningColor;
       case 'check-in':
-        return Colors.green;
+        return AppTheme.successColor;
       case 'belum checkout':
-        return Colors.blue;
+        return AppTheme.primaryColor;
       case 'selesai':
         return Colors.purple;
       case 'batal':
-        return Colors.grey;
+        return AppTheme.errorColor;
       default:
         return Colors.grey;
     }
@@ -48,7 +49,7 @@ class CheckInStatusHelper {
       case 'belum checkin':
         return Icons.login_outlined;
       case 'check-in':
-        return Icons.check_circle;
+        return Icons.check_circle_outline;
       case 'belum checkout':
         return Icons.logout_outlined;
       case 'selesai':
@@ -59,4 +60,4 @@ class CheckInStatusHelper {
         return Icons.help_outline;
     }
   }
-} 
+}

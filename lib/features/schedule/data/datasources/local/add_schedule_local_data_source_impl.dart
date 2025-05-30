@@ -11,7 +11,7 @@ class AddScheduleLocalDataSourceImpl implements AddScheduleLocalDataSource {
   final AppDatabase database;
 
   // Konstanta untuk sinkronisasi
-  static const int SYNC_INTERVAL = 6 * 60 * 60 * 1000; // 6 jam dalam milidetik
+  static const int syncInterval = 6 * 60 * 60 * 1000; // 6 jam dalam milidetik
   static const String _tag = 'AddScheduleLocalDataSourceImpl';
 
   AddScheduleLocalDataSourceImpl({required this.database});
@@ -100,10 +100,13 @@ class AddScheduleLocalDataSourceImpl implements AddScheduleLocalDataSource {
       return productsData.map((json) {
         // Konversi dari format database ke model
         return ProductModel(
-          id: json['id'] as int,
+          idProduct: json['id'] as int,
+          namaProduct: json['name'] as String,
+          desc: '',
+          kode: '',
           nama: json['name'] as String,
           keterangan: '',
-          kodeRayon: '',
+          id: json['id'] as int,
         );
       }).toList();
     } catch (e) {
@@ -144,8 +147,8 @@ class AddScheduleLocalDataSourceImpl implements AddScheduleLocalDataSource {
       final List<Map<String, dynamic>> productsToInsert =
           products.map((product) {
         return {
-          'id': product.id,
-          'name': product.nama,
+          'id': product.idProduct,
+          'name': product.namaProduct,
           'division_id': 0, // Default value, sesuaikan jika ada data tambahan
           'specialist_id': 0, // Default value, sesuaikan jika ada data tambahan
         };
@@ -225,7 +228,7 @@ class AddScheduleLocalDataSourceImpl implements AddScheduleLocalDataSource {
     }
 
     // Cek apakah sudah lewat interval sinkronisasi atau belum ada data
-    return lastUpdate == 0 || diff > SYNC_INTERVAL;
+    return lastUpdate == 0 || diff > syncInterval;
   }
 
   @override
@@ -241,7 +244,7 @@ class AddScheduleLocalDataSourceImpl implements AddScheduleLocalDataSource {
     }
 
     // Cek apakah sudah lewat interval sinkronisasi atau belum ada data
-    return lastUpdate == 0 || diff > SYNC_INTERVAL;
+    return lastUpdate == 0 || diff > syncInterval;
   }
 
   @override
@@ -257,6 +260,6 @@ class AddScheduleLocalDataSourceImpl implements AddScheduleLocalDataSource {
     }
 
     // Cek apakah sudah lewat interval sinkronisasi atau belum ada data
-    return lastUpdate == 0 || diff > SYNC_INTERVAL;
+    return lastUpdate == 0 || diff > syncInterval;
   }
 }

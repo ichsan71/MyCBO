@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'schedule_model.dart';
+import '../../../../core/utils/logger.dart';
 
 class ScheduleResponseModel extends Equatable {
   final bool status;
@@ -12,19 +13,74 @@ class ScheduleResponseModel extends Equatable {
     required this.data,
   });
 
-  factory ScheduleResponseModel.fromJson(Map<String, dynamic> json) {
-    if (json.isEmpty) {
+  factory ScheduleResponseModel.fromJson(dynamic json) {
+    Logger.info('ScheduleResponseModel', 'Raw input type: ${json.runtimeType}');
+    Logger.info('ScheduleResponseModel', 'Raw input: $json');
+
+    if (json == null) {
+      Logger.warning('ScheduleResponseModel', 'Input is null');
       return ScheduleResponseModel(
         status: false,
         desc: 'Data kosong',
         data: ScheduleDataModel.empty(),
       );
     }
-
+    if (json is List) {
+      Logger.info(
+          'ScheduleResponseModel', 'Input is List with ${json.length} items');
+      // Jika API mengembalikan List langsung, bungkus ke dalam Map
+      if (json.isNotEmpty) {
+        Logger.info(
+            'ScheduleResponseModel', 'First item in data array: ${json.first}');
+      }
+      return ScheduleResponseModel(
+        status: true,
+        desc: '',
+        data: ScheduleDataModel.fromJson({'data': json}),
+      );
+    }
+    if (json is Map<String, dynamic>) {
+      Logger.info('ScheduleResponseModel',
+          'Input is Map with keys: ${json.keys.toList()}');
+      if (json.isEmpty) {
+        Logger.warning('ScheduleResponseModel', 'Input Map is empty');
+        return ScheduleResponseModel(
+          status: false,
+          desc: 'Data kosong',
+          data: ScheduleDataModel.empty(),
+        );
+      }
+      if (json['data'] is List && (json['data'] as List).isNotEmpty) {
+        Logger.info('ScheduleResponseModel',
+            'First item in data array: ${(json['data'] as List).first}');
+      } else if (json['data'] is Map<String, dynamic> &&
+          json['data']['data'] is List &&
+          (json['data']['data'] as List).isNotEmpty) {
+        Logger.info('ScheduleResponseModel',
+            'First item in nested data array: ${(json['data']['data'] as List).first}');
+      }
+      return ScheduleResponseModel(
+        status: json['status'] ?? false,
+        desc: json['desc'] ?? '',
+        data: ScheduleDataModel.fromJson(json['data'] ?? {}),
+      );
+    }
+    // Fallback jika tipe tidak dikenali
+    Logger.error('ScheduleResponseModel',
+        'Unrecognized input type: ${json.runtimeType}');
     return ScheduleResponseModel(
-      status: json['status'] ?? false,
-      desc: json['desc'] ?? '',
-      data: ScheduleDataModel.fromJson(json['data'] ?? {}),
+      status: false,
+      desc: 'Format data tidak dikenali',
+      data: ScheduleDataModel.empty(),
+    );
+  }
+
+  factory ScheduleResponseModel.fromList(List<dynamic> list) {
+    // Bungkus List ke dalam struktur Map yang diharapkan
+    return ScheduleResponseModel(
+      status: true,
+      desc: '',
+      data: ScheduleDataModel.fromJson({'data': list}),
     );
   }
 
@@ -81,13 +137,20 @@ class ScheduleDataModel extends Equatable {
     );
   }
 
-  factory ScheduleDataModel.fromJson(Map<String, dynamic> json) {
-    if (json.isEmpty) {
+  factory ScheduleDataModel.fromJson(dynamic json) {
+    if (json == null) {
+      return ScheduleDataModel.empty();
+    }
+    if (json is List) {
+      // Jika langsung List, bungkus ke dalam Map
+      return ScheduleDataModel.fromJson({'data': json});
+    }
+    if (json is! Map<String, dynamic> || json.isEmpty) {
       return ScheduleDataModel.empty();
     }
 
     List<ScheduleModel> schedules = [];
-    if (json['data'] != null) {
+    if (json['data'] != null && json['data'] is List) {
       try {
         schedules = List<ScheduleModel>.from(
           (json['data'] as List).map(
@@ -97,10 +160,13 @@ class ScheduleDataModel extends Equatable {
       } catch (e) {
         schedules = [];
       }
+    } else {
+      // Jika bukan List, kembalikan list kosong
+      schedules = [];
     }
 
     List<LinkModel> linksList = [];
-    if (json['links'] != null) {
+    if (json['links'] != null && json['links'] is List) {
       try {
         linksList = List<LinkModel>.from(
           (json['links'] as List).map(

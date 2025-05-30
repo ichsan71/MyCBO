@@ -84,13 +84,14 @@ class ApprovalBloc extends Bloc<ApprovalEvent, ApprovalState> {
     emit(ApprovalProcessing());
     final result = await rejectRequest(
       RejectRequestParams(
-        approvalId: event.approvalId,
-        notes: event.notes,
+        idSchedule: event.idSchedule,
+        idRejecter: event.idRejecter,
+        comment: event.comment,
       ),
     );
     result.fold(
       (failure) => emit(ApprovalError(message: failure.message)),
-      (_) => add(GetApprovalsEvent(userId: event.userId)),
+      (_) => emit(ApprovalInitial()),
     );
   }
 

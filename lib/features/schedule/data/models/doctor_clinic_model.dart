@@ -1,7 +1,77 @@
+import 'package:equatable/equatable.dart';
 import 'package:test_cbo/core/utils/logger.dart';
-import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic.dart';
 
-class DoctorClinicModel extends DoctorClinic {
+class DoctorClinicBase extends Equatable {
+  final int id;
+  final String nama;
+  final String spesialis;
+  final String? alamat;
+  final String? noTelp;
+  final String? email;
+  final String? tipeDokter;
+  final String? tipeKlinik;
+  final String? kodeRayon;
+
+  const DoctorClinicBase({
+    required this.id,
+    required this.nama,
+    required this.spesialis,
+    this.alamat,
+    this.noTelp,
+    this.email,
+    this.tipeDokter,
+    this.tipeKlinik,
+    this.kodeRayon,
+  });
+
+  factory DoctorClinicBase.fromJson(Map<String, dynamic> json) {
+    return DoctorClinicBase(
+      id: json['id'],
+      nama: json['nama'],
+      spesialis: json['spesialis'] ?? '',
+      alamat: json['alamat'],
+      noTelp: json['no_telp'],
+      email: json['email'],
+      tipeDokter: json['tipe_dokter'],
+      tipeKlinik: json['tipe_klinik'],
+      kodeRayon: json['kode_rayon'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nama': nama,
+      'spesialis': spesialis,
+      'alamat': alamat,
+      'no_telp': noTelp,
+      'email': email,
+      'tipe_dokter': tipeDokter,
+      'tipe_klinik': tipeKlinik,
+      'kode_rayon': kodeRayon,
+    };
+  }
+
+  @override
+  List<Object?> get props => [
+        id,
+        nama,
+        spesialis,
+        alamat,
+        noTelp,
+        email,
+        tipeDokter,
+        tipeKlinik,
+        kodeRayon
+      ];
+
+  @override
+  String toString() {
+    return 'DoctorClinicBase(id: $id, nama: $nama, spesialis: $spesialis)';
+  }
+}
+
+class DoctorClinicModel extends DoctorClinicBase {
   const DoctorClinicModel({
     required int id,
     required String nama,
@@ -137,19 +207,5 @@ class DoctorClinicModel extends DoctorClinic {
         kodeRayon: '',
       );
     }
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'nama': nama,
-      'alamat': alamat,
-      'no_telp': noTelp,
-      'email': email,
-      'spesialis': spesialis,
-      'tipe_dokter': tipeDokter,
-      'tipe_klinik': tipeKlinik,
-      'kode_rayon': kodeRayon,
-    };
   }
 }

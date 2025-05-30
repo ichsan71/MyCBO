@@ -71,18 +71,18 @@ class ApproveRequestEvent extends ApprovalEvent {
 }
 
 class RejectRequestEvent extends ApprovalEvent {
-  final int approvalId;
-  final int userId;
-  final String notes;
+  final String idSchedule;
+  final String idRejecter;
+  final String comment;
 
   const RejectRequestEvent({
-    required this.approvalId,
-    required this.userId,
-    required this.notes,
+    required this.idSchedule,
+    required this.idRejecter,
+    required this.comment,
   });
 
   @override
-  List<Object> get props => [approvalId, userId, notes];
+  List<Object> get props => [idSchedule, idRejecter, comment];
 }
 
 class SendApprovalEvent extends ApprovalEvent {

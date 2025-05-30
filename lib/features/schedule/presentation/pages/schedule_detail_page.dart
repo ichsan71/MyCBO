@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
@@ -20,7 +19,6 @@ import '../../../auth/presentation/bloc/auth_state.dart';
 import '../widgets/checkin_form.dart';
 import '../widgets/checkout_form.dart';
 import '../../../../core/presentation/widgets/shimmer_schedule_detail_loading.dart';
-import '../../../../core/presentation/widgets/shimmer_form_loading.dart';
 
 class ScheduleDetailPage extends StatelessWidget {
   final Schedule schedule;
@@ -77,27 +75,77 @@ class ScheduleDetailPage extends StatelessWidget {
 
   Future<void> _handleCheckin(
       BuildContext context, CheckinRequestModel request) async {
-    // Tampilkan loading dialog
+    // Tampilkan loading dialog dengan tampilan yang lebih menarik
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Dialog(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+          ),
+          elevation: 8,
+          child: Container(
+            padding: const EdgeInsets.all(24.0),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20.0),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white,
+                  Colors.blue.shade50,
+                ],
+              ),
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(
-                  height: 100,
-                  child: ShimmerFormLoading(
-                    isDetailed: false,
-                    hasImage: false,
+                Container(
+                  height: 80,
+                  width: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: SizedBox(
+                      width: 50,
+                      height: 50,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).primaryColor,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 20),
-                Text('Sedang mengirim data check-in...',
-                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 24),
+                Text(
+                  "Memproses Check-in",
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "Mohon tunggu sebentar, kami sedang memproses data Anda",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                LinearProgressIndicator(
+                  backgroundColor: Colors.grey[200],
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).primaryColor,
+                  ),
+                ),
               ],
             ),
           ),
@@ -232,14 +280,6 @@ class ScheduleDetailPage extends StatelessWidget {
 
           // Tutup bottom sheet
           Navigator.pop(context);
-
-          // Gunakan scheduler untuk menunggu frame selesai sebelum navigasi kedua
-          SchedulerBinding.instance.addPostFrameCallback((_) {
-            if (context.mounted) {
-              // Kembali ke halaman sebelumnya
-              Navigator.of(context).pop();
-            }
-          });
         }
       } else {
         if (context.mounted) {
@@ -296,27 +336,77 @@ class ScheduleDetailPage extends StatelessWidget {
 
   Future<void> _handleCheckout(
       BuildContext context, CheckoutRequestModel request) async {
-    // Tampilkan loading dialog
+    // Tampilkan loading dialog dengan tampilan yang lebih menarik
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Dialog(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+          ),
+          elevation: 8,
+          child: Container(
+            padding: const EdgeInsets.all(24.0),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20.0),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white,
+                  Colors.green.shade50,
+                ],
+              ),
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(
-                  height: 100,
-                  child: ShimmerFormLoading(
-                    isDetailed: false,
-                    hasImage: false,
+                Container(
+                  height: 80,
+                  width: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 50,
+                      height: 50,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Colors.green,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 20),
-                Text('Sedang mengirim data check-out...',
-                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 24),
+                Text(
+                  "Memproses Check-out",
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.green[700],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "Mohon tunggu sebentar, kami sedang memproses data Anda",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                LinearProgressIndicator(
+                  backgroundColor: Colors.grey[200],
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    Colors.green,
+                  ),
+                ),
               ],
             ),
           ),
@@ -454,14 +544,6 @@ class ScheduleDetailPage extends StatelessWidget {
           // Tutup bottom sheet dengan pengecekan aman
           if (Navigator.canPop(context)) {
             Navigator.pop(context);
-
-            // Gunakan scheduler untuk menunggu frame selesai sebelum navigasi kedua
-            SchedulerBinding.instance.addPostFrameCallback((_) {
-              if (context.mounted && Navigator.canPop(context)) {
-                // Kembali ke halaman sebelumnya
-                Navigator.of(context).pop();
-              }
-            });
           }
         }
       } else {
@@ -523,24 +605,46 @@ class ScheduleDetailPage extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (bottomSheetContext) => BlocProvider<ScheduleBloc>.value(
-        value: scheduleBloc,
-        child: Builder(
-          builder: (builderContext) => Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(bottomSheetContext).viewInsets.bottom,
-            ),
-            child: SingleChildScrollView(
-              child: CheckinForm(
-                scheduleId: schedule.id,
-                userId: userId,
-                onSubmit: (request) => _handleCheckin(builderContext, request),
+      enableDrag: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (bottomSheetContext) => SafeArea(
+        child: BlocProvider<ScheduleBloc>.value(
+          value: scheduleBloc,
+          child: Builder(
+            builder: (builderContext) => Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(bottomSheetContext).viewInsets.bottom,
+              ),
+              child: SingleChildScrollView(
+                child: CheckinForm(
+                  scheduleId: schedule.id,
+                  userId: userId,
+                  onSubmit: (request) =>
+                      _handleCheckin(builderContext, request),
+                ),
               ),
             ),
           ),
         ),
       ),
-    );
+    ).then((_) {
+      // Logging saat bottom sheet ditutup
+      Logger.info('ScheduleDetailPage', 'Check-in form closed');
+    }).catchError((error) {
+      // Menangkap error yang terjadi
+      Logger.error('ScheduleDetailPage', 'Error on check-in form: $error');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Terjadi kesalahan: ${error.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
   }
 
   void _showCheckoutForm(BuildContext context) {
@@ -549,24 +653,46 @@ class ScheduleDetailPage extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (bottomSheetContext) => BlocProvider<ScheduleBloc>.value(
-        value: scheduleBloc,
-        child: Builder(
-          builder: (builderContext) => Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(bottomSheetContext).viewInsets.bottom,
-            ),
-            child: SingleChildScrollView(
-              child: CheckoutForm(
-                scheduleId: schedule.id,
-                userId: userId,
-                onSubmit: (request) => _handleCheckout(builderContext, request),
+      enableDrag: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (bottomSheetContext) => SafeArea(
+        child: BlocProvider<ScheduleBloc>.value(
+          value: scheduleBloc,
+          child: Builder(
+            builder: (builderContext) => Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(bottomSheetContext).viewInsets.bottom,
+              ),
+              child: SingleChildScrollView(
+                child: CheckoutForm(
+                  scheduleId: schedule.id,
+                  userId: userId,
+                  onSubmit: (request) =>
+                      _handleCheckout(builderContext, request),
+                ),
               ),
             ),
           ),
         ),
       ),
-    );
+    ).then((_) {
+      // Logging saat bottom sheet ditutup
+      Logger.info('ScheduleDetailPage', 'Check-out form closed');
+    }).catchError((error) {
+      // Menangkap error yang terjadi
+      Logger.error('ScheduleDetailPage', 'Error on check-out form: $error');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Terjadi kesalahan: ${error.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
   }
 
   @override
@@ -579,14 +705,14 @@ class ScheduleDetailPage extends StatelessWidget {
         'Status Check-in (lowercase): ${schedule.statusCheckin.toLowerCase()}');
     Logger.info('ScheduleDetailPage', 'Draft: ${schedule.draft}');
     Logger.info('ScheduleDetailPage',
-        'Draft (lowercase): ${schedule.draft.toLowerCase()}');
+        'Draft (lowercase): ${schedule.draft?.toLowerCase() ?? ''}');
     Logger.info('ScheduleDetailPage',
-        'Draft (lowercase & trim): ${schedule.draft.toLowerCase().trim()}');
+        'Draft (lowercase & trim): ${schedule.draft?.toLowerCase().trim() ?? ''}');
     Logger.info('ScheduleDetailPage', 'Approved: ${schedule.approved}');
     Logger.info('ScheduleDetailPage', '================');
 
     final theme = Theme.of(context);
-    final lowerDraft = schedule.draft.toLowerCase().trim();
+    final lowerDraft = schedule.draft?.toLowerCase().trim() ?? '';
     final lowerStatus = schedule.statusCheckin.toLowerCase().trim();
 
     return MultiBlocProvider(
@@ -621,7 +747,8 @@ class ScheduleDetailPage extends StatelessWidget {
                     children: [
                       _buildDetailRow(
                         label: 'Tipe Schedule',
-                        value: schedule.tipeSchedule,
+                        value:
+                            schedule.namaTipeSchedule ?? schedule.tipeSchedule,
                         icon: Icons.label_outline,
                       ),
                       const SizedBox(height: 12),
@@ -633,7 +760,7 @@ class ScheduleDetailPage extends StatelessWidget {
                       const SizedBox(height: 12),
                       _buildDetailRow(
                         label: 'Shift',
-                        value: schedule.shift,
+                        value: schedule.shift ?? '',
                         icon: Icons.access_time,
                       ),
                       const SizedBox(height: 12),
@@ -641,7 +768,7 @@ class ScheduleDetailPage extends StatelessWidget {
                         label: 'Status',
                         value: schedule.statusCheckin,
                         status: schedule.statusCheckin,
-                        draft: schedule.draft,
+                        draft: schedule.draft ?? '',
                         approved: schedule.approved,
                         icon: Icons.info_outline,
                       ),
@@ -666,6 +793,15 @@ class ScheduleDetailPage extends StatelessWidget {
                         value: schedule.namaTujuan,
                         icon: Icons.account_circle_outlined,
                       ),
+                      const SizedBox(height: 12),
+                      if (schedule.namaSpesialis?.isNotEmpty == true) ...[
+                        const SizedBox(height: 12),
+                        _buildDetailRow(
+                          label: 'Spesialis',
+                          value: schedule.namaSpesialis ?? '-',
+                          icon: Icons.local_hospital_outlined,
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -678,23 +814,15 @@ class ScheduleDetailPage extends StatelessWidget {
                     children: [
                       _buildDetailRow(
                         label: 'Nama Produk',
-                        value: schedule.namaProduct,
+                        value: schedule.namaProduct ?? '-',
                         icon: Icons.medication_outlined,
                       ),
                       const SizedBox(height: 12),
                       _buildDetailRow(
                         label: 'Divisi',
-                        value: schedule.namaDivisi,
+                        value: schedule.namaDivisi ?? '-',
                         icon: Icons.category_outlined,
                       ),
-                      if (schedule.namaSpesialis.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        _buildDetailRow(
-                          label: 'Spesialis',
-                          value: schedule.namaSpesialis,
-                          icon: Icons.local_hospital_outlined,
-                        ),
-                      ],
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -707,14 +835,14 @@ class ScheduleDetailPage extends StatelessWidget {
                     children: [
                       _buildDetailRow(
                         label: 'Catatan',
-                        value: schedule.note.isNotEmpty
-                            ? schedule.note
-                            : 'Tidak ada catatan',
+                        value: schedule.note?.isNotEmpty == true
+                            ? schedule.note ?? ''
+                            : '',
                         icon: Icons.comment_outlined,
                       ),
                       const SizedBox(height: 12),
                       _buildDetailRowWithStatus(
-                        label: 'Status Approval',
+                        label: 'Status Jadwal',
                         value: schedule.approved == 1
                             ? 'Disetujui'
                             : lowerDraft.contains('rejected')
@@ -725,7 +853,7 @@ class ScheduleDetailPage extends StatelessWidget {
                             : lowerDraft.contains('rejected')
                                 ? 'rejected'
                                 : 'pending',
-                        draft: schedule.draft,
+                        draft: schedule.draft ?? '',
                         approved: schedule.approved,
                         icon: Icons.verified_outlined,
                       ),
@@ -733,9 +861,20 @@ class ScheduleDetailPage extends StatelessWidget {
                           schedule.namaApprover!.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         _buildDetailRow(
-                          label: 'Nama Approver',
+                          label: 'Approver Jadwal',
                           value: schedule.namaApprover!,
                           icon: Icons.person_outlined,
+                        ),
+                      ],
+                      if (schedule.approved == 1) ...[
+                        const SizedBox(height: 12),
+                        _buildDetailRow(
+                          label: 'Approver Realisasi',
+                          value: schedule.realisasiApprove != null &&
+                                  schedule.realisasiApprove! > 0
+                              ? schedule.namaApprover ?? 'Tidak diketahui'
+                              : 'Belum disetujui',
+                          icon: Icons.approval_outlined,
                         ),
                       ],
                     ],
@@ -749,13 +888,10 @@ class ScheduleDetailPage extends StatelessWidget {
                 'ScheduleDetailPage', '=== BOTTOM NAVIGATION STATUS ===');
             Logger.info(
                 'ScheduleDetailPage', 'Draft Raw Value: "${schedule.draft}"');
-            Logger.info(
-                'ScheduleDetailPage', 'Draft Length: ${schedule.draft.length}');
+            Logger.info('ScheduleDetailPage',
+                'Draft Length: ${schedule.draft?.length ?? 0}');
             Logger.info('ScheduleDetailPage', 'Draft Characters:');
-            for (var i = 0; i < schedule.draft.length; i++) {
-              Logger.info('ScheduleDetailPage',
-                  'Char at $i: "${schedule.draft[i]}" (${schedule.draft.codeUnitAt(i)})');
-            }
+
             Logger.info('ScheduleDetailPage', 'Lower Draft: "$lowerDraft"');
             Logger.info('ScheduleDetailPage',
                 'Lower Draft Length: ${lowerDraft.length}');
@@ -770,49 +906,107 @@ class ScheduleDetailPage extends StatelessWidget {
                 'ScheduleDetailPage', '================================');
 
             // Tampilkan bottom bar dengan konten yang sesuai
+            final DateTime? visitDate = schedule.tglVisit.isNotEmpty
+                ? DateTime.tryParse(schedule.tglVisit)
+                : null;
+            final DateTime now = DateTime.now();
+            final bool isToday = visitDate != null &&
+                visitDate.year == now.year &&
+                visitDate.month == now.month &&
+                visitDate.day == now.day;
             return Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (lowerDraft.contains('rejected'))
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.red.shade300,
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.cancel_outlined,
-                            color: Colors.red.shade700,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Jadwal ditolak oleh supervisor',
-                              style: TextStyle(
-                                color: Colors.red.shade700,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.red.shade300,
+                              width: 1,
                             ),
                           ),
-                        ],
-                      ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.cancel_outlined,
+                                color: Colors.red.shade700,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Jadwal ditolak oleh approver',
+                                  style: TextStyle(
+                                    color: Colors.red.shade700,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            // TODO: Navigate to Edit Schedule page
+                            Logger.info('ScheduleDetailPage',
+                                'Edit Schedule button pressed for ID: ${schedule.id}');
+                            // Example Navigation (replace with actual route)
+                            Navigator.pushNamed(
+                              context,
+                              '/edit_schedule',
+                              arguments:
+                                  schedule.id, // Pass schedule ID as argument
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: Theme.of(context)
+                                .colorScheme
+                                .secondary, // Or a suitable color
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.edit,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Edit Jadwal',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     )
                   else if (lowerStatus == 'belum checkin' &&
                       schedule.approved == 1)
                     ElevatedButton(
-                      onPressed: () => _showCheckinForm(context),
+                      onPressed:
+                          isToday ? () => _showCheckinForm(context) : null,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         backgroundColor: theme.colorScheme.primary,
@@ -821,7 +1015,7 @@ class ScheduleDetailPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
@@ -829,10 +1023,12 @@ class ScheduleDetailPage extends StatelessWidget {
                             color: Colors.white,
                             size: 24,
                           ),
-                          SizedBox(width: 12),
+                          const SizedBox(width: 12),
                           Text(
-                            'Check-in',
-                            style: TextStyle(
+                            isToday
+                                ? 'Check-in'
+                                : 'Check-in hanya untuk hari ini',
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -877,13 +1073,15 @@ class ScheduleDetailPage extends StatelessWidget {
                   else if (lowerStatus == 'check-in' ||
                       lowerStatus == 'belum checkout')
                     ElevatedButton(
-                      onPressed: () {
-                        Logger.info('ScheduleDetailPage',
-                            'Status saat ini: ${schedule.statusCheckin}');
-                        Logger.info(
-                            'ScheduleDetailPage', 'Tombol check-out ditekan');
-                        _showCheckoutForm(context);
-                      },
+                      onPressed: isToday
+                          ? () {
+                              Logger.info('ScheduleDetailPage',
+                                  'Status saat ini: \\${schedule.statusCheckin}');
+                              Logger.info('ScheduleDetailPage',
+                                  'Tombol check-out ditekan');
+                              _showCheckoutForm(context);
+                            }
+                          : null,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         backgroundColor: theme.colorScheme.secondary,
@@ -892,7 +1090,7 @@ class ScheduleDetailPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
@@ -900,10 +1098,12 @@ class ScheduleDetailPage extends StatelessWidget {
                             color: Colors.white,
                             size: 24,
                           ),
-                          SizedBox(width: 12),
+                          const SizedBox(width: 12),
                           Text(
-                            'Check-out',
-                            style: TextStyle(
+                            isToday
+                                ? 'Check-out'
+                                : 'Check-out hanya untuk hari ini',
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,

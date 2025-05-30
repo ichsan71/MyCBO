@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:test_cbo/core/utils/logger.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/presentation/widgets/app_bar_widget.dart';
 import '../../../../core/presentation/widgets/app_button.dart';
 import '../../../../core/presentation/widgets/app_card.dart';
 import '../../../../core/presentation/theme/app_theme.dart';
 import '../../../../core/utils/constants.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../domain/entities/realisasi_visit.dart';
 import '../bloc/realisasi_visit_bloc.dart';
 
@@ -53,10 +57,11 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
   bool _isProcessing = false;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  final _animatedListKey = GlobalKey<AnimatedListState>();
+  // final _animatedListKey = GlobalKey<AnimatedListState>();
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchFocused = false;
   String _selectedFilter = 'Semua';
+  bool _selectAll = false;
 
   // Gunakan metode untuk mendapatkan filter options
   List<Map<String, dynamic>> get filterOptions => [
@@ -145,98 +150,234 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                   children: [
                     _buildHeaderSection(),
                     const SizedBox(height: 24),
-                    if (_hasPendingSchedules()) ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: AppTheme.borderRadiusMedium,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+
+                    // Search & Filter Card
+                    AppCard(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.search,
+                                size: 18,
+                                color: AppTheme.primaryColor,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Cari & Filter',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.primaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          _buildSearchBar(),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Section title with counter
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Colors.grey.shade200,
+                            width: 1.5,
+                          ),
                         ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryColor.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.list_alt,
+                                  size: 16,
+                                  color: AppTheme.primaryColor,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Daftar Jadwal',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              '${widget.realisasiVisit.details.length} Jadwal',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Bulk Approval Card - redesigned
+                    if (_hasPendingSchedules()) ...[
+                      AppCard(
+                        padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Icon(Icons.batch_prediction,
-                                    size: 16, color: AppTheme.primaryColor),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Persetujuan Massal',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.approval,
+                                      size: 20,
+                                      color: AppTheme.successColor,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      'Persetujuan Massal',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppTheme.successColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Flexible(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade100,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: Colors.grey.shade300,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      '${_selectedScheduleIds.length} terpilih',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
                                 ),
                               ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Pilih jadwal untuk diproses:',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
                             ),
                             const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: AppButton(
-                                    text:
-                                        'Setujui (${_selectedScheduleIds.length})',
-                                    onPressed: _selectedScheduleIds.isNotEmpty
-                                        ? () => _showApprovalDialog(true)
-                                        : null,
-                                    type: AppButtonType.success,
-                                    isFullWidth: true,
-                                    prefixIcon: const Icon(Icons.check_circle,
-                                        size: 14, color: Colors.white),
-                                    fontSize: 12,
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 8, horizontal: 8),
+                            const Divider(height: 1),
+                            const SizedBox(height: 12),
+                            if (widget.realisasiVisit.details.any((schedule) =>
+                                _canApproveSchedule(schedule))) ...[
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      'Pilih semua jadwal yang tersedia',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: AppButton(
-                                    text:
-                                        'Tolak (${_selectedScheduleIds.length})',
-                                    onPressed: _selectedScheduleIds.isNotEmpty
-                                        ? () => _showApprovalDialog(false)
-                                        : null,
-                                    type: AppButtonType.error,
-                                    isFullWidth: true,
-                                    prefixIcon: const Icon(Icons.cancel,
-                                        size: 14, color: Colors.white),
-                                    fontSize: 12,
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 8, horizontal: 8),
+                                  Column(
+                                    children: [
+                                      Text(
+                                        'Pilih Semua',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: AppTheme.primaryColor,
+                                        ),
+                                      ),
+                                      Checkbox(
+                                        value: _selectAll,
+                                        onChanged: (bool? value) {
+                                          setState(() {
+                                            _selectAll = value ?? false;
+                                            if (_selectAll) {
+                                              _selectedScheduleIds.clear();
+                                              _selectedScheduleIds.addAll(
+                                                widget.realisasiVisit.details
+                                                    .where((schedule) =>
+                                                        _canApproveSchedule(
+                                                            schedule))
+                                                    .map((schedule) =>
+                                                        schedule.id.toString()),
+                                              );
+                                            } else {
+                                              _selectedScheduleIds.clear();
+                                            }
+                                          });
+                                        },
+                                        activeColor: AppTheme.primaryColor,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                            AppButton(
+                              text:
+                                  'Setujui Jadwal Terpilih (${_selectedScheduleIds.length})',
+                              onPressed: _selectedScheduleIds.isNotEmpty
+                                  ? () => _showApprovalDialog(true)
+                                  : null,
+                              type: AppButtonType.success,
+                              isFullWidth: true,
+                              prefixIcon: const Icon(Icons.check_circle,
+                                  size: 16, color: Colors.white),
+                              fontSize: 14,
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 12, horizontal: 16),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 24),
                     ],
-                    Text(
-                      'Daftar Jadwal',
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildSearchBar(),
-                    const SizedBox(height: 16),
+
                     _buildScheduleList(),
                     const SizedBox(height: 80), // Padding untuk bottom buttons
                   ],
@@ -313,14 +454,14 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
         Text(
           '$label: ',
           style: GoogleFonts.poppins(
-            fontSize: 12,
+            fontSize: 14,
             color: Colors.grey[600],
           ),
         ),
         Text(
           value,
           style: GoogleFonts.poppins(
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -335,7 +476,7 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color:
                   _isSearchFocused ? AppTheme.primaryColor : Colors.grey[300]!,
@@ -392,7 +533,7 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
             },
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -406,32 +547,41 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                       _selectedFilter = filter['name'];
                     });
                   },
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                   child: Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: isSelected ? AppTheme.primaryColor : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isSelected
                             ? AppTheme.primaryColor
                             : Colors.grey[300]!,
                       ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: AppTheme.primaryColor.withOpacity(0.3),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           filter['icon'],
-                          size: 14,
+                          size: 16,
                           color: isSelected ? Colors.white : Colors.grey[600],
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 6),
                         Text(
                           filter['name'],
                           style: GoogleFonts.poppins(
-                            fontSize: 12,
+                            fontSize: 14,
                             fontWeight:
                                 isSelected ? FontWeight.w600 : FontWeight.w400,
                             color: isSelected ? Colors.white : Colors.grey[600],
@@ -446,7 +596,7 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
           ),
         ),
         if (_searchQuery.isNotEmpty) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           _buildSearchResultInfo(),
         ],
       ],
@@ -479,16 +629,16 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
           Text(
             'Ditemukan $totalCount jadwal',
             style: GoogleFonts.poppins(
-              fontSize: 12,
+              fontSize: 14,
               color: Colors.blue[700],
               fontWeight: FontWeight.w500,
             ),
           ),
           if (_selectedFilter != 'Semua') ...[
             Text(
-              ' (Filter: ${_selectedFilter})',
+              ' (Filter: $_selectedFilter)',
               style: GoogleFonts.poppins(
-                fontSize: 12,
+                fontSize: 14,
                 color: Colors.blue[700],
                 fontWeight: FontWeight.w400,
               ),
@@ -520,25 +670,33 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(height: 20),
-              Icon(Icons.search_off, size: 60, color: Colors.grey[300]),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  shape: BoxShape.circle,
+                ),
+                child:
+                    Icon(Icons.search_off, size: 60, color: Colors.grey[400]),
+              ),
               const SizedBox(height: 16),
               Text(
                 'Tidak ada jadwal yang sesuai',
                 style: GoogleFonts.poppins(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.w500,
-                  color: Colors.grey[600],
+                  color: Colors.grey[700],
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Coba kata kunci pencarian lain',
                 style: GoogleFonts.poppins(
-                  fontSize: 14,
+                  fontSize: 16,
                   color: Colors.grey[500],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               AppButton(
                 text: 'Hapus Pencarian',
                 onPressed: () {
@@ -548,10 +706,10 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                   });
                 },
                 type: AppButtonType.outline,
-                prefixIcon: const Icon(Icons.refresh, size: 14),
+                prefixIcon: const Icon(Icons.refresh, size: 16),
                 fontSize: 14,
                 padding:
-                    const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
               ),
             ],
           ),
@@ -567,25 +725,35 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (pendingSchedules.isNotEmpty) ...[
-            Row(
-              children: [
-                Icon(
-                  Icons.pending_actions,
-                  size: 16,
-                  color: AppTheme.warningColor,
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppTheme.warningColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppTheme.warningColor.withOpacity(0.3),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  'Menunggu Persetujuan (${pendingSchedules.length})',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.pending_actions,
+                    size: 16,
                     color: AppTheme.warningColor,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Text(
+                    'Menunggu Persetujuan (${pendingSchedules.length})',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.warningColor,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -605,8 +773,15 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                       setState(() {
                         if (isSelected) {
                           _selectedScheduleIds.remove(schedule.id.toString());
+                          _selectAll = false;
                         } else {
                           _selectedScheduleIds.add(schedule.id.toString());
+                          final approvableSchedules = pendingSchedules
+                              .where((s) => _canApproveSchedule(s))
+                              .map((s) => s.id.toString())
+                              .toList();
+                          _selectAll = approvableSchedules
+                              .every((id) => _selectedScheduleIds.contains(id));
                         }
                       });
                     }
@@ -617,25 +792,35 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
             const SizedBox(height: 24),
           ],
           if (approvedSchedules.isNotEmpty) ...[
-            Row(
-              children: [
-                Icon(
-                  Icons.check_circle_outline,
-                  size: 16,
-                  color: Colors.grey[700],
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppTheme.successColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppTheme.successColor.withOpacity(0.3),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  'Sudah Diproses (${approvedSchedules.length})',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[700],
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.check_circle_outline,
+                    size: 16,
+                    color: AppTheme.successColor,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Text(
+                    'Sudah Diproses (${approvedSchedules.length})',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.successColor,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -727,9 +912,11 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                                     const SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
-                                        schedule.tujuanData.namaDokter,
+                                        schedule.tujuanData.namaDokter.isEmpty
+                                            ? 'Dokter (ID: ${schedule.idTujuan})'
+                                            : schedule.tujuanData.namaDokter,
                                         style: GoogleFonts.poppins(
-                                          fontSize: 14,
+                                          fontSize: 16,
                                           fontWeight: FontWeight.w600,
                                         ),
                                         maxLines: 1,
@@ -743,11 +930,15 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                                     Icon(Icons.event,
                                         size: 14, color: Colors.grey[600]),
                                     const SizedBox(width: 4),
-                                    Text(
-                                      'Tanggal: $formattedDate',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
+                                    Expanded(
+                                      child: Text(
+                                        'Tanggal: $formattedDate',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 14,
+                                          color: Colors.grey[600],
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                   ],
@@ -838,29 +1029,53 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: schedule.productData.map((product) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 3,
+                if (schedule.productData.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                    child: Text(
+                      "Tidak ada produk",
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey[500],
                       ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        product.namaProduct,
-                        style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          color: AppTheme.primaryColor,
+                    ),
+                  )
+                else
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: schedule.productData.map((product) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 3,
                         ),
-                      ),
-                    );
-                  }).toList(),
-                ),
+                        constraints: BoxConstraints(
+                          maxWidth: MediaQuery.of(context).size.width * 0.4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          product.namaProduct,
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            color: AppTheme.primaryColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 if (schedule.note.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Row(
@@ -877,76 +1092,47 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    schedule.note,
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: Colors.grey[700],
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                    child: Text(
+                      schedule.note,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey[700],
+                      ),
+                      textAlign: TextAlign.justify,
                     ),
                   ),
                 ],
                 if (schedule.realisasiVisitApproved == null) ...[
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Tooltip(
-                          message: canApprove
-                              ? ''
-                              : 'Sudah melewati batas waktu persetujuan',
-                          child: AppButton(
-                            text: 'Setujui',
-                            onPressed: canApprove
-                                ? () {
-                                    _approveSchedule([schedule.id.toString()]);
-                                  }
-                                : null,
-                            type: AppButtonType.success,
-                            isFullWidth: true,
-                            prefixIcon: const Icon(Icons.check_circle,
-                                size: 14, color: Colors.white),
-                            fontSize: 12,
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 8, horizontal: 8),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Tooltip(
-                          message: canApprove
-                              ? ''
-                              : 'Sudah melewati batas waktu persetujuan',
-                          child: AppButton(
-                            text: 'Tolak',
-                            onPressed: canApprove
-                                ? () {
-                                    _rejectSchedule([schedule.id.toString()]);
-                                  }
-                                : null,
-                            type: AppButtonType.error,
-                            isFullWidth: true,
-                            prefixIcon: Icon(Icons.cancel,
-                                size: 14, color: Colors.white),
-                            fontSize: 12,
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 8, horizontal: 8),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                   if (!canApprove) ...[
-                    const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.amber.shade50,
+                        color: schedule.statusTerrealisasi.toLowerCase() ==
+                                'not done'
+                            ? Colors.red.shade50
+                            : Colors.amber.shade50,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.amber),
+                        border: Border.all(
+                            color: schedule.statusTerrealisasi.toLowerCase() ==
+                                    'not done'
+                                ? Colors.red
+                                : Colors.amber),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.amber.withOpacity(0.2),
+                            color: (schedule.statusTerrealisasi.toLowerCase() ==
+                                        'not done'
+                                    ? Colors.red
+                                    : Colors.amber)
+                                .withOpacity(0.2),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -957,11 +1143,25 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                           Container(
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: Colors.amber.withOpacity(0.2),
+                              color:
+                                  (schedule.statusTerrealisasi.toLowerCase() ==
+                                              'not done'
+                                          ? Colors.red
+                                          : Colors.amber)
+                                      .withOpacity(0.2),
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(Icons.warning_amber_rounded,
-                                color: Colors.amber[700], size: 16),
+                            child: Icon(
+                                schedule.statusTerrealisasi.toLowerCase() ==
+                                        'not done'
+                                    ? Icons.error_outline
+                                    : Icons.warning_amber_rounded,
+                                color:
+                                    schedule.statusTerrealisasi.toLowerCase() ==
+                                            'not done'
+                                        ? Colors.red[700]
+                                        : Colors.amber[700],
+                                size: 16),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -969,18 +1169,32 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Batas waktu berakhir',
+                                  schedule.statusTerrealisasi.toLowerCase() ==
+                                          'not done'
+                                      ? 'Jadwal tidak dapat disetujui'
+                                      : 'Batas waktu berakhir',
                                   style: GoogleFonts.poppins(
-                                    fontSize: 12,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.amber[900],
+                                    color: schedule.statusTerrealisasi
+                                                .toLowerCase() ==
+                                            'not done'
+                                        ? Colors.red[900]
+                                        : Colors.amber[900],
                                   ),
                                 ),
                                 Text(
-                                  'Maksimal H+1 jam 12 siang',
+                                  schedule.statusTerrealisasi.toLowerCase() ==
+                                          'not done'
+                                      ? 'Status kunjungan tidak selesai'
+                                      : 'Maksimal H+1 jam 12 siang',
                                   style: GoogleFonts.poppins(
-                                    fontSize: 10,
-                                    color: Colors.amber[900],
+                                    fontSize: 12,
+                                    color: schedule.statusTerrealisasi
+                                                .toLowerCase() ==
+                                            'not done'
+                                        ? Colors.red[900]
+                                        : Colors.amber[900],
                                   ),
                                 ),
                               ],
@@ -1007,9 +1221,13 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
       child: Container(
         width: double.infinity,
         height: 160,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.3,
+        ),
         decoration: BoxDecoration(
           borderRadius: AppTheme.borderRadiusSmall,
           border: Border.all(color: Colors.grey[300]!),
+          color: Colors.white,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
@@ -1022,59 +1240,64 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
           children: [
             ClipRRect(
               borderRadius: AppTheme.borderRadiusSmall,
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
+                fit: BoxFit.contain,
                 width: double.infinity,
                 height: double.infinity,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
-                          : null,
-                    ),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey[200],
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.error_outline,
-                              size: 30, color: Colors.red),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Gagal memuat gambar',
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              color: Colors.grey[700],
-                            ),
+                placeholder: (context, url) => Center(
+                  child: CircularProgressIndicator(
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: Colors.grey[100],
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error_outline,
+                            size: 30, color: AppTheme.errorColor),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Gagal memuat gambar',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.grey[700],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
             ),
             Positioned(
               right: 8,
               bottom: 8,
               child: Container(
-                padding: const EdgeInsets.all(4),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Icon(
-                  Icons.zoom_in,
-                  color: Colors.white,
-                  size: 16,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.zoom_in,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Perbesar',
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -1098,6 +1321,7 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
               style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontWeight: FontWeight.w500,
+                fontSize: 18,
               ),
             ),
           ),
@@ -1109,38 +1333,27 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
               maxScale: 4,
               child: Hero(
                 tag: imageUrl,
-                child: Image.network(
-                  imageUrl,
+                child: CachedNetworkImage(
+                  imageUrl: imageUrl,
                   fit: BoxFit.contain,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Center(
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                            : null,
-                      ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline,
-                            size: 60, color: Colors.red),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Gagal memuat gambar',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
+                  placeholder: (context, url) => const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  ),
+                  errorWidget: (context, url, error) => Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline,
+                          size: 60, color: Colors.red),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Gagal memuat gambar',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          color: Colors.white,
                         ),
-                      ],
-                    );
-                  },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1160,7 +1373,7 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
         Text(
           '$label: ',
           style: GoogleFonts.poppins(
-            fontSize: 12,
+            fontSize: 14,
             color: Colors.grey[600],
           ),
         ),
@@ -1168,7 +1381,7 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
           child: Text(
             value,
             style: GoogleFonts.poppins(
-              fontSize: 12,
+              fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
             overflow: TextOverflow.ellipsis,
@@ -1184,17 +1397,23 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
     IconData statusIcon;
 
     if (schedule.realisasiVisitApproved == null) {
-      badgeColor = AppTheme.warningColor;
-      statusText = 'Menunggu';
-      statusIcon = Icons.hourglass_empty;
-    } else if (schedule.realisasiVisitApproved == '1') {
+      if (schedule.statusTerrealisasi.toLowerCase() == 'not done') {
+        badgeColor = AppTheme.warningColor;
+        statusText = 'Pending';
+        statusIcon = Icons.hourglass_empty;
+      } else if (schedule.statusTerrealisasi.toLowerCase() == 'done') {
+        badgeColor = AppTheme.warningColor;
+        statusText = 'Menunggu';
+        statusIcon = Icons.hourglass_empty;
+      } else {
+        badgeColor = AppTheme.warningColor;
+        statusText = 'Pending';
+        statusIcon = Icons.hourglass_empty;
+      }
+    } else {
       badgeColor = AppTheme.successColor;
       statusText = 'Disetujui';
       statusIcon = Icons.check_circle;
-    } else {
-      badgeColor = AppTheme.errorColor;
-      statusText = 'Ditolak';
-      statusIcon = Icons.cancel;
     }
 
     return Container(
@@ -1216,7 +1435,7 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
           Text(
             statusText,
             style: GoogleFonts.poppins(
-              fontSize: 12,
+              fontSize: 14,
               fontWeight: FontWeight.w500,
               color: badgeColor,
             ),
@@ -1232,7 +1451,13 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
   }
 
   bool _canApproveSchedule(RealisasiVisitDetail schedule) {
+    // Jika jadwal sudah disetujui atau ditolak
     if (schedule.realisasiVisitApproved != null) {
+      return false;
+    }
+
+    // Jika status terealisasi adalah "not done", tidak bisa disetujui
+    if (schedule.statusTerrealisasi.toLowerCase() == 'not done') {
       return false;
     }
 
@@ -1258,14 +1483,12 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: isApprove
-                    ? AppTheme.successColor.withOpacity(0.1)
-                    : AppTheme.errorColor.withOpacity(0.1),
+                color: AppTheme.successColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                isApprove ? Icons.check_circle : Icons.cancel,
-                color: isApprove ? AppTheme.successColor : AppTheme.errorColor,
+                Icons.check_circle,
+                color: AppTheme.successColor,
                 size: 18,
               ),
             ),
@@ -1274,7 +1497,7 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
               child: Text(
                 isApprove ? 'Setujui Jadwal' : 'Tolak Jadwal',
                 style: GoogleFonts.poppins(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -1286,9 +1509,7 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              isApprove
-                  ? 'Yakin menyetujui ${_selectedScheduleIds.length} jadwal?'
-                  : 'Yakin menolak ${_selectedScheduleIds.length} jadwal?',
+              'Yakin menyetujui ${_selectedScheduleIds.length} jadwal?',
               style: GoogleFonts.poppins(
                 fontSize: 14,
               ),
@@ -1309,7 +1530,7 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                     child: Text(
                       'Tindakan ini tidak dapat dibatalkan.',
                       style: GoogleFonts.poppins(
-                        fontSize: 12,
+                        fontSize: 14,
                         color: Colors.blue.shade900,
                       ),
                     ),
@@ -1332,18 +1553,14 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           ),
           AppButton(
-            text: isApprove ? 'Setujui' : 'Tolak',
+            text: 'Setujui',
             onPressed: () {
               Navigator.pop(context);
-              if (isApprove) {
-                _approveSchedule(_selectedScheduleIds);
-              } else {
-                _rejectSchedule(_selectedScheduleIds);
-              }
+              _approveSchedule(_selectedScheduleIds);
             },
-            type: isApprove ? AppButtonType.success : AppButtonType.error,
-            prefixIcon: Icon(
-              isApprove ? Icons.check : Icons.close,
+            type: AppButtonType.success,
+            prefixIcon: const Icon(
+              Icons.check,
               size: 14,
               color: Colors.white,
             ),
@@ -1357,22 +1574,44 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
 
   void _approveSchedule(List<String> scheduleIds) {
     setState(() => _isProcessing = true);
-    context.read<RealisasiVisitBloc>().add(
-          ApproveRealisasiVisitEvent(
-            idAtasan: widget.userId,
-            idSchedule: scheduleIds,
-          ),
-        );
-  }
 
-  void _rejectSchedule(List<String> scheduleIds) {
-    setState(() => _isProcessing = true);
-    context.read<RealisasiVisitBloc>().add(
-          RejectRealisasiVisitEvent(
-            idAtasan: widget.userId,
-            idSchedule: scheduleIds,
-          ),
-        );
+    // Debug log
+    Logger.info(
+        'realisasi_visit', '[APPROVAL DEBUG] Approve scheduleIds: $scheduleIds, userId: ${widget.userId}');
+
+    // Mencari role user dari BLoC
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthAuthenticated) {
+      final String role = authState.user.role.toUpperCase();
+      Logger.info(
+          'realisasi_visit', '[APPROVAL DEBUG] User role: $role');
+
+      if (role == 'GM') {
+        // Gunakan API khusus GM untuk approval
+        context.read<RealisasiVisitBloc>().add(
+              ApproveRealisasiVisitGMEvent(
+                idAtasan: widget.userId,
+                idSchedule: scheduleIds,
+              ),
+            );
+      } else {
+        // Gunakan API standar untuk role lainnya
+        context.read<RealisasiVisitBloc>().add(
+              ApproveRealisasiVisitEvent(
+                idAtasan: widget.userId,
+                idSchedule: scheduleIds,
+              ),
+            );
+      }
+    } else {
+      // Fallback ke API standar jika tidak dapat menentukan role
+      context.read<RealisasiVisitBloc>().add(
+            ApproveRealisasiVisitEvent(
+              idAtasan: widget.userId,
+              idSchedule: scheduleIds,
+            ),
+          );
+    }
   }
 
   bool _filterSchedule(RealisasiVisitDetail schedule) {
@@ -1388,9 +1627,7 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
     final String status = schedule.statusTerrealisasi.toLowerCase();
     final String shift = schedule.shift.toLowerCase();
     final String jenis = schedule.jenis.toLowerCase();
-    final String products = schedule.productData
-        .map((product) => product.namaProduct.toLowerCase())
-        .join(' ');
+    final String products = schedule.formattedProductNames.toLowerCase();
 
     switch (_selectedFilter) {
       case 'Dokter':

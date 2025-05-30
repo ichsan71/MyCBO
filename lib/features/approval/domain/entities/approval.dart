@@ -49,6 +49,7 @@ class Detail extends Equatable {
   final List<ProductData> productData;
   final TujuanData tujuanData;
   final int approved;
+  final int? realisasiApprove;
 
   const Detail({
     required this.id,
@@ -62,6 +63,7 @@ class Detail extends Equatable {
     required this.productData,
     required this.tujuanData,
     required this.approved,
+    this.realisasiApprove,
   });
 
   @override
@@ -77,6 +79,7 @@ class Detail extends Equatable {
         productData,
         tujuanData,
         approved,
+        realisasiApprove,
       ];
 }
 

@@ -11,8 +11,6 @@ import 'package:image/image.dart' as img;
 import '../../data/models/checkin_request_model.dart';
 import '../bloc/schedule_bloc.dart';
 import '../bloc/schedule_event.dart';
-import 'package:test_cbo/core/presentation/widgets/shimmer_loading.dart';
-import 'package:test_cbo/core/presentation/widgets/shimmer_form_loading.dart';
 import 'package:test_cbo/core/presentation/widgets/shimmer_button_loading.dart';
 
 class CheckinForm extends StatefulWidget {
@@ -39,6 +37,9 @@ class _CheckinFormState extends State<CheckinForm> {
   String? _compressedImagePath;
   String? _imageTimestamp;
   bool _isLoading = false;
+  String? _locationError;
+  String? _imageError;
+  String? _noteError;
 
   @override
   void initState() {
@@ -219,26 +220,64 @@ class _CheckinFormState extends State<CheckinForm> {
     }
   }
 
-  void _submitForm() async {
-    // Cek jika sedang loading, jangan submit lagi
-    if (_isLoading) {
-      return;
+  // Fungsi validasi form
+  bool _validateForm() {
+    bool isValid = true;
+
+    // Validasi lokasi
+    if (_currentPosition == null || _currentAddress == null) {
+      setState(() {
+        _locationError =
+            'Lokasi belum tersedia. Pastikan GPS aktif dan izin lokasi diberikan.';
+      });
+      isValid = false;
+    } else {
+      setState(() {
+        _locationError = null;
+      });
     }
 
-    if (_currentPosition == null || _currentAddress == null) {
+    // Validasi foto
+    if (_imageFile == null) {
+      setState(() {
+        _imageError = 'Foto wajib diambil untuk melakukan check-in';
+      });
+      isValid = false;
+    } else {
+      setState(() {
+        _imageError = null;
+      });
+    }
+
+    // Validasi catatan (opsional)
+    if (_noteController.text.isNotEmpty && _noteController.text.length < 10) {
+      setState(() {
+        _noteError = 'Catatan minimal 10 karakter jika diisi';
+      });
+      isValid = false;
+    } else {
+      setState(() {
+        _noteError = null;
+      });
+    }
+
+    return isValid;
+  }
+
+  void _submitForm() async {
+    // Validasi form sebelum submit
+    if (!_validateForm()) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Mohon tunggu, sedang mendapatkan lokasi...')),
+          content: Text('Mohon lengkapi semua data yang diperlukan'),
+          backgroundColor: Colors.orange,
+        ),
       );
-      // Coba mendapatkan lokasi lagi
-      _getCurrentLocation();
       return;
     }
 
-    if (_imageFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Silakan ambil foto terlebih dahulu')),
-      );
+    // Cek jika sedang loading
+    if (_isLoading) {
       return;
     }
 
@@ -253,21 +292,71 @@ class _CheckinFormState extends State<CheckinForm> {
           barrierDismissible: false,
           builder: (BuildContext context) {
             return Dialog(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.0),
+              ),
+              elevation: 8,
+              child: Container(
+                padding: const EdgeInsets.all(24.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20.0),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white,
+                      Colors.blue.shade50,
+                    ],
+                  ),
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const SizedBox(
+                    Container(
                       height: 80,
-                      child: ShimmerFormLoading(
-                        isDetailed: false,
-                        hasImage: false,
+                      width: 80,
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: SizedBox(
+                          width: 50,
+                          height: 50,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Theme.of(context).primaryColor,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      "Memproses Check-in",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).primaryColor,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Text("Memproses check-in...",
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      "Mohon tunggu sebentar, kami sedang memproses data Anda",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
+                      backgroundColor: Colors.grey[200],
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Theme.of(context).primaryColor,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -381,7 +470,7 @@ class _CheckinFormState extends State<CheckinForm> {
           ),
           const SizedBox(height: 24),
 
-          // Location section
+          // Location section dengan error message
           if (_currentPosition != null && _currentAddress != null) ...[
             Container(
               padding: const EdgeInsets.all(12),
@@ -421,57 +510,152 @@ class _CheckinFormState extends State<CheckinForm> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: _locationError != null
+                    ? Colors.red.shade50
+                    : Colors.orange.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.shade300),
+                border: Border.all(
+                  color: _locationError != null
+                      ? Colors.red.shade300
+                      : Colors.orange.shade300,
+                ),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  SizedBox(
-                    width: 100,
-                    height: 24,
-                    child: ShimmerLoading(
-                      baseColor: Colors.orange.shade200,
-                      highlightColor: Colors.orange.shade50,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_off,
+                        color:
+                            _locationError != null ? Colors.red : Colors.orange,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _locationError ??
+                              'Sedang mendapatkan lokasi saat ini...',
+                          style: TextStyle(
+                            color: _locationError != null
+                                ? Colors.red
+                                : Colors.orange,
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Sedang mendapatkan lokasi saat ini...',
-                      style: TextStyle(color: Colors.deepOrange),
+                  if (_locationError != null) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: _getCurrentLocation,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Coba Lagi'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
           ],
           const SizedBox(height: 16),
 
+          // Foto section dengan error message
+          if (_imageError != null)
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline,
+                      color: Colors.red.shade700, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _imageError!,
+                      style:
+                          TextStyle(color: Colors.red.shade700, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          const SizedBox(height: 8),
+
           // Foto section
           _imageFile != null
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.file(
-                          File(_compressedImagePath ?? _imageFile!.path),
-                          height: 200,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                        ),
+                    GestureDetector(
+                      onTap: () {
+                        // Menampilkan preview gambar full screen saat diklik
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => Scaffold(
+                              appBar: AppBar(
+                                title: const Text('Preview Foto'),
+                                backgroundColor: Colors.black,
+                              ),
+                              body: Container(
+                                color: Colors.black,
+                                child: Center(
+                                  child: InteractiveViewer(
+                                    panEnabled: true,
+                                    boundaryMargin: const EdgeInsets.all(20),
+                                    minScale: 0.5,
+                                    maxScale: 4,
+                                    child: Image.file(
+                                      File(_compressedImagePath ??
+                                          _imageFile!.path),
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      child: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(
+                                File(_compressedImagePath ?? _imageFile!.path),
+                                height: 200,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            right: 8,
+                            bottom: 8,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.6),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Icon(
+                                Icons.zoom_in,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -510,15 +694,34 @@ class _CheckinFormState extends State<CheckinForm> {
                 ),
           const SizedBox(height: 16),
 
-          // Catatan section
+          // Catatan section dengan error message
           TextField(
             controller: _noteController,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Catatan (opsional)',
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
               hintText: 'Tambahkan catatan jika diperlukan',
+              errorText: _noteError,
+              helperText: _noteController.text.isNotEmpty
+                  ? 'Minimal 10 karakter jika diisi'
+                  : null,
             ),
             maxLines: 3,
+            onChanged: (value) {
+              if (value.isNotEmpty) {
+                setState(() {
+                  if (value.length < 10) {
+                    _noteError = 'Catatan minimal 10 karakter jika diisi';
+                  } else {
+                    _noteError = null;
+                  }
+                });
+              } else {
+                setState(() {
+                  _noteError = null;
+                });
+              }
+            },
           ),
           const SizedBox(height: 24),
 

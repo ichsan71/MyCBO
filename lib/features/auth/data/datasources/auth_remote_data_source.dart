@@ -25,6 +25,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<UserModel> login(String email, String password) async {
     try {
+      if (kDebugMode) {
+        print('Mencoba login dengan email: $email');
+      }
+
       final response = await dio.post(
         '${Constants.baseUrl}/login',
         data: {
@@ -32,6 +36,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           'password': password,
         },
       );
+
+      if (kDebugMode) {
+        print('Status response: ${response.statusCode}');
+        print('Response data: ${response.data}');
+      }
 
       if (response.statusCode == 200) {
         // Memastikan data respons berupa Map<String, dynamic>
@@ -58,15 +67,32 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           final token = responseData['token'];
           final userData = responseData['data'];
 
+          if (kDebugMode) {
+            print('Token: $token');
+            print('User data: $userData');
+          }
+
           // Buat UserModel dari data dan token
-          final user = UserModel.fromJson(userData, token);
+          try {
+            final user = UserModel.fromJson(userData, token);
 
-          // Simpan token dan data user ke SharedPreferences menggunakan konstanta
-          await sharedPreferences.setString(Constants.tokenKey, token);
-          await sharedPreferences.setString(
-              Constants.userDataKey, json.encode(user.toJson()));
+            if (kDebugMode) {
+              print('UserModel created successfully: ${user.toJson()}');
+            }
 
-          return user;
+            // Simpan token dan data user ke SharedPreferences menggunakan konstanta
+            await sharedPreferences.setString(Constants.tokenKey, token);
+            await sharedPreferences.setString(
+                Constants.userDataKey, json.encode(user.toJson()));
+
+            return user;
+          } catch (e) {
+            if (kDebugMode) {
+              print('Error creating UserModel: $e');
+            }
+            throw AuthenticationException(
+                message: 'Gagal membuat model user: ${e.toString()}');
+          }
         } else {
           throw AuthenticationException(
             message: responseData['message'] ?? 'Login gagal',
@@ -78,6 +104,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         );
       }
     } on DioException catch (e) {
+      if (kDebugMode) {
+        print('DioException: ${e.message}');
+        print('DioException response: ${e.response?.data}');
+      }
+
       if (e.response != null) {
         throw AuthenticationException(
           message: e.response?.data?['message'] ?? 'Login gagal',
@@ -85,6 +116,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
       throw ServerException(
           message: e.message ?? 'Terjadi kesalahan pada server');
+    } catch (e) {
+      if (kDebugMode) {
+        print('General exception during login: $e');
+      }
+      throw ServerException(message: 'Terjadi kesalahan tidak terduga: $e');
     }
   }
 
@@ -95,22 +131,22 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         print('Memulai proses logout...');
         print('1. Menghapus data dari SharedPreferences');
       }
-      
+
       // Hapus data user dari SharedPreferences menggunakan konstanta
       await sharedPreferences.remove(Constants.tokenKey);
       await sharedPreferences.remove(Constants.userDataKey);
-      
+
       if (kDebugMode) {
         print('2. Membersihkan database lokal');
       }
-      
+
       // Bersihkan semua data lokal di SQLite
       await AppDatabase.instance.clearAllTables();
-      
+
       if (kDebugMode) {
         print('Proses logout selesai');
       }
-      
+
       return true;
     } catch (e) {
       if (kDebugMode) {

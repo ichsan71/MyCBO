@@ -9,8 +9,10 @@ import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
 import 'features/auth/presentation/pages/dashboard_page.dart';
 import 'features/auth/presentation/pages/login_page.dart';
+import 'features/auth/presentation/pages/schedule_page.dart';
 import 'features/schedule/presentation/bloc/schedule_bloc.dart';
 import 'features/schedule/presentation/pages/add_schedule_page.dart';
+import 'features/schedule/presentation/pages/edit_schedule_page.dart';
 import 'features/splash/presentation/pages/splash_screen.dart';
 
 void main() async {
@@ -68,7 +70,11 @@ class MyApp extends StatelessWidget {
         routes: {
           '/login': (context) => const LoginPage(),
           '/dashboard': (context) => const DashboardPage(),
+          '/schedule': (context) => const SchedulePage(),
           '/add_schedule': (context) => const AddSchedulePage(),
+          '/edit_schedule': (context) => EditSchedulePage(
+                scheduleId: ModalRoute.of(context)!.settings.arguments as int,
+              ),
         },
       ),
     );

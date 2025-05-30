@@ -4,35 +4,63 @@ class Schedule extends Equatable {
   final int id;
   final String namaUser;
   final String tipeSchedule;
+  final String? namaTipeSchedule;
   final String tujuan;
-  final String namaTujuan;
+  final int idTujuan;
   final String tglVisit;
-  final String shift;
   final String statusCheckin;
-  final String draft;
+  final String shift;
   final String note;
-  final String namaProduct;
-  final String namaDivisi;
-  final String namaSpesialis;
+  final String? product;
+  final String draft;
+  final String? statusDraft;
+  final String? alasanReject;
+  final String namaTujuan;
+  final String? namaSpesialis;
+  final String? namaProduct;
+  final String? namaDivisi;
   final int approved;
   final String? namaApprover;
+  final int? realisasiApprove;
+  final int idUser;
+  final List<String> productForIdDivisi;
+  final List<String> productForIdSpesialis;
+  final String jenis;
+  final dynamic approvedBy;
+  final dynamic rejectedBy;
+  final dynamic realisasiVisitApproved;
+  final String? createdAt;
 
   const Schedule({
     required this.id,
     required this.namaUser,
     required this.tipeSchedule,
+    this.namaTipeSchedule,
     required this.tujuan,
-    required this.namaTujuan,
+    required this.idTujuan,
     required this.tglVisit,
-    required this.shift,
     required this.statusCheckin,
-    required this.draft,
+    required this.shift,
     required this.note,
-    required this.namaProduct,
-    required this.namaDivisi,
-    required this.namaSpesialis,
+    this.product,
+    required this.draft,
+    this.statusDraft,
+    this.alasanReject,
+    required this.namaTujuan,
+    this.namaSpesialis,
+    this.namaProduct,
+    this.namaDivisi,
     required this.approved,
     this.namaApprover,
+    this.realisasiApprove,
+    required this.idUser,
+    required this.productForIdDivisi,
+    required this.productForIdSpesialis,
+    required this.jenis,
+    this.approvedBy,
+    this.rejectedBy,
+    this.realisasiVisitApproved,
+    this.createdAt,
   });
 
   @override
@@ -40,53 +68,97 @@ class Schedule extends Equatable {
         id,
         namaUser,
         tipeSchedule,
+        namaTipeSchedule,
         tujuan,
-        namaTujuan,
+        idTujuan,
         tglVisit,
-        shift,
         statusCheckin,
-        draft,
+        shift,
         note,
+        product,
+        draft,
+        statusDraft,
+        alasanReject,
+        namaTujuan,
+        namaSpesialis,
         namaProduct,
         namaDivisi,
-        namaSpesialis,
         approved,
         namaApprover,
+        realisasiApprove,
+        idUser,
+        productForIdDivisi,
+        productForIdSpesialis,
+        jenis,
+        approvedBy,
+        rejectedBy,
+        realisasiVisitApproved,
+        createdAt,
       ];
 
   Schedule copyWith({
     int? id,
     String? namaUser,
     String? tipeSchedule,
+    String? namaTipeSchedule,
     String? tujuan,
-    String? namaTujuan,
+    int? idTujuan,
     String? tglVisit,
-    String? shift,
     String? statusCheckin,
-    String? draft,
+    String? shift,
     String? note,
+    String? product,
+    String? draft,
+    String? statusDraft,
+    String? alasanReject,
+    String? namaTujuan,
+    String? namaSpesialis,
     String? namaProduct,
     String? namaDivisi,
-    String? namaSpesialis,
     int? approved,
     String? namaApprover,
+    int? realisasiApprove,
+    int? idUser,
+    List<String>? productForIdDivisi,
+    List<String>? productForIdSpesialis,
+    String? jenis,
+    dynamic approvedBy,
+    dynamic rejectedBy,
+    dynamic realisasiVisitApproved,
+    String? createdAt,
   }) {
     return Schedule(
       id: id ?? this.id,
       namaUser: namaUser ?? this.namaUser,
       tipeSchedule: tipeSchedule ?? this.tipeSchedule,
+      namaTipeSchedule: namaTipeSchedule ?? this.namaTipeSchedule,
       tujuan: tujuan ?? this.tujuan,
-      namaTujuan: namaTujuan ?? this.namaTujuan,
+      idTujuan: idTujuan ?? this.idTujuan,
       tglVisit: tglVisit ?? this.tglVisit,
-      shift: shift ?? this.shift,
       statusCheckin: statusCheckin ?? this.statusCheckin,
-      draft: draft ?? this.draft,
+      shift: shift ?? this.shift,
       note: note ?? this.note,
+      product: product ?? this.product,
+      draft: draft ?? this.draft,
+      statusDraft: statusDraft ?? this.statusDraft,
+      alasanReject: alasanReject ?? this.alasanReject,
+      namaTujuan: namaTujuan ?? this.namaTujuan,
+      namaSpesialis: namaSpesialis ?? this.namaSpesialis,
       namaProduct: namaProduct ?? this.namaProduct,
       namaDivisi: namaDivisi ?? this.namaDivisi,
-      namaSpesialis: namaSpesialis ?? this.namaSpesialis,
       approved: approved ?? this.approved,
       namaApprover: namaApprover ?? this.namaApprover,
+      realisasiApprove: realisasiApprove ?? this.realisasiApprove,
+      idUser: idUser ?? this.idUser,
+      productForIdDivisi: productForIdDivisi ?? this.productForIdDivisi,
+      productForIdSpesialis:
+          productForIdSpesialis ?? this.productForIdSpesialis,
+      jenis: jenis ?? this.jenis,
+      approvedBy: approvedBy ?? this.approvedBy,
+      rejectedBy: rejectedBy ?? this.rejectedBy,
+      realisasiVisitApproved:
+          realisasiVisitApproved ?? this.realisasiVisitApproved,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }

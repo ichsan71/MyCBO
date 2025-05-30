@@ -11,6 +11,7 @@ import '../bloc/auth_bloc.dart';
 import '../bloc/auth_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:test_cbo/core/presentation/widgets/shimmer_schedule_list_loading.dart';
+import 'package:intl/intl.dart';
 
 class SchedulePage extends StatelessWidget {
   const SchedulePage({super.key});
@@ -32,6 +33,7 @@ class _ScheduleViewState extends State<_ScheduleView> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedFilter = 'Semua';
   List<Schedule> _filteredSchedules = [];
+  DateTimeRange? _selectedDateRange;
 
   @override
   void initState() {
@@ -81,10 +83,11 @@ class _ScheduleViewState extends State<_ScheduleView> {
           // Pencarian berdasarkan teks
           final matchesSearch = query.isEmpty ||
               schedule.namaTujuan.toLowerCase().contains(query.toLowerCase()) ||
-              (schedule.namaSpesialis.isNotEmpty &&
+              (schedule.namaSpesialis?.isNotEmpty == true &&
                   schedule.namaSpesialis
-                      .toLowerCase()
-                      .contains(query.toLowerCase()));
+                          ?.toLowerCase()
+                          .contains(query.toLowerCase()) ==
+                      true);
 
           // Memeriksa status draft dan approved
           final lowerDraft = schedule.draft.toLowerCase().trim();
@@ -153,6 +156,29 @@ class _ScheduleViewState extends State<_ScheduleView> {
     _filterSchedules(schedules, _searchController.text);
   }
 
+  void _pickDateRange() async {
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      initialDateRange: _selectedDateRange,
+    );
+    if (picked != null) {
+      setState(() => _selectedDateRange = picked);
+      final authState = context.read<AuthBloc>().state;
+      if (authState is AuthAuthenticated) {
+        final rangeDate =
+            "${DateFormat('MM/dd/yyyy').format(picked.start)} - ${DateFormat('MM/dd/yyyy').format(picked.end)}";
+        context.read<ScheduleBloc>().add(
+              GetSchedulesByRangeDateEvent(
+                userId: authState.user.idUser,
+                rangeDate: rangeDate,
+              ),
+            );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -183,115 +209,194 @@ class _ScheduleViewState extends State<_ScheduleView> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 24),
-              // Search Bar
-              TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: l10n.searchHint,
-                  hintStyle: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.grey[500],
-                  ),
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.blue),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                ),
-                onChanged: (query) {
-                  if (context.read<ScheduleBloc>().state is ScheduleLoaded) {
-                    final schedules =
-                        (context.read<ScheduleBloc>().state as ScheduleLoaded)
-                            .schedules;
-                    // Gunakan post frame callback untuk mencegah setState selama build
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) {
-                        _updateFilteredSchedules(schedules);
-                      }
-                    });
-                  }
-                },
-              ),
               const SizedBox(height: 16),
-              // Filter Chips
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    for (final filter in [
-                      l10n.filterAll,
-                      l10n.filterPendingApproval,
-                      l10n.filterApproved,
-                      l10n.filterRejected,
-                      l10n.filterCompleted
-                    ])
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: FilterChip(
-                          label: Text(
-                            filter,
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight: _selectedFilter == filter
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
-                            ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      minimumSize: const Size(0, 32),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    onPressed: _pickDateRange,
+                    icon: const Icon(Icons.date_range, size: 18),
+                    label: const Text('Pilih Rentang Tanggal',
+                        style: TextStyle(fontSize: 13)),
+                  ),
+                  if (_selectedDateRange != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            "${DateFormat('dd/MM/yyyy').format(_selectedDateRange!.start)} - ${DateFormat('dd/MM/yyyy').format(_selectedDateRange!.end)}",
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 13),
                           ),
-                          selected: _selectedFilter == filter,
-                          onSelected: (selected) {
-                            setState(() {
-                              _selectedFilter = filter;
-                            });
-
-                            if (context.read<ScheduleBloc>().state
-                                is ScheduleLoaded) {
-                              final schedules = (context
-                                      .read<ScheduleBloc>()
-                                      .state as ScheduleLoaded)
-                                  .schedules;
-                              // Gunakan post frame callback untuk mencegah setState selama build
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (mounted) {
-                                  _updateFilteredSchedules(schedules);
-                                }
-                              });
-                            }
-                          },
-                          backgroundColor: Colors.grey[100],
-                          selectedColor: Colors.blue[100],
-                          checkmarkColor: Colors.blue[700],
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                        ),
+                          IconButton(
+                            icon: const Icon(Icons.clear, size: 18),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: () {
+                              setState(() => _selectedDateRange = null);
+                              final authState = context.read<AuthBloc>().state;
+                              if (authState is AuthAuthenticated) {
+                                context.read<ScheduleBloc>().add(
+                                      GetSchedulesEvent(
+                                          userId: authState.user.idUser),
+                                    );
+                              }
+                            },
+                          ),
+                        ],
                       ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Search Bar
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[300]!),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                      offset: const Offset(0, 2),
+                    ),
                   ],
                 ),
+                child: TextField(
+                  controller: _searchController,
+                  style: GoogleFonts.poppins(fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: l10n.searchHint,
+                    hintStyle: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Colors.grey[400],
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: Colors.grey[400],
+                      size: 20,
+                    ),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? Container(
+                            margin: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.clear, size: 16),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: () {
+                                setState(() {
+                                  _searchController.clear();
+                                  final authState =
+                                      context.read<AuthBloc>().state;
+                                  if (authState is AuthAuthenticated) {
+                                    if (context.read<ScheduleBloc>().state
+                                        is ScheduleLoaded) {
+                                      final schedules = (context
+                                              .read<ScheduleBloc>()
+                                              .state as ScheduleLoaded)
+                                          .schedules;
+                                      _filterSchedules(schedules, '');
+                                    }
+                                  }
+                                });
+                              },
+                              color: Colors.grey[600],
+                            ),
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding:
+                        const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                    fillColor: Colors.white,
+                    filled: true,
+                  ),
+                  onChanged: (value) {
+                    final authState = context.read<AuthBloc>().state;
+                    if (authState is AuthAuthenticated) {
+                      if (context.read<ScheduleBloc>().state
+                          is ScheduleLoaded) {
+                        final schedules = (context.read<ScheduleBloc>().state
+                                as ScheduleLoaded)
+                            .schedules;
+                        _filterSchedules(schedules, value);
+                      }
+                    }
+                  },
+                ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
+
+              // Filter Categories
+              Container(
+                height: 40,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildFilterChip(l10n.filterAll),
+                      _buildFilterChip(l10n.filterPendingApproval),
+                      _buildFilterChip(l10n.filterApproved),
+                      _buildFilterChip(l10n.filterRejected),
+                      _buildFilterChip(l10n.filterCompleted),
+                    ],
+                  ),
+                ),
+              ),
+
+              if (_searchController.text.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.blue.shade100),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.info_outline,
+                          size: 14, color: Colors.blue[700]),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Ditemukan ${_filteredSchedules.length} jadwal',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.blue[700],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 16),
               Flexible(
                 child: BlocBuilder<AuthBloc, AuthState>(
                   builder: (context, authState) {
                     if (authState is AuthAuthenticated) {
                       return BlocConsumer<ScheduleBloc, ScheduleState>(
                         listener: (context, state) {
-                          // Perbarui filter ketika data dimuat
                           if (state is ScheduleLoaded) {
                             Logger.info('SchedulePage',
                                 'Schedule loaded in listener, updating filters');
-
-                            // Selalu update saat jadwal baru dimuat
                             WidgetsBinding.instance.addPostFrameCallback((_) {
                               if (mounted) {
                                 _updateFilteredSchedules(state.schedules);
@@ -303,88 +408,23 @@ class _ScheduleViewState extends State<_ScheduleView> {
                           if (state is ScheduleLoading) {
                             return const ShimmerScheduleListLoading();
                           } else if (state is ScheduleLoaded) {
-                            // Jika state loaded tapi belum difilter, update sekali
                             if (_filteredSchedules.isEmpty) {
                               WidgetsBinding.instance.addPostFrameCallback((_) {
                                 if (mounted) {
                                   _updateFilteredSchedules(state.schedules);
                                 }
                               });
-                              // Tampilkan loading hanya jika belum difilter
                               return const ShimmerScheduleListLoading();
                             }
-
-                            // Setelah difilter, periksa apakah hasilnya kosong
                             if (_filteredSchedules.isEmpty) {
-                              return RefreshIndicator(
-                                onRefresh: () async {
-                                  _searchController.clear();
-                                  final l10n = AppLocalizations.of(context)!;
-                                  setState(() {
-                                    _selectedFilter = l10n.filterAll;
-                                  });
-
-                                  // Muat ulang data dengan state awal kosong
-                                  context.read<ScheduleBloc>().add(
-                                        GetSchedulesEvent(
-                                          userId: authState.user.idUser,
-                                        ),
-                                      );
-                                },
-                                child: ListView(
-                                  physics:
-                                      const AlwaysScrollableScrollPhysics(),
-                                  children: [
-                                    SizedBox(
-                                      height:
-                                          MediaQuery.of(context).size.height -
-                                              300,
-                                      child: Center(
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.search_off,
-                                              size: 70,
-                                              color: Colors.grey[400],
-                                            ),
-                                            const SizedBox(height: 16),
-                                            Text(
-                                              'Tidak Ada Hasil',
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.w600,
-                                                color: Colors.grey[600],
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              'Coba ubah filter atau kata kunci pencarian',
-                                              textAlign: TextAlign.center,
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 14,
-                                                color: Colors.grey[500],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
+                              return _buildEmptyState();
                             }
-
-                            // Tampilkan hasil filter dalam ListView dengan RefreshIndicator
                             return RefreshIndicator(
                               onRefresh: () async {
                                 _searchController.clear();
                                 setState(() {
                                   _selectedFilter = l10n.filterAll;
                                 });
-
-                                // Muat ulang data dengan GetSchedulesEvent (bukan RefreshSchedulesEvent)
                                 context.read<ScheduleBloc>().add(
                                       GetSchedulesEvent(
                                         userId: authState.user.idUser,
@@ -401,6 +441,59 @@ class _ScheduleViewState extends State<_ScheduleView> {
                                     context,
                                     schedule,
                                   );
+                                },
+                              ),
+                            );
+                          } else if (state is RejectedSchedulesLoaded) {
+                            final rejectedSchedules = state.schedules;
+                            if (rejectedSchedules.isEmpty) {
+                              return _buildEmptyState();
+                            }
+                            return RefreshIndicator(
+                              onRefresh: () async {
+                                context.read<ScheduleBloc>().add(
+                                      FetchRejectedSchedulesEvent(
+                                          userId: authState.user.idUser),
+                                    );
+                              },
+                              child: ListView.builder(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                shrinkWrap: true,
+                                itemCount: rejectedSchedules.length,
+                                itemBuilder: (context, index) {
+                                  final r = rejectedSchedules[index];
+                                  // Mapping manual ke Schedule agar bisa pakai _buildScheduleCard
+                                  final schedule = Schedule(
+                                    id: r.id,
+                                    namaUser: r.namaUser,
+                                    tipeSchedule: r.tipeSchedule,
+                                    tujuan: r.tujuan,
+                                    idTujuan: 0,
+                                    tglVisit: r.tglVisit,
+                                    statusCheckin: r.statusCheckin,
+                                    shift: r.shift,
+                                    note: r.note,
+                                    product: '[]',
+                                    draft: r.draft,
+                                    statusDraft: '',
+                                    alasanReject: '',
+                                    namaTujuan: r.namaTujuan,
+                                    namaSpesialis: r.namaSpesialis,
+                                    namaProduct: r.namaProduct,
+                                    namaDivisi: r.namaDivisi,
+                                    approved: r.approved,
+                                    namaApprover: r.namaRejecter,
+                                    realisasiApprove: null,
+                                    idUser: 0,
+                                    productForIdDivisi: const [],
+                                    productForIdSpesialis: const [],
+                                    jenis: r.jenis,
+                                    approvedBy: null,
+                                    rejectedBy: null,
+                                    realisasiVisitApproved: null,
+                                    createdAt: r.createdAt,
+                                  );
+                                  return _buildScheduleCard(context, schedule);
                                 },
                               ),
                             );
@@ -631,7 +724,8 @@ class _ScheduleViewState extends State<_ScheduleView> {
 
   Widget _buildScheduleCard(BuildContext context, Schedule schedule) {
     final lowerDraft = schedule.draft.toLowerCase().trim();
-    final statusColor = _getStatusColor(schedule.statusCheckin, schedule.draft);
+    final statusColor =
+        _getStatusColor(schedule.statusCheckin, schedule.draft);
     final displayStatus = _getDisplayStatus(
       schedule.statusCheckin,
       schedule.draft,
@@ -639,182 +733,492 @@ class _ScheduleViewState extends State<_ScheduleView> {
       schedule.namaApprover,
     );
 
-    Logger.info('SchedulePage', '=== SCHEDULE CARD INFO ===');
-    Logger.info('SchedulePage', 'Schedule ID: ${schedule.id}');
-    Logger.info('SchedulePage', 'Status Check-in: ${schedule.statusCheckin}');
-    Logger.info('SchedulePage', 'Draft: ${schedule.draft}');
-    Logger.info('SchedulePage', 'Draft (lowercase & trim): $lowerDraft');
-    Logger.info('SchedulePage',
-        'Is Draft Rejected?: ${lowerDraft.contains("rejected")}');
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      color:
-          lowerDraft.contains('rejected') ? Colors.red.shade50 : Colors.white,
-      child: InkWell(
-        onTap: () {
-          final authState = context.read<AuthBloc>().state;
-          if (authState is AuthAuthenticated) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ScheduleDetailPage(
-                  schedule: schedule,
-                  userId: authState.user.idUser,
-                ),
-              ),
-            );
-          }
-        },
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border(
-              left: BorderSide(
-                color: statusColor,
-                width: 8,
-              ),
-            ),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: lowerDraft.contains('rejected')
+            ? Border.all(color: Colors.red.shade200, width: 1.5)
+            : Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: lowerDraft.contains('rejected')
+                ? Colors.red.withOpacity(0.08)
+                : Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            spreadRadius: 1,
+            offset: const Offset(0, 3),
           ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {
+            final authState = context.read<AuthBloc>().state;
+            if (authState is AuthAuthenticated) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ScheduleDetailPage(
+                    schedule: schedule,
+                    userId: authState.user.idUser,
+                  ),
+                ),
+              );
+            }
+          },
+          splashColor: Theme.of(context).primaryColor.withOpacity(0.1),
+          highlightColor: Theme.of(context).primaryColor.withOpacity(0.05),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: Text(
-                        schedule.namaTujuan,
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: lowerDraft.contains('rejected')
-                              ? Colors.red.shade700
-                              : Colors.black,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: lowerDraft.contains('rejected')
+                                  ? Colors.red.shade50
+                                  : Theme.of(context)
+                                      .primaryColor
+                                      .withOpacity(0.1),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: lowerDraft.contains('rejected')
+                                      ? Colors.red.shade100.withOpacity(0.5)
+                                      : Theme.of(context)
+                                          .primaryColor
+                                          .withOpacity(0.15),
+                                  blurRadius: 4,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.person,
+                              size: 18,
+                              color: lowerDraft.contains('rejected')
+                                  ? Colors.red.shade700
+                                  : Theme.of(context).primaryColor,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  schedule.namaTujuan,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: lowerDraft.contains('rejected')
+                                        ? Colors.red.shade700
+                                        : Colors.black87,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                                if (schedule.namaApprover != null &&
+                                    schedule.namaApprover!.isNotEmpty)
+                                  Text(
+                                    schedule.approved == 1
+                                        ? 'Disetujui oleh ${schedule.namaApprover}'
+                                        : lowerDraft.contains('rejected')
+                                            ? 'Ditolak oleh ${schedule.namaApprover}'
+                                            : '',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      color: lowerDraft.contains('rejected')
+                                          ? Colors.red.shade700
+                                          : Colors.green.shade700,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: statusColor,
-                        borderRadius: BorderRadius.circular(8),
+                        color: statusColor.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: statusColor.withOpacity(0.3)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: statusColor.withOpacity(0.1),
+                            blurRadius: 4,
+                            spreadRadius: 1,
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        displayStatus,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _getStatusIcon(schedule.statusCheckin,
+                                schedule.draft, schedule.approved),
+                            size: 14,
+                            color: statusColor,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            displayStatus,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: statusColor,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-                if (schedule.namaApprover != null &&
-                    schedule.namaApprover!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      schedule.approved == 1
-                          ? 'Disetujui oleh ${schedule.namaApprover}'
-                          : lowerDraft.contains('rejected')
-                              ? 'Ditolak oleh ${schedule.namaApprover}'
-                              : '',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: lowerDraft.contains('rejected')
-                            ? Colors.red.shade700
-                            : Colors.green.shade700,
-                        fontWeight: FontWeight.w500,
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildDetailRow(
+                        Icons.calendar_today,
+                        'Tanggal:',
+                        schedule.tglVisit,
+                        lowerDraft.contains('rejected')
+                            ? Colors.red.shade400
+                            : Colors.grey.shade600,
                       ),
+                      const SizedBox(height: 8),
+                      _buildDetailRow(
+                        Icons.access_time,
+                        'Shift:',
+                        schedule.shift,
+                        lowerDraft.contains('rejected')
+                            ? Colors.red.shade400
+                            : Colors.grey.shade600,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildDetailRow(
+                        Icons.medical_services_outlined,
+                        'Spesialis:',
+                        schedule.namaSpesialis?.isNotEmpty == true
+                            ? schedule.namaSpesialis ?? '-'
+                            : '-',
+                        lowerDraft.contains('rejected')
+                            ? Colors.red.shade400
+                            : null,
+                      ),
+                    ],
+                  ),
+                ),
+                if (schedule.namaProduct?.isNotEmpty == true) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Theme.of(context).primaryColor.withOpacity(0.2),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.medication,
+                              size: 16,
+                              color: lowerDraft.contains('rejected')
+                                  ? Colors.red.shade500
+                                  : Theme.of(context).primaryColor,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Produk:',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: lowerDraft.contains('rejected')
+                                    ? Colors.red.shade500
+                                    : Theme.of(context).primaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: schedule.namaProduct
+                                  ?.split(', ')
+                                  .map((product) {
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: lowerDraft.contains('rejected')
+                                        ? Colors.white
+                                        : Colors.white,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: lowerDraft.contains('rejected')
+                                          ? Colors.red.shade300
+                                          : Theme.of(context)
+                                              .primaryColor
+                                              .withOpacity(0.3),
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.03),
+                                        blurRadius: 2,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    product,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      color: lowerDraft.contains('rejected')
+                                          ? Colors.red.shade700
+                                          : Theme.of(context).primaryColor,
+                                    ),
+                                  ),
+                                );
+                              }).toList() ??
+                              [],
+                        ),
+                      ],
                     ),
                   ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 16,
-                      color: lowerDraft.contains('rejected')
-                          ? Colors.red.shade400
-                          : Colors.grey[700],
+                ],
+                if (schedule.note.isNotEmpty == true) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        schedule.tglVisit,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: lowerDraft.contains('rejected')
-                              ? Colors.red.shade400
-                              : Colors.grey[700],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Catatan:',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade700,
+                          ),
                         ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.access_time,
-                      size: 16,
-                      color: lowerDraft.contains('rejected')
-                          ? Colors.red.shade400
-                          : Colors.grey[700],
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Shift ${schedule.shift}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: lowerDraft.contains('rejected')
-                              ? Colors.red.shade400
-                              : Colors.grey[700],
+                        const SizedBox(height: 8),
+                        Text(
+                          schedule.note,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
                         ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.medical_services_outlined,
-                      size: 16,
-                      color: lowerDraft.contains('rejected')
-                          ? Colors.red.shade400
-                          : Colors.grey[700],
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        schedule.tipeSchedule,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: lowerDraft.contains('rejected')
-                              ? Colors.red.shade400
-                              : Colors.grey[700],
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value,
+      [Color? customColor]) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: customColor ?? Theme.of(context).primaryColor,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '$label ',
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            color: customColor ?? Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: customColor ?? Colors.grey[800],
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  IconData _getStatusIcon(String status, String draft, int approved) {
+    final lowerDraft = draft.toLowerCase().trim();
+    final lowerStatus = status.toLowerCase().trim();
+
+    if (lowerDraft.contains('rejected')) {
+      return Icons.cancel;
+    } else if (approved == 0) {
+      return Icons.hourglass_empty;
+    } else if (approved == 1) {
+      return Icons.check_circle;
+    } else if (lowerStatus == 'selesai') {
+      return Icons.task_alt;
+    } else if (lowerStatus == 'check-in') {
+      return Icons.login;
+    } else if (lowerStatus == 'belum checkout') {
+      return Icons.logout;
+    } else if (lowerStatus == 'batal') {
+      return Icons.block;
+    }
+
+    return Icons.info;
+  }
+
+  Widget _buildFilterChip(String filter) {
+    final bool isSelected = _selectedFilter == filter;
+    IconData? iconData;
+
+    // Determine appropriate icon for each filter
+    if (filter == AppLocalizations.of(context)!.filterAll) {
+      iconData = Icons.filter_list;
+    } else if (filter == AppLocalizations.of(context)!.filterPendingApproval) {
+      iconData = Icons.pending_actions;
+    } else if (filter == AppLocalizations.of(context)!.filterApproved) {
+      iconData = Icons.check_circle;
+    } else if (filter == AppLocalizations.of(context)!.filterRejected) {
+      iconData = Icons.cancel;
+    } else if (filter == AppLocalizations.of(context)!.filterCompleted) {
+      iconData = Icons.task_alt;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              setState(() {
+                _selectedFilter = filter;
+                final authState = context.read<AuthBloc>().state;
+                if (authState is AuthAuthenticated) {
+                  if (filter == AppLocalizations.of(context)!.filterRejected) {
+                    context.read<ScheduleBloc>().add(
+                          FetchRejectedSchedulesEvent(
+                              userId: authState.user.idUser),
+                        );
+                  } else if (context.read<ScheduleBloc>().state
+                      is ScheduleLoaded) {
+                    final schedules =
+                        (context.read<ScheduleBloc>().state as ScheduleLoaded)
+                            .schedules;
+                    _filterSchedules(schedules, _searchController.text);
+                  } else {
+                    context.read<ScheduleBloc>().add(
+                          GetSchedulesEvent(userId: authState.user.idUser),
+                        );
+                  }
+                }
+              });
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color:
+                    isSelected ? Theme.of(context).primaryColor : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isSelected
+                      ? Theme.of(context).primaryColor
+                      : Colors.grey[300]!,
+                  width: isSelected ? 1.5 : 1.0,
+                ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color:
+                              Theme.of(context).primaryColor.withOpacity(0.3),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (iconData != null)
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? Colors.white.withOpacity(0.3)
+                            : Theme.of(context).primaryColor.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        iconData,
+                        size: 14,
+                        color: isSelected
+                            ? Colors.white
+                            : Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  const SizedBox(width: 6),
+                  Text(
+                    filter,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected ? Colors.white : Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

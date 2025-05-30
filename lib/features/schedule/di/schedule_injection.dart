@@ -15,6 +15,10 @@ import 'package:test_cbo/features/schedule/domain/usecases/get_schedule_types.da
 import 'package:test_cbo/features/schedule/domain/usecases/get_schedules_usecase.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_bloc.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_bloc.dart';
+import 'package:test_cbo/features/schedule/domain/usecases/get_edit_schedule_usecase.dart';
+import 'package:test_cbo/features/schedule/domain/usecases/get_schedules_by_range_date_usecase.dart'
+    as range_date_usecase;
+import 'package:test_cbo/features/schedule/domain/usecases/update_schedule_usecase.dart';
 
 /// Inisialisasi dependency injection untuk fitur schedule
 ///
@@ -28,6 +32,10 @@ Future<void> initScheduleDependencies() async {
   sl.registerFactory(
     () => ScheduleBloc(
       getSchedulesUseCase: sl(),
+      getSchedulesByRangeDateUseCase: sl(),
+      approvalRepository: sl(),
+      getEditScheduleUseCase: sl(),
+      updateScheduleUseCase: sl(),
     ),
   );
 
@@ -48,6 +56,10 @@ Future<void> initScheduleDependencies() async {
   sl.registerLazySingleton(() => GetProducts(sl()));
   sl.registerLazySingleton(() => GetDoctors(sl()));
   sl.registerLazySingleton(() => AddSchedule(sl()));
+  sl.registerLazySingleton(
+      () => range_date_usecase.GetSchedulesByRangeDateUseCase(sl()));
+  sl.registerLazySingleton(() => GetEditScheduleUseCase(sl()));
+  sl.registerLazySingleton(() => UpdateScheduleUseCase(sl()));
 
   // Repository
   sl.registerLazySingleton<ScheduleRepository>(

@@ -25,6 +25,13 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Get initial index from route arguments
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args != null && args is int) {
+        setState(() {
+          _selectedIndex = args;
+        });
+      }
       _refreshScheduleIfNeeded();
     });
   }

@@ -76,6 +76,18 @@ class RealisasiVisitDetail extends Equatable {
     required this.tujuanData,
   });
 
+  // Fungsi helper untuk mendapatkan daftar nama produk
+  List<String> get productNames => productData
+      .map((product) => product.namaProduct)
+      .where((name) => name.isNotEmpty)
+      .toList();
+
+  // Fungsi helper untuk mendapatkan formatted text daftar produk
+  String get formattedProductNames {
+    if (productData.isEmpty) return '';
+    return productNames.join(', ');
+  }
+
   @override
   List<Object?> get props => [
         id,

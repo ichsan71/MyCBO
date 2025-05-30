@@ -28,17 +28,30 @@ class CacheFailure extends Failure {
 }
 
 class NetworkFailure extends Failure {
-  const NetworkFailure() : super('Tidak ada koneksi internet');
+  const NetworkFailure([String message = 'Tidak ada koneksi internet'])
+      : super(message);
+
+  @override
+  String toString() => message;
+}
+
+class ConnectionFailure extends Failure {
+  const ConnectionFailure({required String message}) : super(message);
 
   @override
   String toString() => message;
 }
 
 class AuthenticationFailure extends Failure {
-  final String message;
+  const AuthenticationFailure({String message = 'Autentikasi gagal'})
+      : super(message);
 
-  
-  const AuthenticationFailure({this.message = 'Autentikasi gagal'}) : super(message);
+  @override
+  String toString() => message;
+}
+
+class UnauthorizedFailure extends Failure {
+  const UnauthorizedFailure({required String message}) : super(message);
 
   @override
   String toString() => message;

@@ -5,6 +5,8 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/presentation/widgets/app_bar_widget.dart';
 import '../../../../core/presentation/widgets/app_button.dart';
 import '../../../../core/presentation/theme/app_theme.dart';
+import '../../../../core/utils/logger.dart';
+import '../../domain/entities/realisasi_visit.dart';
 import '../bloc/realisasi_visit_bloc.dart';
 import '../widgets/realisasi_visit_card.dart';
 import '../widgets/shimmer_loading.dart';
@@ -50,9 +52,111 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
   void _loadRealisasiVisits() {
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
-      context.read<RealisasiVisitBloc>().add(
-            GetRealisasiVisitsEvent(idAtasan: authState.user.idUser),
+      if (authState.user.role.toUpperCase() == 'GM') {
+        // Jika role adalah GM, gunakan API khusus GM
+        context.read<RealisasiVisitBloc>().add(
+              GetRealisasiVisitsGMEvent(idAtasan: authState.user.idUser),
+            );
+      } else {
+        // Jika role bukan GM, gunakan API normal
+        context.read<RealisasiVisitBloc>().add(
+              GetRealisasiVisitsEvent(idAtasan: authState.user.idUser),
+            );
+      }
+    }
+  }
+
+  // Fungsi untuk menghitung jumlah dokter dari detail
+  String _countDoctorsFromDetails(List<RealisasiVisitDetail> details) {
+    try {
+      // Menghitung jumlah dokter unik berdasarkan idTujuan
+      final uniqueDoctorIds = <int>{};
+      for (var detail in details) {
+        if (detail.tujuan.toLowerCase() == 'dokter') {
+          uniqueDoctorIds.add(detail.idTujuan);
+        }
+      }
+      return uniqueDoctorIds.length.toString();
+    } catch (e) {
+      Logger.error('realisasi_visit', 'Error menghitung jumlah dokter: $e');
+      return '0';
+    }
+  }
+
+  // Fungsi untuk memperbaiki nama dokter pada details jika kosong
+  List<RealisasiVisitDetail> _enhanceDetailsWithNameIfMissing(
+      List<RealisasiVisitDetail> details) {
+    try {
+      Logger.info(
+          'realisasi_visit', 'Memperbaiki nama dokter untuk ${details.length} detail');
+
+      // Dummy data untuk ilustrasi
+      final Map<int, String> doctorNameMap = {
+        // ID Dokter -> Nama Dokter
+        // Dapat diisi dari database lokal jika diperlukan
+      };
+
+      return details.map((detail) {
+        // Jika namaDokter kosong dan tujuan adalah dokter, coba isi dengan informasi yang ada
+        if (detail.tujuanData.namaDokter.isEmpty &&
+            detail.tujuan.toLowerCase() == 'dokter') {
+          Logger.info(
+              'realisasi_visit',
+              'Detail dengan id ${detail.id} memiliki namaDokter kosong, mencoba memperbaiki');
+
+          // Jika kita memiliki mapping ID ke nama dokter, gunakan itu
+          final String doctorName = doctorNameMap[detail.idTujuan] ??
+              'Dokter (ID: ${detail.idTujuan})';
+
+          // Buat objek RealisasiVisitDetail baru dengan tujuanData yang dimodifikasi
+          return RealisasiVisitDetail(
+            id: detail.id,
+            typeSchedule: detail.typeSchedule,
+            tujuan: detail.tujuan,
+            idTujuan: detail.idTujuan,
+            tglVisit: detail.tglVisit,
+            product: detail.product,
+            note: detail.note,
+            shift: detail.shift,
+            jenis: detail.jenis,
+            checkin: detail.checkin,
+            fotoSelfie: detail.fotoSelfie,
+            checkout: detail.checkout,
+            fotoSelfieDua: detail.fotoSelfieDua,
+            statusTerrealisasi: detail.statusTerrealisasi,
+            realisasiVisitApproved: detail.realisasiVisitApproved,
+            productData: detail.productData,
+            tujuanData: TujuanData(
+              idDokter: detail.tujuanData.idDokter,
+              namaDokter: doctorName,
+            ),
           );
+        }
+
+        return detail;
+      }).toList();
+    } catch (e) {
+      Logger.error('realisasi_visit', 'Error saat memperbaiki nama dokter: $e');
+      return details;
+    }
+  }
+
+  // Fungsi untuk menghitung jumlah klinik dari detail
+  String _countClinicsFromDetails(List<RealisasiVisitDetail> details) {
+    try {
+      // Menghitung jumlah klinik unik berdasarkan idTujuan
+      final uniqueClinicIds = <int>{};
+      for (var detail in details) {
+        if (detail.tujuan.toLowerCase() == 'klinik' ||
+            detail.tujuan.toLowerCase() == 'apotek' ||
+            detail.tujuan.toLowerCase() == 'rs') {
+          uniqueClinicIds.add(detail.idTujuan);
+        }
+      }
+      return uniqueClinicIds.length.toString();
+    } catch (e) {
+      print('Error menghitung jumlah klinik: $e');
+      return '0';
     }
   }
 
@@ -182,6 +286,80 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
                                       builder: (context) =>
                                           RealisasiVisitDetailPage(
                                         realisasiVisit: realisasiVisit,
+                                        userId: authState.user.idUser,
+                                      ),
+                                    ),
+                                  ).then((_) => _loadRealisasiVisits());
+                                },
+                              );
+                            },
+                          ),
+                        );
+                      } else if (state is RealisasiVisitGMLoaded) {
+                        final realisasiVisitsGM =
+                            state.realisasiVisitsGM.where((realisasi) {
+                          final matchesSearch = realisasi.namaBawahan
+                              .toLowerCase()
+                              .contains(_searchQuery);
+                          return matchesSearch;
+                        }).toList();
+
+                        if (realisasiVisitsGM.isEmpty) {
+                          return Center(
+                            child: Text(
+                              _searchQuery.isNotEmpty
+                                  ? 'Tidak ada realisasi visit yang sesuai dengan pencarian'
+                                  : 'Tidak ada realisasi visit yang perlu disetujui',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          );
+                        }
+
+                        return RefreshIndicator(
+                          onRefresh: () async => _loadRealisasiVisits(),
+                          child: ListView.builder(
+                            itemCount: realisasiVisitsGM.length,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemBuilder: (context, index) {
+                              final realisasiVisitGM = realisasiVisitsGM[index];
+
+                              // Konversi model GM ke model standar
+                              final convertedRealisasiVisit = RealisasiVisit(
+                                idBawahan: realisasiVisitGM.idBawahan,
+                                namaBawahan: realisasiVisitGM.namaBawahan,
+                                role: realisasiVisitGM.roleUsers,
+                                totalSchedule:
+                                    realisasiVisitGM.jumlah.isNotEmpty
+                                        ? realisasiVisitGM.jumlah.first.total
+                                        : 0,
+                                // Ekstrak dan hitung jumlah dokter dari details
+                                jumlahDokter: _countDoctorsFromDetails(
+                                    realisasiVisitGM.details),
+                                // Ekstrak dan hitung jumlah klinik dari details
+                                jumlahKlinik: _countClinicsFromDetails(
+                                    realisasiVisitGM.details),
+                                totalTerrealisasi: realisasiVisitGM
+                                        .jumlah.isNotEmpty
+                                    ? realisasiVisitGM.jumlah.first.realisasi
+                                    : '0',
+                                approved: 0,
+                                details: _enhanceDetailsWithNameIfMissing(
+                                    realisasiVisitGM.details),
+                              );
+
+                              return RealisasiVisitCard(
+                                realisasiVisit: convertedRealisasiVisit,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          RealisasiVisitDetailPage(
+                                        realisasiVisit: convertedRealisasiVisit,
                                         userId: authState.user.idUser,
                                       ),
                                     ),

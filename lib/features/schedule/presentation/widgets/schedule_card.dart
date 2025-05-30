@@ -72,7 +72,7 @@ class ScheduleCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 _buildInfoRow(
                   Icons.medical_services_outlined,
-                  schedule.tipeSchedule,
+                  schedule.namaTipeSchedule ?? schedule.tipeSchedule,
                   lowerDraft,
                 ),
               ],

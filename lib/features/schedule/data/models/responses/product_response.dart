@@ -18,7 +18,8 @@ class ProductResponse {
   factory ProductResponse.fromJson(Map<String, dynamic> json) {
     try {
       Logger.info('ProductResponse', 'Memproses respons produk');
-      Logger.info('ProductResponse', 'Keys yang tersedia: ${json.keys.toList()}');
+      Logger.info(
+          'ProductResponse', 'Keys yang tersedia: ${json.keys.toList()}');
 
       // Coba ekstrak data produk dari berbagai kemungkinan struktur respons
       dynamic rawData;
@@ -89,7 +90,8 @@ class ProductResponse {
       List<ProductModel> products = [];
 
       if (rawData is List) {
-        Logger.info('ProductResponse', 'Data adalah List dengan ${rawData.length} item');
+        Logger.info('ProductResponse',
+            'Data adalah List dengan ${rawData.length} item');
 
         products = rawData
             .map((item) {
@@ -102,11 +104,13 @@ class ProductResponse {
                     final Map<String, dynamic> jsonItem = jsonDecode(item);
                     return ProductModel.fromJson(jsonItem);
                   } catch (e) {
-                    Logger.error('ProductResponse', 'Item tidak bisa di-parse sebagai JSON: $e');
+                    Logger.error('ProductResponse',
+                        'Item tidak bisa di-parse sebagai JSON: $e');
                     return null;
                   }
                 } else {
-                  Logger.error('ProductResponse', 'Item bukan Map atau String: $item');
+                  Logger.error(
+                      'ProductResponse', 'Item bukan Map atau String: $item');
                   return null;
                 }
               } catch (e) {
@@ -124,11 +128,13 @@ class ProductResponse {
           final model = ProductModel.fromJson(rawData);
           products = [model];
         } catch (e) {
-          Logger.error('ProductResponse', 'Error parsing data as single object: $e');
+          Logger.error(
+              'ProductResponse', 'Error parsing data as single object: $e');
         }
       } else if (rawData is String) {
         // Jika data adalah string, coba parse sebagai JSON
-        Logger.info('ProductResponse', 'Data adalah String, mencoba parse sebagai JSON');
+        Logger.info('ProductResponse',
+            'Data adalah String, mencoba parse sebagai JSON');
         try {
           final jsonData = jsonDecode(rawData);
           if (jsonData is List) {
@@ -143,27 +149,38 @@ class ProductResponse {
         }
       }
 
-      Logger.info('ProductResponse', 'Jumlah produk setelah parsing: ${products.length}');
+      Logger.info('ProductResponse',
+          'Jumlah produk setelah parsing: ${products.length}');
 
       // Jika tidak ada data yang berhasil di-parse, tambahkan dummy data
       if (products.isEmpty) {
-        Logger.info('ProductResponse', 'Tidak ada data yang berhasil di-parse, menambahkan dummy data');
+        Logger.info('ProductResponse',
+            'Tidak ada data yang berhasil di-parse, menambahkan dummy data');
         products = [
           const ProductModel(
-              id: 1,
+              idProduct: 1,
+              namaProduct: 'Produk A',
+              desc: 'Deskripsi produk A',
+              kode: '001',
               nama: 'Produk A',
               keterangan: 'Deskripsi produk A',
-              kodeRayon: '001'),
+              id: 1),
           const ProductModel(
-              id: 2,
+              idProduct: 2,
+              namaProduct: 'Produk B',
+              desc: 'Deskripsi produk B',
+              kode: '002',
               nama: 'Produk B',
               keterangan: 'Deskripsi produk B',
-              kodeRayon: '002'),
+              id: 2),
           const ProductModel(
-              id: 3,
+              idProduct: 3,
+              namaProduct: 'Produk C',
+              desc: 'Deskripsi produk C',
+              kode: '003',
               nama: 'Produk C',
               keterangan: 'Deskripsi produk C',
-              kodeRayon: '003'),
+              id: 3),
         ];
       }
 
@@ -182,20 +199,29 @@ class ProductResponse {
         message: 'Gagal memproses data: $e',
         data: [
           const ProductModel(
-              id: 1,
+              idProduct: 1,
+              namaProduct: 'Produk A',
+              desc: 'Deskripsi produk A',
+              kode: '001',
               nama: 'Produk A',
               keterangan: 'Deskripsi produk A',
-              kodeRayon: '001'),
+              id: 1),
           const ProductModel(
-              id: 2,
+              idProduct: 2,
+              namaProduct: 'Produk B',
+              desc: 'Deskripsi produk B',
+              kode: '002',
               nama: 'Produk B',
               keterangan: 'Deskripsi produk B',
-              kodeRayon: '002'),
+              id: 2),
           const ProductModel(
-              id: 3,
+              idProduct: 3,
+              namaProduct: 'Produk C',
+              desc: 'Deskripsi produk C',
+              kode: '003',
               nama: 'Produk C',
               keterangan: 'Deskripsi produk C',
-              kodeRayon: '003'),
+              id: 3),
         ],
       );
     }
