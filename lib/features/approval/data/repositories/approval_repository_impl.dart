@@ -9,8 +9,6 @@ import '../../domain/entities/approval_response.dart';
 import '../../domain/entities/monthly_approval.dart';
 import '../../domain/repositories/approval_repository.dart';
 import '../datasources/approval_remote_data_source.dart';
-import '../models/approval_model.dart';
-import '../models/approval_response_model.dart';
 
 class ApprovalRepositoryImpl implements ApprovalRepository {
   final ApprovalRemoteDataSource remoteDataSource;

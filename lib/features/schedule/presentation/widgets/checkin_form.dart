@@ -41,10 +41,20 @@ class _CheckinFormState extends State<CheckinForm> {
   String? _imageError;
   String? _noteError;
 
+  // Add minimum character constant
+  static const int _minimumNoteCharacters = 10;
+  static const int _maxNoteCharacters = 200;
+
   @override
   void initState() {
     super.initState();
     _checkPermissions();
+    // Add listener for text changes
+    _noteController.addListener(() {
+      setState(() {
+        // This will trigger a rebuild to update the character count
+      });
+    });
   }
 
   Future<void> _checkPermissions() async {
@@ -220,64 +230,62 @@ class _CheckinFormState extends State<CheckinForm> {
     }
   }
 
-  // Fungsi validasi form
-  bool _validateForm() {
-    bool isValid = true;
-
-    // Validasi lokasi
-    if (_currentPosition == null || _currentAddress == null) {
+  // Add note validation method
+  bool _validateNote() {
+    final noteLength = _noteController.text.trim().length;
+    if (noteLength < _minimumNoteCharacters) {
       setState(() {
-        _locationError =
-            'Lokasi belum tersedia. Pastikan GPS aktif dan izin lokasi diberikan.';
+        _noteError = 'Catatan harus minimal $_minimumNoteCharacters karakter';
       });
-      isValid = false;
-    } else {
-      setState(() {
-        _locationError = null;
-      });
+      return false;
     }
-
-    // Validasi foto
-    if (_imageFile == null) {
+    if (noteLength > _maxNoteCharacters) {
       setState(() {
-        _imageError = 'Foto wajib diambil untuk melakukan check-in';
+        _noteError =
+            'Catatan tidak boleh lebih dari $_maxNoteCharacters karakter';
       });
-      isValid = false;
-    } else {
-      setState(() {
-        _imageError = null;
-      });
+      return false;
     }
-
-    // Validasi catatan (opsional)
-    if (_noteController.text.isNotEmpty && _noteController.text.length < 10) {
-      setState(() {
-        _noteError = 'Catatan minimal 10 karakter jika diisi';
-      });
-      isValid = false;
-    } else {
-      setState(() {
-        _noteError = null;
-      });
-    }
-
-    return isValid;
+    setState(() {
+      _noteError = null;
+    });
+    return true;
   }
 
   void _submitForm() async {
-    // Validasi form sebelum submit
-    if (!_validateForm()) {
+    if (_isLoading) return;
+
+    // Validate note first
+    if (!_validateNote()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Mohon lengkapi semua data yang diperlukan'),
+        SnackBar(
+          content: Text(_noteError!),
           backgroundColor: Colors.orange,
         ),
       );
       return;
     }
 
-    // Cek jika sedang loading
-    if (_isLoading) {
+    // Rest of the validation and submission logic
+    if (_imageFile == null) {
+      setState(() {
+        _imageError = 'Silakan ambil foto terlebih dahulu';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Silakan ambil foto terlebih dahulu')),
+      );
+      return;
+    }
+
+    if (_currentPosition == null) {
+      setState(() {
+        _locationError = 'Lokasi tidak ditemukan';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tidak dapat mendapatkan lokasi. Silakan coba lagi.'),
+        ),
+      );
       return;
     }
 
@@ -285,188 +293,32 @@ class _CheckinFormState extends State<CheckinForm> {
       _isLoading = true;
     });
 
-    // Tampilkan dialog loading
-    if (mounted) {
-      showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20.0),
-              ),
-              elevation: 8,
-              child: Container(
-                padding: const EdgeInsets.all(24.0),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20.0),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white,
-                      Colors.blue.shade50,
-                    ],
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      height: 80,
-                      width: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade100,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: SizedBox(
-                          width: 50,
-                          height: 50,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Theme.of(context).primaryColor,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      "Memproses Check-in",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      "Mohon tunggu sebentar, kami sedang memproses data Anda",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    LinearProgressIndicator(
-                      backgroundColor: Colors.grey[200],
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Theme.of(context).primaryColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          });
-    }
+    // Create the request model
+    final request = CheckinRequestModel(
+      idSchedule: widget.scheduleId,
+      foto: _compressedImagePath ?? _imageFile!.path,
+      lokasi: _currentAddress ?? 'Unknown Location',
+      note: _noteController.text.trim(),
+    );
 
-    try {
-      // Gunakan path gambar yang sudah dikompresi jika tersedia
-      final imagePath = _compressedImagePath ?? _imageFile!.path;
-
-      final request = CheckinRequestModel(
-        idSchedule: widget.scheduleId,
-        lokasi: _currentAddress!,
-        note: _noteController.text,
-        foto: imagePath,
-      );
-
-      developer.log(
-        'Melakukan check-in untuk jadwal ${widget.scheduleId}',
-        name: 'CheckinForm',
-      );
-      developer.log(
-        'Alamat: $_currentAddress',
-        name: 'CheckinForm',
-      );
-      developer.log(
-        'Path foto: $imagePath',
-        name: 'CheckinForm',
-      );
-
-      // Atur timeout untuk menghindari request yang berjalan terlalu lama
-      final result = await Future.delayed(const Duration(seconds: 1), () {
-        return widget.onSubmit(request);
-      }).timeout(const Duration(seconds: 30), onTimeout: () {
-        throw Exception('Timeout saat melakukan check-in. Mohon coba lagi.');
-      });
-
-      if (mounted) {
-        // Tutup dialog loading
-        Navigator.of(context).pop();
-
-        // Update status jadwal
-        context.read<ScheduleBloc>().add(
-              UpdateScheduleStatusEvent(
-                scheduleId: widget.scheduleId,
-                newStatus: 'Check-in',
-                userId: widget.userId,
-              ),
-            );
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Check-in berhasil!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        developer.log(
-          'Check-in berhasil untuk jadwal ${widget.scheduleId}',
-          name: 'CheckinForm',
-        );
-
-        Navigator.of(context).pop(); // Kembali ke halaman sebelumnya
-      }
-    } catch (e) {
-      developer.log(
-        'Error saat check-in: ${e.toString()}',
-        name: 'CheckinForm',
-        error: e,
-      );
-
-      if (mounted) {
-        // Tutup dialog loading
-        Navigator.of(context).pop();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Terjadi kesalahan: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+    // Call the onSubmit callback
+    widget.onSubmit(request);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
       padding: const EdgeInsets.all(16.0),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Form title
-          Center(
-            child: Text(
-              'Check-in Jadwal',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).primaryColor,
-              ),
-            ),
+          Text(
+            'Check-in',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
 
@@ -587,141 +439,116 @@ class _CheckinFormState extends State<CheckinForm> {
           const SizedBox(height: 8),
 
           // Foto section
-          _imageFile != null
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        // Menampilkan preview gambar full screen saat diklik
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => Scaffold(
-                              appBar: AppBar(
-                                title: const Text('Preview Foto'),
-                                backgroundColor: Colors.black,
-                              ),
-                              body: Container(
-                                color: Colors.black,
-                                child: Center(
-                                  child: InteractiveViewer(
-                                    panEnabled: true,
-                                    boundaryMargin: const EdgeInsets.all(20),
-                                    minScale: 0.5,
-                                    maxScale: 4,
-                                    child: Image.file(
-                                      File(_compressedImagePath ??
-                                          _imageFile!.path),
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                      child: Stack(
-                        alignment: Alignment.bottomRight,
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.shade300),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.file(
-                                File(_compressedImagePath ?? _imageFile!.path),
-                                height: 200,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            right: 8,
-                            bottom: 8,
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.6),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Icon(
-                                Icons.zoom_in,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                          ),
-                        ],
+          if (_imageFile != null) ...[
+            GestureDetector(
+              onTap: () {
+                // Show full screen image preview
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => Scaffold(
+                      appBar: AppBar(
+                        title: const Text('Preview Foto'),
+                        backgroundColor: Colors.black,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(Icons.access_time, size: 14),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Diambil pada: $_imageTimestamp',
-                          style: const TextStyle(fontSize: 12),
+                      body: Container(
+                        color: Colors.black,
+                        child: Center(
+                          child: InteractiveViewer(
+                            panEnabled: true,
+                            boundaryMargin: const EdgeInsets.all(20),
+                            minScale: 0.5,
+                            maxScale: 4,
+                            child: Image.file(
+                              File(_compressedImagePath ?? _imageFile!.path),
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      onPressed: _takePicture,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Ambil Ulang Foto'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
                       ),
                     ),
-                  ],
-                )
-              : OutlinedButton.icon(
-                  onPressed: _takePicture,
-                  icon: const Icon(Icons.photo_camera),
-                  label: const Text('Ambil Foto'),
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.grey.shade100,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    minimumSize: const Size(double.infinity, 60),
                   ),
+                );
+              },
+              child: Stack(
+                children: [
+                  AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        image: DecorationImage(
+                          image: FileImage(
+                              File(_compressedImagePath ?? _imageFile!.path)),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 8,
+                    bottom: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Icon(
+                        Icons.zoom_in,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (_imageTimestamp != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Foto diambil pada: $_imageTimestamp',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
                 ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+            const SizedBox(height: 16),
+          ],
+
+          ElevatedButton.icon(
+            onPressed: _takePicture,
+            icon: const Icon(Icons.camera_alt, color: Colors.white),
+            label: Text(
+              _imageFile == null ? 'Ambil Foto' : 'Ambil Ulang Foto',
+              style: const TextStyle(color: Colors.white),
+            ),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).primaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
           const SizedBox(height: 16),
 
-          // Catatan section dengan error message
+          // Modified note input field with character count
           TextField(
             controller: _noteController,
-            decoration: InputDecoration(
-              labelText: 'Catatan (opsional)',
-              border: const OutlineInputBorder(),
-              hintText: 'Tambahkan catatan jika diperlukan',
-              errorText: _noteError,
-              helperText: _noteController.text.isNotEmpty
-                  ? 'Minimal 10 karakter jika diisi'
-                  : null,
-            ),
+            maxLength: _maxNoteCharacters,
             maxLines: 3,
-            onChanged: (value) {
-              if (value.isNotEmpty) {
-                setState(() {
-                  if (value.length < 10) {
-                    _noteError = 'Catatan minimal 10 karakter jika diisi';
-                  } else {
-                    _noteError = null;
-                  }
-                });
-              } else {
-                setState(() {
-                  _noteError = null;
-                });
-              }
-            },
+            decoration: InputDecoration(
+              labelText: 'Catatan',
+              alignLabelWithHint: true,
+              errorText: _noteError,
+              counterText: '${_noteController.text.length}/$_maxNoteCharacters',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
           ),
           const SizedBox(height: 24),
 
@@ -730,7 +557,12 @@ class _CheckinFormState extends State<CheckinForm> {
             onPressed: _isLoading ? null : _submitForm,
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
+              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).primaryColor,
               disabledBackgroundColor: Colors.blue.shade200,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: _isLoading
                 ? const Row(
@@ -748,6 +580,7 @@ class _CheckinFormState extends State<CheckinForm> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
                     ],
@@ -755,13 +588,14 @@ class _CheckinFormState extends State<CheckinForm> {
                 : const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.check_circle, size: 20),
+                      Icon(Icons.check_circle, size: 20, color: Colors.white),
                       SizedBox(width: 8),
                       Text(
                         'Check-in',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
                     ],

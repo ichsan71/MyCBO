@@ -19,6 +19,7 @@ import '../../../auth/presentation/bloc/auth_state.dart';
 import '../widgets/checkin_form.dart';
 import '../widgets/checkout_form.dart';
 import '../../../../core/presentation/widgets/shimmer_schedule_detail_loading.dart';
+import '../../../check_in/presentation/utils/dialog_helper.dart';
 
 class ScheduleDetailPage extends StatelessWidget {
   final Schedule schedule;
@@ -599,9 +600,55 @@ class ScheduleDetailPage extends StatelessWidget {
     }
   }
 
+  bool _hasUncheckedOutSchedules(List<Schedule> schedules) {
+    return schedules.any((s) =>
+        s.id != schedule.id && // Don't check current schedule
+        (s.statusCheckin.toLowerCase().trim() == 'check-in' ||
+            s.statusCheckin.toLowerCase().trim() == 'belum checkout'));
+  }
+
   void _showCheckinForm(BuildContext context) {
     final scheduleBloc = context.read<ScheduleBloc>();
+    final scheduleState = scheduleBloc.state;
 
+    if (scheduleState is! ScheduleLoaded) {
+      // If schedules are not loaded, fetch them first
+      scheduleBloc.add(GetSchedulesEvent(userId: userId));
+
+      // Listen for the state change with proper subscription management
+      StreamSubscription? subscription;
+      subscription = scheduleBloc.stream.listen((state) {
+        if (state is ScheduleLoaded) {
+          // Cancel the subscription since we got what we needed
+          subscription?.cancel();
+
+          if (_hasUncheckedOutSchedules(state.schedules)) {
+            DialogHelper.showCheckInWarningDialog(context)
+                .then((shouldProceed) {
+              if (shouldProceed && context.mounted) {
+                _showCheckinFormSheet(context, scheduleBloc);
+              }
+            });
+          } else if (context.mounted) {
+            _showCheckinFormSheet(context, scheduleBloc);
+          }
+        }
+      });
+    } else {
+      // Schedules are already loaded
+      if (_hasUncheckedOutSchedules(scheduleState.schedules)) {
+        DialogHelper.showCheckInWarningDialog(context).then((shouldProceed) {
+          if (shouldProceed) {
+            _showCheckinFormSheet(context, scheduleBloc);
+          }
+        });
+      } else {
+        _showCheckinFormSheet(context, scheduleBloc);
+      }
+    }
+  }
+
+  void _showCheckinFormSheet(BuildContext context, ScheduleBloc scheduleBloc) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

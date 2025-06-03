@@ -1,5 +1,3 @@
-import 'package:equatable/equatable.dart';
-
 class UpdateScheduleRequestModel {
   final int id;
   final int typeSchedule;

@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../../core/di/injection_container.dart';
-import '../../../../core/presentation/widgets/app_bar_widget.dart';
 import '../../../../core/presentation/theme/app_theme.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../schedule/domain/entities/tipe_schedule.dart';
