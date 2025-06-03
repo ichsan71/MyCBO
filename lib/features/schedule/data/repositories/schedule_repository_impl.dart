@@ -35,10 +35,6 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
         Logger.error(
             'ScheduleRepositoryImpl', 'Terjadi ServerException: ${e.message}');
         return Left(ServerFailure(message: e.message));
-      } on UnauthorizedException catch (e) {
-        Logger.error('ScheduleRepositoryImpl',
-            'Terjadi UnauthorizedException: ${e.message}');
-        return Left(ServerFailure(message: e.message));
       } catch (e) {
         Logger.error(
             'ScheduleRepositoryImpl', 'Terjadi error tidak terduga: $e');
@@ -47,7 +43,9 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
       }
     } else {
       Logger.error('ScheduleRepositoryImpl', 'Tidak ada koneksi jaringan!');
-      return const Left(NetworkFailure());
+      return const Left(NetworkFailure(
+          message:
+              'Tidak ada koneksi internet. Silakan periksa koneksi anda dan coba lagi.'));
     }
   }
 
@@ -67,9 +65,6 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
         Logger.error(
             'ScheduleRepositoryImpl', 'Terjadi ServerException: ${e.message}');
         return Left(ServerFailure(message: e.message));
-      } on Exception catch (e) {
-        Logger.error('ScheduleRepositoryImpl', 'Terjadi Exception: $e');
-        return Left(ServerFailure(message: 'Error: ${e.toString()}'));
       } catch (e) {
         Logger.error(
             'ScheduleRepositoryImpl', 'Terjadi error tidak terduga: $e');
@@ -78,7 +73,9 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
       }
     } else {
       Logger.error('ScheduleRepositoryImpl', 'Tidak ada koneksi jaringan!');
-      return const Left(NetworkFailure());
+      return const Left(NetworkFailure(
+          message:
+              'Tidak ada koneksi internet. Silakan periksa koneksi anda dan coba lagi.'));
     }
   }
 
@@ -98,23 +95,20 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
             'Data edit jadwal berhasil diambil dari API');
         return Right(editScheduleData);
       } on ServerException catch (e) {
-        Logger.error('ScheduleRepositoryImpl',
-            'Terjadi ServerException saat mengambil data edit jadwal: ${e.message}');
+        Logger.error(
+            'ScheduleRepositoryImpl', 'Terjadi ServerException: ${e.message}');
         return Left(ServerFailure(message: e.message));
-      } on Exception catch (e) {
-        Logger.error('ScheduleRepositoryImpl',
-            'Terjadi Exception saat mengambil data edit jadwal: $e');
-        return Left(ServerFailure(message: 'Error: ${e.toString()}'));
       } catch (e) {
-        Logger.error('ScheduleRepositoryImpl',
-            'Terjadi error tidak terduga saat mengambil data edit jadwal: $e');
+        Logger.error(
+            'ScheduleRepositoryImpl', 'Terjadi error tidak terduga: $e');
         return const Left(ServerFailure(
-            message:
-                'Terjadi kesalahan tidak terduga saat mengambil data edit jadwal. Silakan coba lagi.'));
+            message: 'Terjadi kesalahan tidak terduga. Silakan coba lagi.'));
       }
     } else {
       Logger.error('ScheduleRepositoryImpl', 'Tidak ada koneksi jaringan!');
-      return const Left(NetworkFailure());
+      return const Left(NetworkFailure(
+          message:
+              'Tidak ada koneksi internet. Silakan periksa koneksi anda dan coba lagi.'));
     }
   }
 
@@ -141,8 +135,9 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
       }
     } else {
       Logger.error('ScheduleRepositoryImpl', 'Tidak ada koneksi internet');
-      return Left(NetworkFailure(
-          'Tidak dapat memperbarui jadwal. Periksa koneksi internet Anda.'));
+      return const Left(NetworkFailure(
+          message:
+              'Tidak dapat memperbarui jadwal. Periksa koneksi internet Anda.'));
     }
   }
 
@@ -166,7 +161,9 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
       }
     } else {
       Logger.error('ScheduleRepositoryImpl', 'No network connection');
-      return const Left(NetworkFailure());
+      return const Left(NetworkFailure(
+          message:
+              'No internet connection. Please check your connection and try again.'));
     }
   }
 
@@ -190,7 +187,9 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
       }
     } else {
       Logger.error('ScheduleRepositoryImpl', 'No network connection');
-      return const Left(NetworkFailure());
+      return const Left(NetworkFailure(
+          message:
+              'No internet connection. Please check your connection and try again.'));
     }
   }
 
@@ -214,7 +213,9 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
       }
     } else {
       Logger.error('ScheduleRepositoryImpl', 'No network connection');
-      return const Left(NetworkFailure());
+      return const Left(NetworkFailure(
+          message:
+              'No internet connection. Please check your connection and try again.'));
     }
   }
 
@@ -237,7 +238,9 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
       }
     } else {
       Logger.error('ScheduleRepositoryImpl', 'No network connection');
-      return const Left(NetworkFailure());
+      return const Left(NetworkFailure(
+          message:
+              'No internet connection. Please check your connection and try again.'));
     }
   }
 }

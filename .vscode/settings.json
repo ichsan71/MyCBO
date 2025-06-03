@@ -1,4 +1,37 @@
 {
   "java.configuration.updateBuildConfiguration": "interactive",
-  "java.compile.nullAnalysis.mode": "automatic"
+  "java.compile.nullAnalysis.mode": "automatic",
+  "cSpell.words": [
+    "Alasan",
+    "Anda",
+    "Apakah",
+    "atasan",
+    "Batal",
+    "Bawahan",
+    "Catatan",
+    "diisi",
+    "Dipilih",
+    "Dokter",
+    "hanya",
+    "harus",
+    "ingin",
+    "jadwal",
+    "jumlah",
+    "Klinik",
+    "Konfirmasi",
+    "menolak",
+    "menyetujui",
+    "penolakan",
+    "pilih",
+    "Produk",
+    "satu",
+    "Semua",
+    "Setujui",
+    "Tanggal",
+    "Tidak",
+    "Tolak",
+    "tujuan",
+    "Untuk",
+    "yakin"
+  ]
 }

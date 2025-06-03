@@ -18,7 +18,7 @@ class Logger {
 
   static void info(String tag, String message) {
     if (kDebugMode) {
-      print('$_infoPrefix [$tag] $message');
+      print('ℹ️ $tag: $message');
     }
   }
 
@@ -30,26 +30,22 @@ class Logger {
 
   static void warning(String tag, String message) {
     if (kDebugMode) {
-      print('$_warningPrefix [$tag] $message');
+      print('⚠️ $tag: $message');
     }
   }
 
-  static void error(String tag, String message,
-      [dynamic error, StackTrace? stackTrace]) {
+  static void error(String tag, String message, [dynamic details]) {
     if (kDebugMode) {
-      print('$_errorPrefix [$tag] $message');
-      if (error != null) {
-        print('$_errorPrefix [$tag] Error details: $error');
-      }
-      if (stackTrace != null) {
-        print('$_errorPrefix [$tag] Stack trace: $stackTrace');
+      print('❌ $tag: $message');
+      if (details != null) {
+        print('❌ Details: $details');
       }
     }
   }
 
   static void success(String tag, String message) {
     if (kDebugMode) {
-      print('$_successPrefix [$tag] $message');
+      print('✅ $tag: $message');
     }
   }
 
@@ -67,6 +63,19 @@ class Logger {
   static void divider() {
     if (kDebugMode) {
       print('----------------------------------------');
+    }
+  }
+
+  static void api(String method, String endpoint,
+      {dynamic body, dynamic response}) {
+    if (kDebugMode) {
+      print('🌐 API $method: $endpoint');
+      if (body != null) {
+        print('📤 Request Body: $body');
+      }
+      if (response != null) {
+        print('📥 Response: $response');
+      }
     }
   }
 }

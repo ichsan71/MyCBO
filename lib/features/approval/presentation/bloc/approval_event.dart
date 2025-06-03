@@ -4,98 +4,87 @@ abstract class ApprovalEvent extends Equatable {
   const ApprovalEvent();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
-class GetApprovalsEvent extends ApprovalEvent {
+class GetApprovals extends ApprovalEvent {
   final int userId;
 
-  const GetApprovalsEvent({required this.userId});
+  const GetApprovals({required this.userId});
 
   @override
-  List<Object> get props => [userId];
+  List<Object?> get props => [userId];
 }
 
-class FilterApprovalsEvent extends ApprovalEvent {
-  final ApprovalFilter filter;
-
-  const FilterApprovalsEvent({required this.filter});
-
-  @override
-  List<Object> get props => [filter];
-}
-
-class ApproveDetailEvent extends ApprovalEvent {
-  final int scheduleId;
+class GetMonthlyApprovals extends ApprovalEvent {
   final int userId;
-  final String notes;
 
-  const ApproveDetailEvent({
-    required this.scheduleId,
+  const GetMonthlyApprovals({required this.userId});
+
+  @override
+  List<Object?> get props => [userId];
+}
+
+class FilterApprovals extends ApprovalEvent {
+  final String searchQuery;
+  final int? month;
+  final int? year;
+  final int? status;
+  final int userId;
+
+  const FilterApprovals({
+    required this.searchQuery,
+    this.month,
+    this.year,
+    this.status,
     required this.userId,
-    required this.notes,
   });
 
   @override
-  List<Object> get props => [scheduleId, userId, notes];
+  List<Object?> get props => [searchQuery, month, year, status, userId];
 }
 
-class RejectDetailEvent extends ApprovalEvent {
-  final int scheduleId;
-  final int userId;
-  final String notes;
-
-  const RejectDetailEvent({
-    required this.scheduleId,
-    required this.userId,
-    required this.notes,
-  });
-
-  @override
-  List<Object> get props => [scheduleId, userId, notes];
-}
-
-class ApproveRequestEvent extends ApprovalEvent {
+class ApproveRequest extends ApprovalEvent {
   final int approvalId;
-  final int userId;
   final String notes;
 
-  const ApproveRequestEvent({
+  const ApproveRequest({
     required this.approvalId,
-    required this.userId,
     required this.notes,
   });
 
   @override
-  List<Object> get props => [approvalId, userId, notes];
+  List<Object?> get props => [approvalId, notes];
 }
 
-class RejectRequestEvent extends ApprovalEvent {
+class RejectRequest extends ApprovalEvent {
   final String idSchedule;
   final String idRejecter;
   final String comment;
 
-  const RejectRequestEvent({
+  const RejectRequest({
     required this.idSchedule,
     required this.idRejecter,
     required this.comment,
   });
 
   @override
-  List<Object> get props => [idSchedule, idRejecter, comment];
+  List<Object?> get props => [idSchedule, idRejecter, comment];
 }
 
-class SendApprovalEvent extends ApprovalEvent {
+class SendApproval extends ApprovalEvent {
   final int scheduleId;
   final int userId;
   final bool isApproved;
+  final String? joinScheduleId;
 
-  const SendApprovalEvent({
+  const SendApproval({
     required this.scheduleId,
     required this.userId,
     required this.isApproved,
+    this.joinScheduleId,
   });
 
   @override
-  List<Object> get props => [scheduleId, userId, isApproved];
+  List<Object?> get props => [scheduleId, userId, isApproved, joinScheduleId];
 }

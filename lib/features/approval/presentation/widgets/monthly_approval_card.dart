@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/presentation/theme/app_theme.dart';
-import '../../domain/entities/approval.dart';
+import '../../domain/entities/monthly_approval.dart';
+import 'package:intl/intl.dart';
 
-class ApprovalCard extends StatelessWidget {
-  final Approval approval;
-  final VoidCallback onTap;
+class MonthlyApprovalCard extends StatelessWidget {
+  final MonthlyApproval approval;
+  final VoidCallback? onTap;
 
-  const ApprovalCard({
+  const MonthlyApprovalCard({
     Key? key,
     required this.approval,
-    required this.onTap,
+    this.onTap,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final monthName =
+        DateFormat('MMMM', 'id_ID').format(DateTime(0, approval.month));
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
@@ -48,7 +52,7 @@ class ApprovalCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Periode: ${approval.month}/${approval.year}',
+                          'Periode: $monthName ${approval.year}',
                           style: GoogleFonts.poppins(
                             fontSize: 13,
                             color: Colors.grey[600],
@@ -65,7 +69,7 @@ class ApprovalCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      'Dadakan',
+                      'Bulanan',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,

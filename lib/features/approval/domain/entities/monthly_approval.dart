@@ -1,75 +1,57 @@
 import 'package:equatable/equatable.dart';
 
-class Approval extends Equatable {
-  final int id;
-  final int userId;
-  final String namaBawahan;
-  final String tglVisit;
-  final String tujuan;
-  final String note;
-  final bool isApproved;
-  final int approved;
+class MonthlyApproval extends Equatable {
   final int idBawahan;
-  final int month;
-  final int year;
+  final String namaBawahan;
   final int totalSchedule;
+  final int year;
+  final int month;
   final String jumlahDokter;
   final String jumlahKlinik;
-  final List<Detail> details;
+  final int approved;
+  final List<MonthlyScheduleDetail> details;
 
-  const Approval({
-    required this.id,
-    required this.userId,
-    required this.namaBawahan,
-    required this.tglVisit,
-    required this.tujuan,
-    required this.note,
-    required this.isApproved,
-    required this.approved,
+  const MonthlyApproval({
     required this.idBawahan,
-    required this.month,
-    required this.year,
+    required this.namaBawahan,
     required this.totalSchedule,
+    required this.year,
+    required this.month,
     required this.jumlahDokter,
     required this.jumlahKlinik,
+    required this.approved,
     required this.details,
   });
 
+  MonthlyApproval toEntity() => this;
+
   @override
   List<Object?> get props => [
-        id,
-        userId,
-        namaBawahan,
-        tglVisit,
-        tujuan,
-        note,
-        isApproved,
-        approved,
         idBawahan,
-        month,
-        year,
+        namaBawahan,
         totalSchedule,
+        year,
+        month,
         jumlahDokter,
         jumlahKlinik,
+        approved,
         details,
       ];
 }
 
-class Detail extends Equatable {
+class MonthlyScheduleDetail extends Equatable {
   final int id;
   final String typeSchedule;
   final String tujuan;
   final int idTujuan;
   final String tglVisit;
-  final String product;
+  final List<String> product;
   final String note;
   final String shift;
   final List<ProductData> productData;
   final TujuanData tujuanData;
-  final int approved;
-  final int? realisasiApprove;
 
-  const Detail({
+  const MonthlyScheduleDetail({
     required this.id,
     required this.typeSchedule,
     required this.tujuan,
@@ -80,9 +62,9 @@ class Detail extends Equatable {
     required this.shift,
     required this.productData,
     required this.tujuanData,
-    required this.approved,
-    this.realisasiApprove,
   });
+
+  MonthlyScheduleDetail toEntity() => this;
 
   @override
   List<Object?> get props => [
@@ -96,8 +78,6 @@ class Detail extends Equatable {
         shift,
         productData,
         tujuanData,
-        approved,
-        realisasiApprove,
       ];
 }
 
@@ -110,6 +90,8 @@ class ProductData extends Equatable {
     required this.namaProduct,
   });
 
+  ProductData toEntity() => this;
+
   @override
   List<Object?> get props => [idProduct, namaProduct];
 }
@@ -117,14 +99,14 @@ class ProductData extends Equatable {
 class TujuanData extends Equatable {
   final int idDokter;
   final String namaDokter;
-  final String namaKlinik;
 
   const TujuanData({
     required this.idDokter,
     required this.namaDokter,
-    required this.namaKlinik,
   });
 
+  TujuanData toEntity() => this;
+
   @override
-  List<Object?> get props => [idDokter, namaDokter, namaKlinik];
+  List<Object?> get props => [idDokter, namaDokter];
 }

@@ -11,6 +11,9 @@ import '../widgets/shimmer_loading.dart';
 import 'approval_detail_page.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../domain/entities/approval.dart' as approval_entity;
+import '../../domain/entities/monthly_approval.dart' as monthly_entity;
+import '../widgets/monthly_approval_card.dart';
 
 class ApprovalListPage extends StatelessWidget {
   const ApprovalListPage({Key? key}) : super(key: key);
@@ -31,35 +34,46 @@ class ApprovalListView extends StatefulWidget {
   _ApprovalListViewState createState() => _ApprovalListViewState();
 }
 
-class _ApprovalListViewState extends State<ApprovalListView> {
+class _ApprovalListViewState extends State<ApprovalListView>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  int _selectedFilter = 0; // 0: Semua, 1: Menunggu, 2: Disetujui, 3: Ditolak
-  final List<String> _filterOptions = [
-    'Semua',
-    'Menunggu',
-    'Disetujui',
-    'Ditolak'
-  ];
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_handleTabChange);
     _loadApprovals();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _tabController.removeListener(_handleTabChange);
+    _tabController.dispose();
     super.dispose();
+  }
+
+  void _handleTabChange() {
+    if (_tabController.indexIsChanging) {
+      _loadApprovals();
+    }
   }
 
   void _loadApprovals() {
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
-      context.read<ApprovalBloc>().add(
-            GetApprovalsEvent(userId: authState.user.idUser),
-          );
+      if (_tabController.index == 0) {
+        context.read<ApprovalBloc>().add(
+              GetMonthlyApprovals(userId: authState.user.idUser),
+            );
+      } else {
+        context.read<ApprovalBloc>().add(
+              GetApprovals(userId: authState.user.idUser),
+            );
+      }
     }
   }
 
@@ -69,371 +83,261 @@ class _ApprovalListViewState extends State<ApprovalListView> {
     });
   }
 
-  void _onFilterChanged(int value) {
-    setState(() {
-      _selectedFilter = value;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBarWidget(
-        title: 'Daftar Persetujuan',
-        actions: [
-          // Dropdown filter
-          PopupMenuButton<int>(
-            icon: Stack(
-              alignment: Alignment.center,
-              children: [
-                const Icon(Icons.filter_list),
-                if (_selectedFilter != 0)
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: _selectedFilter == 1
-                            ? AppTheme.warningColor
-                            : _selectedFilter == 2
-                                ? AppTheme.successColor
-                                : AppTheme.errorColor,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            tooltip: 'Filter',
-            offset: const Offset(0, 40),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            onSelected: (int index) {
-              _onFilterChanged(index);
-            },
-            itemBuilder: (BuildContext context) {
-              return List.generate(_filterOptions.length, (index) {
-                return PopupMenuItem<int>(
-                  value: index,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _filterOptions[index],
-                        style: GoogleFonts.poppins(
-                          color: index == 0
-                              ? Colors.grey[800]
-                              : index == 1
-                                  ? AppTheme.warningColor
-                                  : index == 2
-                                      ? AppTheme.successColor
-                                      : AppTheme.errorColor,
-                          fontWeight: _selectedFilter == index
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                        ),
-                      ),
-                      if (_selectedFilter == index)
-                        Icon(
-                          Icons.check,
-                          color: index == 0
-                              ? Colors.grey[800]
-                              : index == 1
-                                  ? AppTheme.warningColor
-                                  : index == 2
-                                      ? AppTheme.successColor
-                                      : AppTheme.errorColor,
-                          size: 18,
-                        ),
-                    ],
-                  ),
-                );
-              });
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadApprovals,
-            tooltip: 'Refresh',
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                TextField(
-                  controller: _searchController,
-                  onChanged: _onSearchChanged,
-                  decoration: InputDecoration(
-                    hintText: 'Cari nama bawahan...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          BorderSide(color: AppTheme.primaryColor, width: 2),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                    contentPadding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 16),
-                    // Tambahkan suffix icon untuk menampilkan filter yang dipilih
-                    suffixIcon: _selectedFilter != 0
-                        ? Padding(
-                            padding: const EdgeInsets.only(right: 8.0),
-                            child: Chip(
-                              label: Text(
-                                _filterOptions[_selectedFilter],
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  color: _selectedFilter == 1
-                                      ? AppTheme.warningColor
-                                      : _selectedFilter == 2
-                                          ? AppTheme.successColor
-                                          : AppTheme.errorColor,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              backgroundColor: _selectedFilter == 1
-                                  ? AppTheme.warningColor.withOpacity(0.1)
-                                  : _selectedFilter == 2
-                                      ? AppTheme.successColor.withOpacity(0.1)
-                                      : AppTheme.errorColor.withOpacity(0.1),
-                              deleteIcon: Icon(
-                                Icons.close,
-                                size: 16,
-                                color: _selectedFilter == 1
-                                    ? AppTheme.warningColor
-                                    : _selectedFilter == 2
-                                        ? AppTheme.successColor
-                                        : AppTheme.errorColor,
-                              ),
-                              onDeleted: () => _onFilterChanged(0),
-                            ),
-                          )
-                        : null,
-                  ),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(140),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
-          ),
-          Expanded(
-            child: BlocBuilder<AuthBloc, AuthState>(
-              builder: (context, authState) {
-                if (authState is AuthAuthenticated) {
-                  // Cek apakah user memiliki role yang diizinkan
-                  final allowedRoles = [
-                    'ADMIN',
-                    'GM',
-                    'BCO',
-                    'RSM',
-                    'DM',
-                    'AM'
-                  ];
-                  if (!allowedRoles.contains(authState.user.role)) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.lock_outline,
-                              size: 64,
-                              color: Colors.grey[400],
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          const BackButton(color: Colors.white),
+                          Text(
+                            'Daftar Persetujuan',
+                            style: GoogleFonts.poppins(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Anda tidak memiliki akses ke fitur ini',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Silakan hubungi administrator untuk informasi lebih lanjut',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            icon:
+                                const Icon(Icons.refresh, color: Colors.white),
+                            onPressed: _loadApprovals,
+                            tooltip: 'Refresh',
+                          ),
+                        ],
                       ),
-                    );
-                  }
-
-                  return BlocBuilder<ApprovalBloc, ApprovalState>(
-                    builder: (context, state) {
-                      if (state is ApprovalLoading) {
-                        return ListView.builder(
-                          itemCount: 5,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemBuilder: (context, index) {
-                            return const ShimmerApprovalCard();
-                          },
-                        );
-                      } else if (state is ApprovalError) {
-                        return Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.error_outline,
-                                  size: 64,
-                                  color: AppTheme.errorColor.withOpacity(0.5),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'Gagal memuat data',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey[800],
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  state.message,
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-                                AppButton(
-                                  text: 'Coba Lagi',
-                                  onPressed: _loadApprovals,
-                                  type: AppButtonType.primary,
-                                  prefixIcon:
-                                      const Icon(Icons.refresh, size: 18),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      } else if (state is ApprovalLoaded) {
-                        final approvals = state.approvals.where((approval) {
-                          final matchesSearch = approval.namaBawahan
-                              .toLowerCase()
-                              .contains(_searchQuery);
-
-                          bool matchesFilter = true;
-                          if (_selectedFilter != 0) {
-                            // Filter berdasarkan status
-                            // 1: Menunggu (approved = 0)
-                            // 2: Disetujui (approved = 1)
-                            // 3: Ditolak (approved = 2)
-                            matchesFilter =
-                                approval.approved == (_selectedFilter - 1);
-                          }
-
-                          return matchesSearch && matchesFilter;
-                        }).toList();
-
-                        if (approvals.isEmpty) {
-                          return Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    _searchQuery.isNotEmpty
-                                        ? Icons.search_off
-                                        : Icons.inbox_outlined,
-                                    size: 64,
-                                    color: Colors.grey[400],
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    _searchQuery.isNotEmpty
-                                        ? 'Tidak ada persetujuan yang sesuai dengan pencarian'
-                                        : 'Tidak ada persetujuan yang perlu diproses',
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                  if (_searchQuery.isNotEmpty) ...[
-                                    const SizedBox(height: 24),
-                                    AppButton(
-                                      text: 'Reset Pencarian',
-                                      onPressed: () {
-                                        _searchController.clear();
-                                        _onSearchChanged('');
-                                      },
-                                      type: AppButtonType.outline,
-                                      prefixIcon:
-                                          const Icon(Icons.refresh, size: 18),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          );
-                        }
-
-                        return RefreshIndicator(
-                          onRefresh: () async => _loadApprovals(),
-                          child: ListView.builder(
-                            itemCount: approvals.length,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemBuilder: (context, index) {
-                              final approval = approvals[index];
-                              return ApprovalCard(
-                                approval: approval,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => ApprovalDetailPage(
-                                        approval: approval,
-                                        userId: authState.user.idUser,
-                                      ),
-                                    ),
-                                  ).then((_) => _loadApprovals());
-                                },
-                              );
-                            },
-                          ),
-                        );
-                      }
-                      return const SizedBox();
-                    },
-                  );
-                } else {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-              },
+                    ),
+                    TabBar(
+                      controller: _tabController,
+                      tabs: const [
+                        Tab(text: 'Bulanan'),
+                        Tab(text: 'Dadakan'),
+                      ],
+                      labelStyle: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      unselectedLabelStyle: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w400,
+                      ),
+                      indicator: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      labelColor: Theme.of(context).primaryColor,
+                      unselectedLabelColor: Colors.white70,
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-        ],
+        ),
+        body: Column(
+          children: [
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.all(16.0),
+              child: Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: _onSearchChanged,
+                  style: GoogleFonts.poppins(),
+                  decoration: InputDecoration(
+                    hintText: 'Cari nama bawahan...',
+                    hintStyle: GoogleFonts.poppins(
+                      color: Colors.grey[600],
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: Colors.grey[600],
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Container(
+                color: Colors.grey[50],
+                child: TabBarView(
+                  physics: const NeverScrollableScrollPhysics(),
+                  controller: _tabController,
+                  children: [
+                    _buildApprovalList(context, context.read<AuthBloc>().state),
+                    _buildApprovalList(context, context.read<AuthBloc>().state),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Widget _buildApprovalList(BuildContext context, AuthState authState) {
+    if (authState is! AuthAuthenticated) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return BlocBuilder<ApprovalBloc, ApprovalState>(
+      builder: (context, state) {
+        if (state is ApprovalLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (state is ApprovalError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  state.message,
+                  style: GoogleFonts.poppins(color: Colors.red),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _loadApprovals,
+                  child: const Text('Coba Lagi'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (state is ApprovalLoaded || state is MonthlyApprovalLoaded) {
+          final approvals = _tabController.index == 0
+              ? (state is MonthlyApprovalLoaded ? state.approvals : [])
+              : (state is ApprovalLoaded ? state.approvals : []);
+
+          if (approvals.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inbox, size: 48, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Tidak ada persetujuan',
+                    style: GoogleFonts.poppins(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final filteredApprovals = _filterApprovals(approvals);
+
+          if (filteredApprovals.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.search_off, size: 48, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Tidak ada hasil pencarian',
+                    style: GoogleFonts.poppins(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: filteredApprovals.length,
+            itemBuilder: (context, index) {
+              final currentApproval = filteredApprovals[index];
+              if (_tabController.index == 0) {
+                if (currentApproval is monthly_entity.MonthlyApproval) {
+                  return MonthlyApprovalCard(
+                    approval: currentApproval,
+                    onTap: () => _navigateToDetail(currentApproval, true),
+                  );
+                }
+              } else {
+                if (currentApproval is approval_entity.Approval) {
+                  return ApprovalCard(
+                    approval: currentApproval,
+                    onTap: () => _navigateToDetail(currentApproval, false),
+                  );
+                }
+              }
+              return const SizedBox.shrink();
+            },
+          );
+        }
+
+        return const Center(child: CircularProgressIndicator());
+      },
+    );
+  }
+
+  List<dynamic> _filterApprovals(List<dynamic> approvals) {
+    if (_searchQuery.isEmpty) {
+      return approvals;
+    }
+
+    return approvals.where((approval) {
+      final namaBawahan = approval is monthly_entity.MonthlyApproval
+          ? approval.namaBawahan.toLowerCase()
+          : (approval as approval_entity.Approval).namaBawahan.toLowerCase();
+      return namaBawahan.contains(_searchQuery.toLowerCase());
+    }).toList();
+  }
+
+  void _navigateToDetail(dynamic approval, bool isMonthlyTab) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ApprovalDetailPage(
+          approval: approval,
+          userId: (context.read<AuthBloc>().state as AuthAuthenticated)
+              .user
+              .idUser
+              .toString(),
+          isMonthlyTab: isMonthlyTab,
+        ),
+      ),
+    ).then((_) => _loadApprovals());
   }
 }

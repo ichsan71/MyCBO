@@ -1,14 +1,14 @@
 import 'package:equatable/equatable.dart';
 
 class ApprovalResponse extends Equatable {
-  final int status;
+  final bool success;
   final String message;
 
   const ApprovalResponse({
-    required this.status,
+    required this.success,
     required this.message,
   });
 
   @override
-  List<Object?> get props => [status, message];
+  List<Object?> get props => [success, message];
 }

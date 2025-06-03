@@ -2,23 +2,23 @@ import '../../domain/entities/approval_response.dart';
 
 class ApprovalResponseModel extends ApprovalResponse {
   const ApprovalResponseModel({
-    required int status,
+    required bool success,
     required String message,
   }) : super(
-          status: status,
+          success: success,
           message: message,
         );
 
   factory ApprovalResponseModel.fromJson(Map<String, dynamic> json) {
     return ApprovalResponseModel(
-      status: json['status'],
-      message: json['message'],
+      success: json['success'] ?? false,
+      message: json['message'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'status': status,
+      'success': success,
       'message': message,
     };
   }

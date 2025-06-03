@@ -6,8 +6,10 @@ import 'package:test_cbo/features/approval/domain/usecases/approve_request_useca
 import 'package:test_cbo/features/approval/domain/usecases/filter_approvals_usecase.dart';
 import 'package:test_cbo/features/approval/domain/usecases/get_approvals_usecase.dart';
 import 'package:test_cbo/features/approval/domain/usecases/reject_request_usecase.dart';
-import 'package:test_cbo/features/approval/domain/usecases/send_approval.dart';
+import 'package:test_cbo/features/approval/domain/usecases/send_approval.dart'
+    as send_approval_usecase;
 import 'package:test_cbo/features/approval/presentation/bloc/approval_bloc.dart';
+import 'package:test_cbo/features/approval/presentation/bloc/monthly_approval_bloc.dart';
 import 'package:http/http.dart' as http;
 
 /// Inisialisasi dependency injection untuk fitur approval
@@ -26,11 +28,12 @@ Future<void> initApprovalDependencies() async {
   // BLoC
   sl.registerFactory(
     () => ApprovalBloc(
-      getApprovals: sl(),
-      filterApprovals: sl(),
-      approveRequest: sl(),
-      rejectRequest: sl(),
-      sendApproval: sl(),
+      repository: sl(),
+    ),
+  );
+  sl.registerFactory(
+    () => MonthlyApprovalBloc(
+      repository: sl(),
     ),
   );
 
@@ -39,7 +42,7 @@ Future<void> initApprovalDependencies() async {
   sl.registerLazySingleton(() => FilterApprovalsUseCase(sl()));
   sl.registerLazySingleton(() => ApproveRequestUseCase(sl()));
   sl.registerLazySingleton(() => RejectRequestUseCase(sl()));
-  sl.registerLazySingleton(() => SendApproval(sl()));
+  sl.registerLazySingleton(() => send_approval_usecase.SendApproval(sl()));
 
   // Repository
   sl.registerLazySingleton<ApprovalRepository>(

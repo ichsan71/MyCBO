@@ -154,14 +154,21 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
         },
         (schedules) async {
           // Fetch jadwal yang ditolak
-          List<RejectedSchedule> rejected = [];
-          try {
-            rejected = await approvalRepository.getRejectedSchedules(userId);
-          } catch (e) {
-            // Bisa di-log jika perlu, tapi jangan gagalkan jadwal utama
-          }
+          final rejectedResult =
+              await approvalRepository.getRejectedSchedules(userId);
+          List<RejectedSchedule> rejectedSchedules = [];
+          rejectedResult.fold(
+            (failure) {
+              // Handle error silently, don't emit error state to avoid disrupting main flow
+              print('Error fetching rejected schedules: ${failure.message}');
+            },
+            (schedules) {
+              rejectedSchedules = schedules;
+            },
+          );
+
           // Mapping RejectedSchedule ke Schedule
-          final rejectedSchedules = rejected
+          final rejectedMapped = rejectedSchedules
               .map((r) => Schedule(
                     id: r.id,
                     namaUser: r.namaUser,
@@ -198,7 +205,7 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
           for (var s in schedules) {
             allSchedules[s.id] = s;
           }
-          for (var s in rejectedSchedules) {
+          for (var s in rejectedMapped) {
             allSchedules[s.id] = s;
           }
           final combined = allSchedules.values.toList();
@@ -220,9 +227,18 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
   ) async {
     emit(const ScheduleLoading());
     try {
-      final rejectedSchedules =
+      final result =
           await approvalRepository.getRejectedSchedules(event.userId);
-      emit(RejectedSchedulesLoaded(rejectedSchedules));
+      result.fold(
+        (failure) => emit(ScheduleError(_mapFailureToMessage(failure))),
+        (rejectedSchedules) {
+          if (rejectedSchedules.isEmpty) {
+            emit(const ScheduleEmpty());
+          } else {
+            emit(RejectedSchedulesLoaded(rejectedSchedules));
+          }
+        },
+      );
     } catch (e) {
       emit(ScheduleError('Gagal memuat jadwal yang ditolak: $e'));
     }

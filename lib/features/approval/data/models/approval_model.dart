@@ -3,56 +3,62 @@ import '../../../../core/error/exceptions.dart';
 
 class ApprovalModel extends Approval {
   const ApprovalModel({
-    required int idBawahan,
+    required int id,
+    required int userId,
     required String namaBawahan,
-    required int totalSchedule,
-    required int year,
+    required String tglVisit,
+    required String tujuan,
+    required String note,
+    required bool isApproved,
+    required int approved,
+    required int idBawahan,
     required int month,
+    required int year,
+    required int totalSchedule,
     required String jumlahDokter,
     required String jumlahKlinik,
-    required int approved,
-    required List<DetailModel> details,
+    required List<Detail> details,
   }) : super(
-          idBawahan: idBawahan,
+          id: id,
+          userId: userId,
           namaBawahan: namaBawahan,
-          totalSchedule: totalSchedule,
-          year: year,
+          tglVisit: tglVisit,
+          tujuan: tujuan,
+          note: note,
+          isApproved: isApproved,
+          approved: approved,
+          idBawahan: idBawahan,
           month: month,
+          year: year,
+          totalSchedule: totalSchedule,
           jumlahDokter: jumlahDokter,
           jumlahKlinik: jumlahKlinik,
-          approved: approved,
           details: details,
         );
 
   factory ApprovalModel.fromJson(Map<String, dynamic> json) {
     try {
       return ApprovalModel(
-        idBawahan: json['id_bawahan'] as int? ??
-            (throw ServerException(
-                message: 'id_bawahan tidak ditemukan atau invalid')),
-        namaBawahan: json['nama_bawahan'] as String? ??
-            (throw ServerException(
-                message: 'nama_bawahan tidak ditemukan atau invalid')),
-        totalSchedule: json['total_schedule'] as int? ??
-            (throw ServerException(
-                message: 'total_schedule tidak ditemukan atau invalid')),
-        year: json['year'] as int? ??
-            (throw ServerException(
-                message: 'year tidak ditemukan atau invalid')),
-        month: json['month'] as int? ??
-            (throw ServerException(
-                message: 'month tidak ditemukan atau invalid')),
+        id: json['id'] ?? 0,
+        userId: json['user_id'] ?? 0,
+        namaBawahan: json['nama_bawahan'] ?? '',
+        tglVisit: json['tgl_visit'] ?? '',
+        tujuan: json['tujuan'] ?? '',
+        note: json['note'] ?? '',
+        isApproved: json['is_approved'] == 1,
+        approved: json['approved'] ?? 0,
+        idBawahan: json['id_bawahan'] ?? 0,
+        month: json['month'] ?? 0,
+        year: json['year'] ?? 0,
+        totalSchedule: json['total_schedule'] ?? 0,
         jumlahDokter: (json['jumlah_dokter'] ?? '0').toString(),
         jumlahKlinik: (json['jumlah_klinik'] ?? '0').toString(),
-        approved: json['approved'] as int? ?? 0,
-        details: json.containsKey('details') && json['details'] != null
-            ? (json['details'] as List)
-                .map((detail) => DetailModel.fromJson(detail))
-                .toList()
-            : [],
+        details: (json['details'] as List?)
+                ?.map((detail) => DetailModel.fromJson(detail))
+                .toList() ??
+            [],
       );
     } catch (e) {
-      if (e is ServerException) rethrow;
       throw ServerException(
           message: 'Error parsing ApprovalModel: ${e.toString()}');
     }
@@ -60,14 +66,20 @@ class ApprovalModel extends Approval {
 
   Map<String, dynamic> toJson() {
     return {
-      'id_bawahan': idBawahan,
+      'id': id,
+      'user_id': userId,
       'nama_bawahan': namaBawahan,
-      'total_schedule': totalSchedule,
-      'year': year,
+      'tgl_visit': tglVisit,
+      'tujuan': tujuan,
+      'note': note,
+      'is_approved': isApproved ? 1 : 0,
+      'approved': approved,
+      'id_bawahan': idBawahan,
       'month': month,
+      'year': year,
+      'total_schedule': totalSchedule,
       'jumlah_dokter': jumlahDokter,
       'jumlah_klinik': jumlahKlinik,
-      'approved': approved,
       'details':
           details.map((detail) => (detail as DetailModel).toJson()).toList(),
     };
@@ -84,8 +96,8 @@ class DetailModel extends Detail {
     required String product,
     required String note,
     required String shift,
-    required List<ProductDataModel> productData,
-    required TujuanDataModel tujuanData,
+    required List<ProductData> productData,
+    required TujuanData tujuanData,
     required int approved,
     int? realisasiApprove,
   }) : super(

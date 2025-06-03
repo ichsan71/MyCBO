@@ -4,14 +4,12 @@ abstract class ApprovalState extends Equatable {
   const ApprovalState();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 class ApprovalInitial extends ApprovalState {}
 
 class ApprovalLoading extends ApprovalState {}
-
-class ApprovalProcessing extends ApprovalState {}
 
 class ApprovalLoaded extends ApprovalState {
   final List<Approval> approvals;
@@ -19,7 +17,16 @@ class ApprovalLoaded extends ApprovalState {
   const ApprovalLoaded({required this.approvals});
 
   @override
-  List<Object> get props => [approvals];
+  List<Object?> get props => [approvals];
+}
+
+class MonthlyApprovalLoaded extends ApprovalState {
+  final List<MonthlyApproval> approvals;
+
+  const MonthlyApprovalLoaded({required this.approvals});
+
+  @override
+  List<Object?> get props => [approvals];
 }
 
 class ApprovalError extends ApprovalState {
@@ -28,16 +35,14 @@ class ApprovalError extends ApprovalState {
   const ApprovalError({required this.message});
 
   @override
-  List<Object> get props => [message];
+  List<Object?> get props => [message];
 }
 
-class ApprovalSent extends ApprovalState {
-  final ApprovalResponse response;
+class ApprovalSuccess extends ApprovalState {
+  final String message;
 
-  const ApprovalSent({required this.response});
+  const ApprovalSuccess({required this.message});
 
   @override
-  List<Object> get props => [response];
+  List<Object?> get props => [message];
 }
-
-class ApprovalSending extends ApprovalState {}
