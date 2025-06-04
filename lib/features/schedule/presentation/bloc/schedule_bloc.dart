@@ -96,22 +96,47 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
   ) async {
     emit(const ScheduleLoading());
     try {
+      Logger.info('ScheduleBloc',
+          'Fetching schedules by range date: ${event.rangeDate}');
       final result = await getSchedulesByRangeDateUseCase(
         range_date_usecase.ScheduleByRangeDateParams(
             userId: event.userId, rangeDate: event.rangeDate),
       );
       result.fold(
-        (failure) => emit(ScheduleError(_mapFailureToMessage(failure))),
+        (failure) {
+          Logger.error('ScheduleBloc',
+              'Failed to fetch schedules: ${_mapFailureToMessage(failure)}');
+          emit(ScheduleError(_mapFailureToMessage(failure)));
+        },
         (schedules) {
           if (schedules.isEmpty) {
-            emit(const ScheduleEmpty());
+            Logger.info('ScheduleBloc',
+                'No schedules found for date range: ${event.rangeDate}');
+            // Instead of emitting ScheduleEmpty, emit ScheduleLoaded with empty list
+            emit(const ScheduleLoaded([]));
           } else {
+            Logger.info('ScheduleBloc',
+                'Found ${schedules.length} schedules for date range: ${event.rangeDate}');
+            // Log sample schedule data
+            if (schedules.isNotEmpty) {
+              final sampleSchedule = schedules.first;
+              Logger.info('ScheduleBloc', 'Sample schedule data:');
+              Logger.info('ScheduleBloc', '  ID: ${sampleSchedule.id}');
+              Logger.info('ScheduleBloc', '  Shift: ${sampleSchedule.shift}');
+              Logger.info(
+                  'ScheduleBloc', '  Tgl Visit: ${sampleSchedule.tglVisit}');
+              Logger.info('ScheduleBloc',
+                  '  Nama Tujuan: ${sampleSchedule.namaTujuan}');
+            }
             emit(ScheduleLoaded(schedules));
           }
         },
       );
     } catch (e) {
-      emit(ScheduleError('Kesalahan tidak terduga: $e'));
+      Logger.error(
+          'ScheduleBloc', 'Error fetching schedules by range date: $e');
+      // Instead of emitting error, emit ScheduleLoaded with empty list
+      emit(const ScheduleLoaded([]));
     }
   }
 

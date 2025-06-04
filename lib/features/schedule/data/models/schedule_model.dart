@@ -35,6 +35,26 @@ class ScheduleModel extends Schedule {
     super.createdAt,
   });
 
+  // Helper function to process shift value
+  static String processShiftValue(dynamic value) {
+    if (value == null) return '';
+
+    String shiftStr = value.toString().toLowerCase().trim();
+
+    // Validate and normalize shift value
+    switch (shiftStr) {
+      case 'pagi':
+      case 'sore':
+        // Capitalize first letter
+        return shiftStr[0].toUpperCase() + shiftStr.substring(1);
+      default:
+        // Instead of returning empty string, return the original value
+        Logger.warning('ScheduleModel',
+            'Non-standard shift value: $value, preserving original value');
+        return value.toString();
+    }
+  }
+
   factory ScheduleModel.empty() {
     return const ScheduleModel(
       id: 0,
@@ -70,6 +90,12 @@ class ScheduleModel extends Schedule {
   }
 
   factory ScheduleModel.fromJson(Map<String, dynamic> json) {
+    Logger.info('ScheduleModel', 'Processing schedule with raw data: $json');
+
+    final shiftValue = processShiftValue(json['shift']);
+    Logger.info('ScheduleModel', 'Raw shift value: ${json['shift']}');
+    Logger.info('ScheduleModel', 'Processed shift value: $shiftValue');
+
     // Helper function to parse product data
     String? parseProduct(dynamic value) {
       if (value == null) return null;
@@ -116,41 +142,60 @@ class ScheduleModel extends Schedule {
       return [];
     }
 
-    return ScheduleModel(
-      id: json['id'] ?? 0,
-      namaUser: json['nama_user']?.toString() ?? '',
-      tipeSchedule: () {
-        // Check both possible field names
-        final typeSchedule = json['type_schedule']?.toString() ??
-            json['tipe_schedule']?.toString() ??
-            '';
-        Logger.info(
-            'ScheduleModel', 'Raw type_schedule: ${json['type_schedule']}');
-        Logger.info(
-            'ScheduleModel', 'Raw tipe_schedule: ${json['tipe_schedule']}');
-        Logger.info('ScheduleModel', 'Final tipeSchedule value: $typeSchedule');
-        return typeSchedule;
-      }(),
-      namaTipeSchedule: () {
-        // Try different possible field names
-        final typeScheduleName = json['nama_type_schedule']?.toString() ??
+    // Helper function to parse integer values that might come as strings
+    int parseIntValue(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is String) {
+        try {
+          return int.parse(value);
+        } catch (e) {
+          Logger.error('ScheduleModel', 'Error parsing int value: $value');
+          return 0;
+        }
+      }
+      return 0;
+    }
+
+    // Helper function to parse dynamic values that might be null
+    dynamic parseDynamicValue(dynamic value) {
+      if (value == null) return null;
+      if (value is String && value.toLowerCase() == 'null') return null;
+      return value;
+    }
+
+    // Log raw values for debugging
+    Logger.info('ScheduleModel', 'Raw type_schedule: ${json['type_schedule']}');
+    Logger.info('ScheduleModel', 'Raw tipe_schedule: ${json['tipe_schedule']}');
+    Logger.info('ScheduleModel', 'Raw id_tujuan: ${json['id_tujuan']}');
+    Logger.info('ScheduleModel', 'Raw approved: ${json['approved']}');
+    Logger.info('ScheduleModel', 'Raw id_user: ${json['id_user']}');
+
+    final String tipeScheduleValue = json['type_schedule']?.toString() ??
+        json['tipe_schedule']?.toString() ??
+        '';
+
+    Logger.info(
+        'ScheduleModel', 'Final tipeSchedule value: $tipeScheduleValue');
+
+    final String? namaTipeScheduleValue =
+        json['nama_type_schedule']?.toString() ??
             json['nama_tipe_schedule']?.toString() ??
-            json['type_schedule']
-                ?.toString() ?? // Use type_schedule as fallback
-            json['tipe_schedule']?.toString(); // Use tipe_schedule as fallback
-        Logger.info('ScheduleModel',
-            'Raw nama_type_schedule: ${json['nama_type_schedule']}');
-        Logger.info('ScheduleModel',
-            'Raw nama_tipe_schedule: ${json['nama_tipe_schedule']}');
-        Logger.info(
-            'ScheduleModel', 'Final namaTipeSchedule value: $typeScheduleName');
-        return typeScheduleName;
-      }(),
+            tipeScheduleValue;
+
+    Logger.info('ScheduleModel',
+        'Final namaTipeSchedule value: $namaTipeScheduleValue');
+
+    return ScheduleModel(
+      id: parseIntValue(json['id']),
+      namaUser: json['nama_user']?.toString() ?? '',
+      tipeSchedule: tipeScheduleValue,
+      namaTipeSchedule: namaTipeScheduleValue,
       tujuan: json['tujuan']?.toString() ?? '',
-      idTujuan: json['id_tujuan'] ?? 0,
+      idTujuan: parseIntValue(json['id_tujuan']),
       tglVisit: json['tgl_visit']?.toString() ?? '',
       statusCheckin: json['status_checkin']?.toString() ?? '',
-      shift: json['shift']?.toString() ?? '',
+      shift: shiftValue,
       note: json['note']?.toString() ?? '',
       product: parseProduct(json['product']),
       draft: json['draft']?.toString() ?? '',
@@ -160,16 +205,17 @@ class ScheduleModel extends Schedule {
       namaSpesialis: json['nama_spesialis']?.toString(),
       namaProduct: json['nama_product']?.toString(),
       namaDivisi: json['nama_divisi']?.toString(),
-      approved: json['approved'] ?? 0,
+      approved: parseIntValue(json['approved']),
       namaApprover: json['nama_approver']?.toString(),
-      realisasiApprove: json['realisasi_approve'],
-      idUser: json['id_user'] ?? 0,
+      realisasiApprove: parseDynamicValue(json['realisasi_approve']),
+      idUser: parseIntValue(json['id_user']),
       productForIdDivisi: parseStringList(json['product_for_id_divisi']),
       productForIdSpesialis: parseStringList(json['product_for_id_spesialis']),
-      jenis: json['jenis']?.toString() ?? 'suddenly',
-      approvedBy: json['approved_by'],
-      rejectedBy: json['rejected_by'],
-      realisasiVisitApproved: json['realisasi_visit_approved'],
+      jenis: json['jenis']?.toString() ?? '',
+      approvedBy: parseDynamicValue(json['approved_by']),
+      rejectedBy: parseDynamicValue(json['rejected_by']),
+      realisasiVisitApproved:
+          parseDynamicValue(json['realisasi_visit_approved']),
       createdAt: json['created_at']?.toString(),
     );
   }

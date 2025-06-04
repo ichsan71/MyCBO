@@ -168,7 +168,7 @@ class _ScheduleViewState extends State<_ScheduleView> {
       final authState = context.read<AuthBloc>().state;
       if (authState is AuthAuthenticated) {
         final rangeDate =
-            "${DateFormat('MM/dd/yyyy').format(picked.start)} - ${DateFormat('MM/dd/yyyy').format(picked.end)}";
+            "${DateFormat('yyyy-MM-dd').format(picked.start)} - ${DateFormat('yyyy-MM-dd').format(picked.end)}";
         context.read<ScheduleBloc>().add(
               GetSchedulesByRangeDateEvent(
                 userId: authState.user.idUser,
@@ -724,8 +724,7 @@ class _ScheduleViewState extends State<_ScheduleView> {
 
   Widget _buildScheduleCard(BuildContext context, Schedule schedule) {
     final lowerDraft = schedule.draft.toLowerCase().trim();
-    final statusColor =
-        _getStatusColor(schedule.statusCheckin, schedule.draft);
+    final statusColor = _getStatusColor(schedule.statusCheckin, schedule.draft);
     final displayStatus = _getDisplayStatus(
       schedule.statusCheckin,
       schedule.draft,

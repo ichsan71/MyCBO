@@ -11,6 +11,7 @@ import '../models/schedule_response_model.dart';
 import '../models/edit_schedule_data_model.dart';
 import '../models/edit/edit_schedule_response_model.dart';
 import '../models/update_schedule_request_model.dart';
+import 'package:intl/intl.dart';
 
 abstract class ScheduleRemoteDataSource {
   Future<List<ScheduleModel>> getSchedules(int userId);
@@ -175,17 +176,38 @@ class ScheduleRemoteDataSourceImpl implements ScheduleRemoteDataSource {
         responseType: ResponseType.json,
         headers: {
           'Accept': 'application/json',
+          'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
-      final formData = FormData.fromMap({
+
+      // Convert date format if needed (yyyy-MM-dd to MM/dd/yyyy)
+      final dates = rangeDate.split(' - ');
+      if (dates.length == 2) {
+        try {
+          final startDate = DateTime.parse(dates[0]);
+          final endDate = DateTime.parse(dates[1]);
+          rangeDate =
+              "${DateFormat('MM/dd/yyyy').format(startDate)} - ${DateFormat('MM/dd/yyyy').format(endDate)}";
+          Logger.info(
+              'ScheduleRemoteDataSource', 'Converted date range: $rangeDate');
+        } catch (e) {
+          Logger.error(
+              'ScheduleRemoteDataSource', 'Error converting date format: $e');
+        }
+      }
+
+      final data = {
         'id_user': userId,
         'range_date': rangeDate,
-      });
+      };
+
       const String url = '${Constants.baseUrl}/filter-schedule';
       Logger.info('ScheduleRemoteDataSource', 'Request URL: $url');
+      Logger.info('ScheduleRemoteDataSource', 'Request data: $data');
+
       final response =
-          await dio.post(url, data: formData, options: options).timeout(
+          await dio.post(url, data: data, options: options).timeout(
         const Duration(seconds: 30),
         onTimeout: () {
           throw ServerException(
@@ -193,32 +215,87 @@ class ScheduleRemoteDataSourceImpl implements ScheduleRemoteDataSource {
                   'Waktu permintaan habis. Silakan periksa koneksi Anda dan coba lagi.');
         },
       );
+
+      Logger.info('ScheduleRemoteDataSource',
+          'Response status: ${response.statusCode}');
+      Logger.info(
+          'ScheduleRemoteDataSource', 'Response data: ${response.data}');
+
       if (response.statusCode == 200) {
         try {
           final dynamic rawData = response.data;
-          final scheduleResponse = ScheduleResponseModel.fromJson(rawData);
-          return scheduleResponse.data.data;
+          Logger.info('ScheduleRemoteDataSource', 'Raw API response: $rawData');
+
+          List<ScheduleModel> schedules = [];
+
+          if (rawData is Map<String, dynamic> && rawData['data'] is List) {
+            final List<dynamic> scheduleList = rawData['data'];
+            Logger.info(
+                'ScheduleRemoteDataSource', 'Raw schedule list: $scheduleList');
+
+            // Log first schedule data if available
+            if (scheduleList.isNotEmpty) {
+              Logger.info('ScheduleRemoteDataSource', 'First schedule data:');
+              Logger.info('ScheduleRemoteDataSource',
+                  '  Raw data: ${scheduleList.first}');
+              Logger.info('ScheduleRemoteDataSource',
+                  '  Shift value: ${scheduleList.first['shift']}');
+            }
+
+            schedules = scheduleList
+                .map((schedule) {
+                  try {
+                    Logger.info('ScheduleRemoteDataSource',
+                        'Processing schedule with shift: ${schedule['shift']}');
+                    return ScheduleModel.fromJson(schedule);
+                  } catch (e) {
+                    Logger.error('ScheduleRemoteDataSource',
+                        'Error parsing schedule: $e');
+                    return ScheduleModel
+                        .empty(); // Return empty model instead of throwing
+                  }
+                })
+                .where((schedule) => schedule.id != 0)
+                .toList(); // Filter out empty models
+
+            Logger.info('ScheduleRemoteDataSource',
+                'Processed schedules count: ${schedules.length}');
+          } else {
+            Logger.warning('ScheduleRemoteDataSource',
+                'Invalid response format or empty data');
+          }
+
+          return schedules;
         } catch (e) {
-          throw ServerException(
-              message: 'Format data jadwal tidak sesuai: $e');
+          Logger.error(
+              'ScheduleRemoteDataSource', 'Error parsing response: $e');
+          return []; // Return empty list instead of throwing
         }
       } else if (response.statusCode == 401) {
         throw UnauthorizedException(
             message: 'Sesi login telah berakhir. Silakan login kembali.');
       } else {
+        final errorMessage = response.data is Map
+            ? response.data['message'] ?? 'Gagal mengambil data jadwal'
+            : 'Gagal mengambil data jadwal';
         throw ServerException(
-            message: 'Gagal mengambil data jadwal. Status: ${response.statusCode}');
+            message: '$errorMessage. Status: ${response.statusCode}');
       }
     } on DioException catch (e) {
+      Logger.error('ScheduleRemoteDataSource', 'DioError: ${e.toString()}');
       if (e.response?.statusCode == 401) {
         throw UnauthorizedException(
             message: 'Sesi login telah berakhir. Silakan login kembali.');
       }
+      final errorMessage =
+          e.response?.data is Map ? e.response?.data['message'] : null;
       throw ServerException(
-          message: 'Terjadi kesalahan saat mengambil data jadwal: ${e.message}');
+          message: errorMessage ??
+              'Terjadi kesalahan saat mengambil data jadwal: ${e.message}');
     } catch (e) {
-      throw ServerException(
-          message: 'Terjadi kesalahan tidak terduga: $e');
+      Logger.error(
+          'ScheduleRemoteDataSource', 'Unexpected error: ${e.toString()}');
+      throw ServerException(message: 'Terjadi kesalahan tidak terduga: $e');
     }
   }
 
