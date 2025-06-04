@@ -452,10 +452,15 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
             );
       } else {
         final immediateApproval = widget.approval as approval.Approval;
-        final scheduleId = immediateApproval.details.first.id;
+        // Get all selected schedules
+        final selectedSchedules = immediateApproval.details
+            .where((detail) => _selectedScheduleIds.contains(detail.id))
+            .toList();
+
+        // Create a batch approval event
         context.read<ApprovalBloc>().add(
-              ApproveRequest(
-                approvalId: scheduleId,
+              BatchApproveRequest(
+                scheduleIds: selectedSchedules.map((s) => s.id).toList(),
                 notes: result,
               ),
             );

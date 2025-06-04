@@ -88,3 +88,16 @@ class SendApproval extends ApprovalEvent {
   @override
   List<Object?> get props => [scheduleId, userId, isApproved, joinScheduleId];
 }
+
+class BatchApproveRequest extends ApprovalEvent {
+  final List<int> scheduleIds;
+  final String notes;
+
+  const BatchApproveRequest({
+    required this.scheduleIds,
+    required this.notes,
+  });
+
+  @override
+  List<Object?> get props => [scheduleIds, notes];
+}

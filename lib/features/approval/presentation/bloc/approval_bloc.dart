@@ -18,6 +18,7 @@ class ApprovalBloc extends Bloc<ApprovalEvent, ApprovalState> {
     on<ApproveRequest>(_onApproveRequest);
     on<RejectRequest>(_onRejectRequest);
     on<SendApproval>(_onSendApproval);
+    on<BatchApproveRequest>(_onBatchApproveRequest);
   }
 
   Future<void> _onGetApprovals(
@@ -120,6 +121,29 @@ class ApprovalBloc extends Bloc<ApprovalEvent, ApprovalState> {
       (response) {
         emit(ApprovalSuccess(message: response.message));
         add(GetApprovals(userId: event.userId)); // Refresh the list
+      },
+    );
+  }
+
+  Future<void> _onBatchApproveRequest(
+    BatchApproveRequest event,
+    Emitter<ApprovalState> emit,
+  ) async {
+    emit(ApprovalLoading());
+    final result = await repository.batchApproveRequest(
+      event.scheduleIds,
+      event.notes,
+    );
+    result.fold(
+      (failure) => emit(ApprovalError(message: failure.message)),
+      (_) {
+        emit(ApprovalSuccess(message: 'Persetujuan berhasil dikirim'));
+        if (state is ApprovalLoaded) {
+          final currentState = state as ApprovalLoaded;
+          if (currentState.approvals.isNotEmpty) {
+            add(GetApprovals(userId: currentState.approvals.first.idBawahan));
+          }
+        }
       },
     );
   }

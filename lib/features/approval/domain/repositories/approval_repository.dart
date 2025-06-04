@@ -39,4 +39,8 @@ abstract class ApprovalRepository {
   Future<Either<Failure, Approval>> getApprovalDetail(int approvalId);
   Future<Either<Failure, List<RejectedSchedule>>> getRejectedSchedules(
       int userId);
+
+  /// Menyetujui beberapa permintaan sekaligus
+  Future<Either<Failure, void>> batchApproveRequest(
+      List<int> scheduleIds, String notes);
 }

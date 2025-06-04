@@ -119,6 +119,30 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
   }
 
   @override
+  Future<Either<Failure, void>> batchApproveRequest(
+      List<int> scheduleIds, String notes) async {
+    if (await networkInfo.isConnected) {
+      try {
+        // Process each approval in sequence
+        for (final scheduleId in scheduleIds) {
+          Logger.api('POST', '/approvals/$scheduleId/approve',
+              body: {'notes': notes});
+          await remoteDataSource.approveRequest(scheduleId, notes);
+          Logger.success('ApprovalRepository',
+              'Request $scheduleId approved successfully');
+        }
+        return const Right(null);
+      } catch (e) {
+        Logger.error(
+            'ApprovalRepository', 'Error in batch approving requests: $e');
+        return Left(ServerFailure(message: e.toString()));
+      }
+    } else {
+      return Left(const NetworkFailure());
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> rejectRequest(
       String idSchedule, String idRejecter, String comment) async {
     if (await networkInfo.isConnected) {
