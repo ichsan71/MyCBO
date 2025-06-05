@@ -55,6 +55,7 @@ class RealisasiVisitDetail extends Equatable {
   final String? realisasiVisitApproved;
   final List<ProductData> productData;
   final TujuanData tujuanData;
+  final String? lokasi;
 
   const RealisasiVisitDetail({
     required this.id,
@@ -74,6 +75,7 @@ class RealisasiVisitDetail extends Equatable {
     this.realisasiVisitApproved,
     required this.productData,
     required this.tujuanData,
+    this.lokasi,
   });
 
   // Fungsi helper untuk mendapatkan daftar nama produk
@@ -107,6 +109,7 @@ class RealisasiVisitDetail extends Equatable {
         realisasiVisitApproved,
         productData,
         tujuanData,
+        lokasi,
       ];
 }
 

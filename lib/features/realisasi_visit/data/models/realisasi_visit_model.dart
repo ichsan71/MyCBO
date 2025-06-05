@@ -91,6 +91,7 @@ class RealisasiVisitDetailModel extends RealisasiVisitDetail {
     String? realisasiVisitApproved,
     required List<ProductDataModel> productData,
     required TujuanDataModel tujuanData,
+    String? lokasi,
   }) : super(
           id: id,
           typeSchedule: typeSchedule,
@@ -109,6 +110,7 @@ class RealisasiVisitDetailModel extends RealisasiVisitDetail {
           realisasiVisitApproved: realisasiVisitApproved,
           productData: productData,
           tujuanData: tujuanData,
+          lokasi: lokasi,
         );
 
   // Fungsi helper untuk mendapatkan daftar nama produk
@@ -127,16 +129,19 @@ class RealisasiVisitDetailModel extends RealisasiVisitDetail {
 
   factory RealisasiVisitDetailModel.fromJson(Map<String, dynamic> json) {
     try {
-      Logger.info('realisasi_visit', 'Parsing RealisasiVisitDetailModel from: $json');
+      Logger.info(
+          'realisasi_visit', 'Parsing RealisasiVisitDetailModel from: $json');
 
       // Tangani tujuan data dengan lebih baik
       TujuanDataModel tujuanData;
       if (json.containsKey('tujuan_data') && json['tujuan_data'] != null) {
-        Logger.info('realisasi_visit', 'Menggunakan tujuan_data dari json: ${json['tujuan_data']}');
+        Logger.info('realisasi_visit',
+            'Menggunakan tujuan_data dari json: ${json['tujuan_data']}');
         tujuanData = TujuanDataModel.fromJson(json['tujuan_data']);
       } else if (json.containsKey('dokter') && json['dokter'] != null) {
         // Format alternatif - gunakan dari field dokter jika ada
-        Logger.info('realisasi_visit', 'Menggunakan field dokter: ${json['dokter']}');
+        Logger.info(
+            'realisasi_visit', 'Menggunakan field dokter: ${json['dokter']}');
         tujuanData = TujuanDataModel(
           idDokter: json['id_tujuan'] as int? ?? 0,
           namaDokter: json['dokter'].toString(),
@@ -144,15 +149,15 @@ class RealisasiVisitDetailModel extends RealisasiVisitDetail {
       } else if (json.containsKey('nama_dokter') &&
           json['nama_dokter'] != null) {
         // Format alternatif - nama dokter langsung di level root
-        Logger.info('realisasi_visit', 'Menggunakan nama_dokter dari root: ${json['nama_dokter']}');
+        Logger.info('realisasi_visit',
+            'Menggunakan nama_dokter dari root: ${json['nama_dokter']}');
         tujuanData = TujuanDataModel(
           idDokter: json['id_tujuan'] as int? ?? 0,
           namaDokter: json['nama_dokter'].toString(),
         );
       } else {
         // Default fallback
-        Logger.error(
-            'realisasi_visit',
+        Logger.error('realisasi_visit',
             'Tidak ada data tujuan ditemukan, menggunakan default dengan id_tujuan: ${json['id_tujuan']}');
         tujuanData = TujuanDataModel(
           idDokter: json['id_tujuan'] as int? ?? 0,
@@ -167,7 +172,8 @@ class RealisasiVisitDetailModel extends RealisasiVisitDetail {
 
       // PRIORITAS PERTAMA: Cek jika ada atribut nama_product yang bisa langsung digunakan
       if (json.containsKey('nama_product') && json['nama_product'] != null) {
-        Logger.info('realisasi_visit', 'Menggunakan nama_product dari API: ${json['nama_product']}');
+        Logger.info('realisasi_visit',
+            'Menggunakan nama_product dari API: ${json['nama_product']}');
         String namaProductStr = json['nama_product'].toString();
 
         // Jika nama produk mengandung koma, bisa jadi berisi beberapa produk
@@ -180,8 +186,7 @@ class RealisasiVisitDetailModel extends RealisasiVisitDetail {
                     namaProduct: name.trim(),
                   ))
               .toList();
-          Logger.info(
-              'realisasi_visit',
+          Logger.info('realisasi_visit',
               'Berhasil parse ${productDataList.length} produk dari nama_product');
         } else {
           // Hanya satu produk
@@ -189,8 +194,7 @@ class RealisasiVisitDetailModel extends RealisasiVisitDetail {
             idProduct: 1,
             namaProduct: namaProductStr.trim(),
           ));
-          Logger.info(
-              'realisasi_visit',
+          Logger.info('realisasi_visit',
               'Berhasil parse 1 produk dari nama_product: $namaProductStr');
         }
       }
@@ -198,8 +202,8 @@ class RealisasiVisitDetailModel extends RealisasiVisitDetail {
       else {
         // Cek format pertama: array product_data
         if (json.containsKey('product_data') && json['product_data'] != null) {
-          Logger.info(
-              'realisasi_visit', 'Parsing product_data dari json: ${json['product_data']}');
+          Logger.info('realisasi_visit',
+              'Parsing product_data dari json: ${json['product_data']}');
           try {
             if (json['product_data'] is List) {
               productDataList = (json['product_data'] as List)
@@ -214,21 +218,19 @@ class RealisasiVisitDetailModel extends RealisasiVisitDetail {
                     .map((product) => ProductDataModel.fromJson(product))
                     .toList();
               } catch (e) {
-                Logger.error(
-                    'realisasi_visit',
+                Logger.error('realisasi_visit',
                     'Error parsing product_data string as JSON: $e');
               }
             }
           } catch (e) {
-            Logger.error(
-                'realisasi_visit', 'Error parsing product_data: $e');
+            Logger.error('realisasi_visit', 'Error parsing product_data: $e');
           }
         }
         // Cek format alternatif: string product yang mungkin berisi JSON
         else if (json.containsKey('product') && json['product'] != null) {
           final dynamic productValue = json['product'];
-          Logger.info(
-              'realisasi_visit', 'Mencoba parse dari field product: $productValue');
+          Logger.info('realisasi_visit',
+              'Mencoba parse dari field product: $productValue');
 
           if (productValue is String) {
             try {
@@ -296,12 +298,12 @@ class RealisasiVisitDetailModel extends RealisasiVisitDetail {
         shift: (json['shift'] ?? '').toString(),
         jenis: (json['jenis'] ?? '').toString(),
         checkin: json['checkin']?.toString(),
-        fotoSelfie:
-            json['foto_selfie']?.toString(),
+        fotoSelfie: json['foto_selfie']?.toString(),
         checkout: json['checkout']?.toString(),
         fotoSelfieDua: json['foto_selfie_dua']?.toString(),
         statusTerrealisasi: (json['status_terrealisasi'] ?? '').toString(),
         realisasiVisitApproved: json['realisasi_visit_approved']?.toString(),
+        lokasi: json['lokasi'] as String?,
         productData: productDataList,
         tujuanData: tujuanData,
       );
@@ -333,6 +335,7 @@ class RealisasiVisitDetailModel extends RealisasiVisitDetail {
       'foto_selfie_dua': fotoSelfieDua,
       'status_terrealisasi': statusTerrealisasi,
       'realisasi_visit_approved': realisasiVisitApproved,
+      'lokasi': lokasi,
       'product_data': productData
           .map((product) => (product as ProductDataModel).toJson())
           .toList(),

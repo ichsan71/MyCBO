@@ -955,135 +955,103 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                 const SizedBox(height: 12),
                 const Divider(),
                 const SizedBox(height: 12),
-                _buildDetailRow('Shift', schedule.shift, Icons.access_time),
-                const SizedBox(height: 4),
-                _buildDetailRow('Jenis', schedule.jenis, Icons.category),
-                const SizedBox(height: 4),
-                _buildDetailRow(
-                    'Status', schedule.statusTerrealisasi, Icons.info),
-                const SizedBox(height: 8),
-                if (isDone) ...[
-                  _buildDetailRow(
-                      'Check-in', schedule.checkin ?? '-', Icons.login),
-                  const SizedBox(height: 4),
-                  _buildDetailRow(
-                      'Check-out', schedule.checkout ?? '-', Icons.logout),
-                  const SizedBox(height: 16),
-
-                  // Menampilkan foto check-in
-                  if (schedule.fotoSelfie != null &&
-                      schedule.fotoSelfie!.isNotEmpty) ...[
-                    Row(
-                      children: [
-                        Icon(Icons.photo_camera,
-                            size: 14, color: AppTheme.primaryColor),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Foto Check-in:',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    _buildImageView(schedule.fotoSelfie!),
-                    const SizedBox(height: 12),
-                  ],
-
-                  // Menampilkan foto check-out
-                  if (schedule.fotoSelfieDua != null &&
-                      schedule.fotoSelfieDua!.isNotEmpty) ...[
-                    Row(
-                      children: [
-                        Icon(Icons.photo_camera,
-                            size: 14, color: AppTheme.primaryColor),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Foto Check-out:',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    _buildImageView(schedule.fotoSelfieDua!),
-                    const SizedBox(height: 12),
-                  ],
-                ],
-                Row(
-                  children: [
-                    Icon(Icons.medication,
-                        size: 14, color: AppTheme.primaryColor),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Produk:',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                if (schedule.productData.isEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.grey[200]!),
-                    ),
-                    child: Text(
-                      "Tidak ada produk",
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic,
-                        color: Colors.grey[500],
-                      ),
-                    ),
-                  )
-                else
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: schedule.productData.map((product) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 3,
-                        ),
-                        constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 0.4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          product.namaProduct,
-                          style: GoogleFonts.poppins(
-                            fontSize: 10,
-                            color: AppTheme.primaryColor,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      );
-                    }).toList(),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
                   ),
-                if (schedule.note.isNotEmpty) ...[
-                  const SizedBox(height: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Shift dan Jenis dalam satu baris
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildDetailRowCompact(
+                                'Shift', schedule.shift, Icons.access_time),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildDetailRowCompact(
+                                'Jenis', schedule.jenis, Icons.category),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      // Status
+                      _buildDetailRowCompact(
+                          'Status', schedule.statusTerrealisasi, Icons.info),
+                      if (schedule.lokasi != null &&
+                          schedule.lokasi!.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        // Lokasi dengan text wrapping
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.location_on,
+                                size: 14, color: AppTheme.primaryColor),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Lokasi:',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  Text(
+                                    schedule.lokasi!,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (isDone) ...[
+                        const SizedBox(height: 8),
+                        const Divider(),
+                        const SizedBox(height: 8),
+                        // Check-in dan Check-out dalam satu baris
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildDetailRowCompact('Check-in',
+                                  schedule.checkin ?? '-', Icons.login),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildDetailRowCompact('Check-out',
+                                  schedule.checkout ?? '-', Icons.logout),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Foto Check-in
+                if (isDone &&
+                    schedule.fotoSelfie != null &&
+                    schedule.fotoSelfie!.isNotEmpty) ...[
                   Row(
                     children: [
-                      Icon(Icons.note, size: 14, color: AppTheme.primaryColor),
+                      Icon(Icons.photo_camera,
+                          size: 14, color: AppTheme.primaryColor),
                       const SizedBox(width: 4),
                       Text(
-                        'Catatan:',
+                        'Foto Check-in:',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
@@ -1091,119 +1059,149 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.grey[200]!),
-                    ),
-                    child: Text(
-                      schedule.note,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.grey[700],
+                  const SizedBox(height: 6),
+                  _buildImageView(schedule.fotoSelfie!),
+                  const SizedBox(height: 12),
+                ],
+
+                // Foto Check-out
+                if (isDone &&
+                    schedule.fotoSelfieDua != null &&
+                    schedule.fotoSelfieDua!.isNotEmpty) ...[
+                  Row(
+                    children: [
+                      Icon(Icons.photo_camera,
+                          size: 14, color: AppTheme.primaryColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Foto Check-out:',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                      textAlign: TextAlign.justify,
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  _buildImageView(schedule.fotoSelfieDua!),
+                  const SizedBox(height: 12),
+                ],
+
+                // Produk Section
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.medication,
+                              size: 14, color: AppTheme.primaryColor),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Produk:',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (schedule.productData.isEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: Text(
+                            "Tidak ada produk",
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        )
+                      else
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: schedule.productData.map((product) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: AppTheme.primaryColor.withOpacity(0.2),
+                                ),
+                              ),
+                              child: Text(
+                                product.namaProduct,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: AppTheme.primaryColor,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                    ],
+                  ),
+                ),
+
+                // Notes Section
+                if (schedule.note.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.note,
+                                size: 14, color: AppTheme.primaryColor),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Catatan:',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          schedule.note,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                          ),
+                          textAlign: TextAlign.justify,
+                        ),
+                      ],
                     ),
                   ),
-                ],
-                if (schedule.realisasiVisitApproved == null) ...[
-                  const SizedBox(height: 16),
-                  if (!canApprove) ...[
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: schedule.statusTerrealisasi.toLowerCase() ==
-                                'not done'
-                            ? Colors.red.shade50
-                            : Colors.amber.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                            color: schedule.statusTerrealisasi.toLowerCase() ==
-                                    'not done'
-                                ? Colors.red
-                                : Colors.amber),
-                        boxShadow: [
-                          BoxShadow(
-                            color: (schedule.statusTerrealisasi.toLowerCase() ==
-                                        'not done'
-                                    ? Colors.red
-                                    : Colors.amber)
-                                .withOpacity(0.2),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color:
-                                  (schedule.statusTerrealisasi.toLowerCase() ==
-                                              'not done'
-                                          ? Colors.red
-                                          : Colors.amber)
-                                      .withOpacity(0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                                schedule.statusTerrealisasi.toLowerCase() ==
-                                        'not done'
-                                    ? Icons.error_outline
-                                    : Icons.warning_amber_rounded,
-                                color:
-                                    schedule.statusTerrealisasi.toLowerCase() ==
-                                            'not done'
-                                        ? Colors.red[700]
-                                        : Colors.amber[700],
-                                size: 16),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  schedule.statusTerrealisasi.toLowerCase() ==
-                                          'not done'
-                                      ? 'Jadwal tidak dapat disetujui'
-                                      : 'Batas waktu berakhir',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: schedule.statusTerrealisasi
-                                                .toLowerCase() ==
-                                            'not done'
-                                        ? Colors.red[900]
-                                        : Colors.amber[900],
-                                  ),
-                                ),
-                                Text(
-                                  schedule.statusTerrealisasi.toLowerCase() ==
-                                          'not done'
-                                      ? 'Status kunjungan tidak selesai'
-                                      : 'Maksimal H+1 jam 12 siang',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 12,
-                                    color: schedule.statusTerrealisasi
-                                                .toLowerCase() ==
-                                            'not done'
-                                        ? Colors.red[900]
-                                        : Colors.amber[900],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
                 ],
               ],
             ),
@@ -1576,15 +1574,14 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
     setState(() => _isProcessing = true);
 
     // Debug log
-    Logger.info(
-        'realisasi_visit', '[APPROVAL DEBUG] Approve scheduleIds: $scheduleIds, userId: ${widget.userId}');
+    Logger.info('realisasi_visit',
+        '[APPROVAL DEBUG] Approve scheduleIds: $scheduleIds, userId: ${widget.userId}');
 
     // Mencari role user dari BLoC
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
       final String role = authState.user.role.toUpperCase();
-      Logger.info(
-          'realisasi_visit', '[APPROVAL DEBUG] User role: $role');
+      Logger.info('realisasi_visit', '[APPROVAL DEBUG] User role: $role');
 
       if (role == 'GM') {
         // Gunakan API khusus GM untuk approval
@@ -1648,5 +1645,38 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
             jenis.contains(query) ||
             products.contains(query);
     }
+  }
+
+  // Add this new helper method for compact detail rows
+  Widget _buildDetailRowCompact(String label, String value, IconData icon) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 14, color: AppTheme.primaryColor),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$label:',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.visible,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
