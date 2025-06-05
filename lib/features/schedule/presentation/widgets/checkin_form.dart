@@ -346,6 +346,11 @@ class _CheckinFormState extends State<CheckinForm> {
                           ),
                         ),
                       ),
+                      IconButton(
+                        icon: Icon(Icons.refresh, color: Colors.green.shade700),
+                        onPressed: _getCurrentLocation,
+                        tooltip: 'Perbarui lokasi',
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),

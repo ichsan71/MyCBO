@@ -110,18 +110,6 @@ class _HomeContent extends StatelessWidget {
                       onTap: () => _navigateToRealisasiVisit(context),
                     ),
                   MenuCard(
-                    title: 'Target',
-                    icon: Icons.flag,
-                    color: Colors.orange,
-                    onTap: () {},
-                  ),
-                  MenuCard(
-                    title: 'Tim',
-                    icon: Icons.people,
-                    color: Colors.purple,
-                    onTap: () {},
-                  ),
-                  MenuCard(
                     title: 'Pengaturan',
                     icon: Icons.settings,
                     color: Colors.grey,

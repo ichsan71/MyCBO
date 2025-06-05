@@ -279,8 +279,9 @@ class ScheduleDetailPage extends StatelessWidget {
             ),
           );
 
-          // Tutup bottom sheet
-          Navigator.pop(context);
+          // Tutup bottom sheet dan navigasi ke halaman schedule
+          Navigator.pop(context); // Close bottom sheet
+          Navigator.pop(context); // Close schedule detail page
         }
       } else {
         if (context.mounted) {
@@ -542,10 +543,9 @@ class ScheduleDetailPage extends StatelessWidget {
             ),
           );
 
-          // Tutup bottom sheet dengan pengecekan aman
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context);
-          }
+          // Tutup bottom sheet dan navigasi ke halaman schedule
+          Navigator.pop(context); // Close bottom sheet
+          Navigator.pop(context); // Close schedule detail page
         }
       } else {
         if (context.mounted) {
