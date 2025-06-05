@@ -130,14 +130,39 @@ class _CheckinFormState extends State<CheckinForm> {
         desiredAccuracy: LocationAccuracy.high,
       );
 
+      // Check if mock location is enabled
+      bool isMockLocation = position.isMocked;
+
+      if (isMockLocation) {
+        if (mounted) {
+          setState(() {
+            _locationError = 'Lokasi palsu terdeteksi';
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Anda terdeteksi menggunakan lokasi palsu. Mohon nonaktifkan aplikasi pihak ketiga yang menyediakan fitur Fake Location untuk melakukan check-in.',
+              ),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+        return;
+      }
+
       if (mounted) {
         setState(() {
           _currentPosition = position;
+          _locationError = null;
         });
         await _getAddressFromLatLng(position);
       }
     } catch (e) {
       if (mounted) {
+        setState(() {
+          _locationError = 'Gagal mendapatkan lokasi';
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal mendapatkan lokasi: ${e.toString()}'),
@@ -254,6 +279,18 @@ class _CheckinFormState extends State<CheckinForm> {
 
   void _submitForm() async {
     if (_isLoading) return;
+
+    // Check for mock location error
+    if (_locationError == 'Lokasi palsu terdeteksi') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Tidak dapat melakukan check-in dengan lokasi palsu. Mohon nonaktifkan aplikasi pihak ketiga yang menyediakan fitur Fake Location.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     // Validate note first
     if (!_validateNote()) {
