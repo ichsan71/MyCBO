@@ -4,7 +4,7 @@
     "scheduleTitle": "Jadwal Aktivitas",
     "searchHint": "Cari nama tujuan atau dokter...",
     "filterAll": "Semua",
-    "filterPendingApproval": "Belum Disetujui",
+    "filterPendingApproval": "Pending",
     "filterApproved": "Disetujui",
     "filterRejected": "Ditolak",
     "filterCompleted": "Selesai",

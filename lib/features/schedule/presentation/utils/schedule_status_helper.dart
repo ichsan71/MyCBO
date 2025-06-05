@@ -65,9 +65,13 @@ class ScheduleStatusHelper {
       case 'belum checkout':
         return l10n.notCheckedOut;
       case 'selesai':
-        return namaApprover != null && namaApprover.isNotEmpty
-            ? '${l10n.completed} (${l10n.approvedBy(namaApprover)})'
-            : l10n.completed;
+        if (lowerDraft == 'submitted') {
+          return l10n.completed;
+        } else if (namaApprover != null && namaApprover.isNotEmpty) {
+          return '${l10n.completed} (${l10n.approvedBy(namaApprover)})';
+        } else {
+          return l10n.completed;
+        }
       case 'batal':
         return l10n.cancelled;
       case 'ditolak':
@@ -78,4 +82,4 @@ class ScheduleStatusHelper {
         return status;
     }
   }
-} 
+}

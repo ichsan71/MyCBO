@@ -78,8 +78,8 @@ class _ScheduleCardState extends State<ScheduleCard> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.50),
+            blurRadius: 15,
             offset: const Offset(0, 2),
           ),
         ],

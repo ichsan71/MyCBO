@@ -20,19 +20,18 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.maztafarma.cbo"
-    compileSdk = 35
-    ndkVersion = flutter.ndkVersion
+    compileSdkVersion 35
+    ndkVersion flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
         encoding = 'UTF-8'
+        coreLibraryDesugaringEnabled true
     }
 
     kotlinOptions {
         jvmTarget = '17'
-        apiVersion = '1.8'
-        languageVersion = '1.8'
     }
 
     signingConfigs {
@@ -46,8 +45,8 @@ android {
 
     defaultConfig {
         applicationId = "com.maztafarma.cbo"
-        minSdk = rootProject.ext.flutterMinSdkVersion
-        targetSdk = rootProject.ext.flutterTargetSdkVersion
+        minSdkVersion rootProject.ext.flutterMinSdkVersion
+        targetSdkVersion rootProject.ext.flutterTargetSdkVersion
         versionCode = 1
         versionName = "1.0.0"
         multiDexEnabled true
@@ -113,6 +112,9 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.fragment:fragment:1.6.2'
+    implementation 'androidx.fragment:fragment-ktx:1.6.2'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
 }
 
 allprojects {

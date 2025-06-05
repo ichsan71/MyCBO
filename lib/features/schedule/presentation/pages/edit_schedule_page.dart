@@ -49,8 +49,8 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
   static const String _tag = 'EditSchedulePage';
 
   // Form validation constants
-  static const int _minimumNoteCharacters = 50;
-  static const int _maximumNoteCharacters = 500;
+  static const int _minimumNoteCharacters = 10;
+  static const int _maximumNoteCharacters = 200;
   String? _noteError;
 
   // Form controllers

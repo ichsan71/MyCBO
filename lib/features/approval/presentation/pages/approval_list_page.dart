@@ -129,8 +129,8 @@ class _ApprovalListViewState extends State<ApprovalListView>
                     TabBar(
                       controller: _tabController,
                       tabs: const [
-                        Tab(text: 'Bulanan'),
-                        Tab(text: 'Dadakan'),
+                        Tab(text: 'Call Plan'),
+                        Tab(text: 'Extra'),
                       ],
                       labelStyle: GoogleFonts.poppins(
                         fontWeight: FontWeight.w600,

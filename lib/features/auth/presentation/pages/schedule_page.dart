@@ -108,25 +108,26 @@ class _ScheduleViewState extends State<_ScheduleView> {
           // Filter berdasarkan kategori
           bool matchesFilter = false;
           if (_selectedFilter == l10n.filterPendingApproval) {
-            // Belum Disetujui: harus approved=0 dan tidak mengandung "rejected"
+            // Pending: approved must be 0 and not rejected
             matchesFilter =
                 schedule.approved == 0 && !lowerDraft.contains('rejected');
             Logger.debug(
                 'SchedulePage', 'Filter Pending Approval: $matchesFilter');
           } else if (_selectedFilter == l10n.filterApproved) {
-            // Disetujui: harus approved=1
-            matchesFilter = schedule.approved == 1;
+            // Disetujui: check if realisasi_approve is null or nama_approver is null
+            matchesFilter = schedule.realisasiApprove == null ||
+                schedule.namaApprover == null;
             Logger.debug('SchedulePage', 'Filter Approved: $matchesFilter');
           } else if (_selectedFilter == l10n.filterRejected) {
-            // Ditolak: draft mengandung "rejected"
+            // Ditolak: draft contains "rejected"
             matchesFilter = lowerDraft.contains('rejected');
             Logger.debug('SchedulePage', 'Filter Rejected: $matchesFilter');
           } else if (_selectedFilter == l10n.filterCompleted) {
-            // Selesai: status "selesai"
-            matchesFilter = lowerStatus == 'selesai';
+            // Selesai: draft must be "submitted"
+            matchesFilter = lowerDraft == 'submitted';
             Logger.debug('SchedulePage', 'Filter Completed: $matchesFilter');
           } else {
-            // Semua: tidak ada filter tambahan
+            // Semua: no additional filter
             matchesFilter = true;
             Logger.debug('SchedulePage', 'Filter All: $matchesFilter');
           }
