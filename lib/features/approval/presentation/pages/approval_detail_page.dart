@@ -398,7 +398,42 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
-            final schedule = _convertToSchedule(details[index]);
+            if (index == 0) {
+              // Add Select All checkbox
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Card(
+                  child: CheckboxListTile(
+                    title: Text(
+                      'Pilih Semua',
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    value: details.every((detail) => _selectedScheduleIds
+                        .contains(detail is monthly.MonthlyScheduleDetail
+                            ? detail.id
+                            : detail.id)),
+                    onChanged: (bool? value) {
+                      setState(() {
+                        if (value == true) {
+                          // Select all
+                          _selectedScheduleIds.addAll(details.map((detail) =>
+                              detail is monthly.MonthlyScheduleDetail
+                                  ? detail.id
+                                  : detail.id));
+                        } else {
+                          // Deselect all
+                          _selectedScheduleIds.clear();
+                        }
+                      });
+                    },
+                    controlAffinity: ListTileControlAffinity.leading,
+                  ),
+                ),
+              );
+            }
+            final schedule = _convertToSchedule(details[index - 1]);
             final isSelected =
                 _selectedScheduleIds.contains(schedule.idSchedule);
             final isJoinVisit =
@@ -417,7 +452,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
                   _onJoinVisitChanged(schedule.idSchedule, value),
             );
           },
-          childCount: details.length,
+          childCount: details.length + 1, // +1 for the Select All checkbox
         ),
       ),
     );
@@ -469,6 +504,10 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
   }
 
   void _handleReject() async {
+    Logger.info('ApprovalDetailView', 'Starting rejection process');
+    Logger.info(
+        'ApprovalDetailView', 'Selected schedule IDs: $_selectedScheduleIds');
+
     final result = await showDialog<String>(
       context: context,
       builder: (context) => const CustomConfirmationDialog(
@@ -483,11 +522,23 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
       ),
     );
 
+    Logger.info(
+        'ApprovalDetailView', 'Rejection dialog result: ${result ?? 'null'}');
+
     if (result != null) {
-      if (!mounted) return;
+      if (!mounted) {
+        Logger.error('ApprovalDetailView', 'Widget not mounted after dialog');
+        return;
+      }
 
       if (widget.isMonthlyTab) {
+        Logger.info('ApprovalDetailView', 'Processing monthly tab rejection');
         final monthlyApproval = widget.approval as monthly.MonthlyApproval;
+        Logger.info('ApprovalDetailView',
+            'Monthly approval - User ID: ${monthlyApproval.idBawahan}');
+        Logger.info('ApprovalDetailView',
+            'Selected schedules for rejection: ${_selectedScheduleIds.toList()}');
+
         context.read<MonthlyApprovalBloc>().add(
               SendMonthlyApproval(
                 scheduleIds: _selectedScheduleIds.toList(),
@@ -499,15 +550,33 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
               ),
             );
       } else {
+        Logger.info('ApprovalDetailView', 'Processing extra tab rejection');
         final immediateApproval = widget.approval as approval.Approval;
-        context.read<ApprovalBloc>().add(
-              RejectRequest(
-                idSchedule: immediateApproval.id.toString(),
-                idRejecter: widget.userId,
-                comment: result,
-              ),
-            );
+        Logger.info('ApprovalDetailView',
+            'Extra approval - User ID: ${immediateApproval.userId}');
+        Logger.info('ApprovalDetailView',
+            'Number of schedules to reject: ${_selectedScheduleIds.length}');
+
+        // Handle batch rejection for extra tab
+        for (var scheduleId in _selectedScheduleIds) {
+          Logger.info(
+              'ApprovalDetailView', 'Rejecting schedule ID: $scheduleId');
+          try {
+            context.read<ApprovalBloc>().add(
+                  RejectRequest(
+                    idSchedule: scheduleId.toString(),
+                    idRejecter: widget.userId,
+                    comment: result,
+                  ),
+                );
+          } catch (e) {
+            Logger.error('ApprovalDetailView',
+                'Error rejecting schedule $scheduleId: $e');
+          }
+        }
       }
+    } else {
+      Logger.info('ApprovalDetailView', 'Rejection cancelled by user');
     }
   }
 

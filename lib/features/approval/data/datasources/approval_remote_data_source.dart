@@ -315,31 +315,51 @@ class ApprovalRemoteDataSourceImpl implements ApprovalRemoteDataSource {
     String idRejecter,
     String comment,
   ) async {
+    Logger.info(_tag, 'Rejecting request with ID: $idSchedule');
+
     final token = sharedPreferences.getString(Constants.tokenKey);
     if (token == null) {
       throw ServerException(message: 'Token tidak ditemukan');
     }
 
-    final url = Uri.parse('${Constants.baseUrl}/api/reject-request');
+    final url = Uri.parse('${Constants.baseUrl}/reject-suddenly');
+    Logger.info(_tag, 'URL: $url');
 
     try {
       final response = await client.post(
         url,
         headers: {
           'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: jsonEncode({
+        body: {
           'id_schedule': idSchedule,
           'id_rejecter': idRejecter,
           'comment': comment,
-        }),
+        },
       );
 
-      if (response.statusCode != 200) {
-        throw ServerException(message: 'Gagal menolak permintaan');
+      Logger.info(_tag, 'Status Code: ${response.statusCode}');
+      Logger.info(_tag, 'Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['status'] == true) {
+          Logger.success(_tag, 'Request rejected successfully');
+          return;
+        }
+        throw ServerException(
+            message: responseData['message'] ?? 'Gagal menolak permintaan');
+      } else if (response.statusCode == 401) {
+        throw UnauthorizedException(message: 'Sesi telah berakhir');
+      } else {
+        Logger.error(_tag, 'Error response',
+            'Status: ${response.statusCode}, Body: ${response.body}');
+        throw ServerException(
+            message: 'Gagal menolak permintaan: ${response.statusCode}');
       }
     } catch (e) {
+      Logger.error(_tag, 'rejectRequest', e.toString());
       throw ServerException(message: 'Error: $e');
     }
   }
