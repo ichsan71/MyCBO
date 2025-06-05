@@ -17,6 +17,7 @@ import 'package:test_cbo/core/presentation/widgets/shimmer_schedule_loading.dart
 import '../../data/models/edit_schedule_data_model.dart';
 import '../../data/models/update_schedule_request_model.dart';
 import '../../data/models/edit/edit_schedule_product_model.dart';
+import 'package:test_cbo/core/presentation/theme/app_theme.dart';
 
 class EditSchedulePage extends StatelessWidget {
   final int scheduleId;
@@ -602,23 +603,34 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Informasi Jadwal Section
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.calendar_today,
-                                color: theme.primaryColor,
-                                size: 24,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Informasi Jadwal',
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  color: theme.primaryColor,
-                                  fontWeight: FontWeight.bold,
+                          // Form Header
+                          AppCard(
+                            elevation: 2,
+                            backgroundColor: AppTheme.scheduleCardColor,
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.calendar_today,
+                                      color: AppTheme.scheduleIconColor,
+                                      size: 24,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      'Informasi Jadwal',
+                                      style:
+                                          theme.textTheme.titleLarge?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppTheme.scheduleHeaderColor,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                           _spacer16,
 
@@ -854,10 +866,10 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                                               },
                                               child: Container(
                                                 color: isSelected
-                                                    ? theme.colorScheme
-                                                        .primaryContainer
-                                                        .withOpacity(0.1)
-                                                    : null,
+                                                    ? AppTheme
+                                                        .scheduleSelectedItemColor
+                                                    : AppTheme
+                                                        .scheduleCardColor,
                                                 padding:
                                                     const EdgeInsets.all(16),
                                                 child: Row(
@@ -868,21 +880,21 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                                                               8),
                                                       decoration: BoxDecoration(
                                                         color: isSelected
-                                                            ? theme.colorScheme
-                                                                .primary
+                                                            ? AppTheme
+                                                                .scheduleHighlightColor
                                                                 .withOpacity(
                                                                     0.1)
-                                                            : theme.colorScheme
-                                                                .surfaceVariant,
+                                                            : AppTheme
+                                                                .scheduleBackgroundColor,
                                                         shape: BoxShape.circle,
                                                       ),
                                                       child: Icon(
                                                         Icons.person_outline,
                                                         color: isSelected
-                                                            ? theme.colorScheme
-                                                                .primary
-                                                            : theme.colorScheme
-                                                                .onSurfaceVariant,
+                                                            ? AppTheme
+                                                                .scheduleHighlightColor
+                                                            : AppTheme
+                                                                .scheduleIconColor,
                                                         size: 20,
                                                       ),
                                                     ),
@@ -894,10 +906,10 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                                                             .textTheme.bodyLarge
                                                             ?.copyWith(
                                                           color: isSelected
-                                                              ? theme
-                                                                  .colorScheme
-                                                                  .primary
-                                                              : null,
+                                                              ? AppTheme
+                                                                  .scheduleHighlightColor
+                                                              : AppTheme
+                                                                  .scheduleTextColor,
                                                           fontWeight: isSelected
                                                               ? FontWeight.bold
                                                               : FontWeight
@@ -969,20 +981,26 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                                         label: Text(
                                           product.namaProduct,
                                           style: TextStyle(
-                                            color: theme
-                                                .colorScheme.onPrimaryContainer,
+                                            color:
+                                                AppTheme.scheduleHighlightColor,
+                                            fontWeight: FontWeight.w500,
                                           ),
                                         ),
                                         backgroundColor:
-                                            theme.colorScheme.primaryContainer,
+                                            AppTheme.scheduleSelectedItemColor,
                                         deleteIcon: Icon(
                                           Icons.close,
                                           size: 18,
-                                          color: theme
-                                              .colorScheme.onPrimaryContainer,
+                                          color:
+                                              AppTheme.scheduleHighlightColor,
                                         ),
                                         onDeleted: () =>
                                             _removeProduct(product),
+                                        side: BorderSide(
+                                          color: AppTheme.scheduleHighlightColor
+                                              .withOpacity(0.5),
+                                          width: 1,
+                                        ),
                                       );
                                     }).toList(),
                                   ),
@@ -1070,10 +1088,9 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                                             },
                                             child: Container(
                                               color: isSelected
-                                                  ? theme.colorScheme
-                                                      .primaryContainer
-                                                      .withOpacity(0.1)
-                                                  : null,
+                                                  ? AppTheme
+                                                      .scheduleSelectedItemColor
+                                                  : AppTheme.scheduleCardColor,
                                               padding: const EdgeInsets.all(16),
                                               child: Row(
                                                 children: [
@@ -1082,20 +1099,21 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                                                         const EdgeInsets.all(8),
                                                     decoration: BoxDecoration(
                                                       color: isSelected
-                                                          ? theme.colorScheme
-                                                              .primaryContainer
-                                                          : theme.colorScheme
-                                                              .surfaceVariant,
+                                                          ? AppTheme
+                                                              .scheduleHighlightColor
+                                                              .withOpacity(0.1)
+                                                          : AppTheme
+                                                              .scheduleBackgroundColor,
                                                       shape: BoxShape.circle,
                                                     ),
                                                     child: Icon(
                                                       Icons
                                                           .medical_services_outlined,
                                                       color: isSelected
-                                                          ? theme.colorScheme
-                                                              .primary
-                                                          : theme.colorScheme
-                                                              .onSurfaceVariant,
+                                                          ? AppTheme
+                                                              .scheduleHighlightColor
+                                                          : AppTheme
+                                                              .scheduleIconColor,
                                                       size: 20,
                                                     ),
                                                   ),
@@ -1114,25 +1132,25 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                                                             fontWeight:
                                                                 FontWeight.w500,
                                                             color: isSelected
-                                                                ? theme
-                                                                    .colorScheme
-                                                                    .primary
-                                                                : null,
+                                                                ? AppTheme
+                                                                    .scheduleHighlightColor
+                                                                : AppTheme
+                                                                    .scheduleTextColor,
                                                           ),
                                                         ),
                                                         if (product.desc
                                                                 ?.isNotEmpty ??
                                                             false) ...[
-                                                          _spacer4,
+                                                          const SizedBox(
+                                                              height: 4),
                                                           Text(
                                                             product.desc!,
                                                             style: theme
                                                                 .textTheme
                                                                 .bodySmall
                                                                 ?.copyWith(
-                                                              color: theme
-                                                                  .colorScheme
-                                                                  .onSurfaceVariant,
+                                                              color: AppTheme
+                                                                  .scheduleSubtextColor,
                                                             ),
                                                             maxLines: 2,
                                                             overflow:
@@ -1146,8 +1164,8 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                                                   if (isSelected)
                                                     Icon(
                                                       Icons.check_circle,
-                                                      color: theme
-                                                          .colorScheme.primary,
+                                                      color: AppTheme
+                                                          .scheduleHighlightColor,
                                                     ),
                                                 ],
                                               ),

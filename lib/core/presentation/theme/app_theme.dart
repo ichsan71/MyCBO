@@ -17,6 +17,23 @@ class AppTheme {
   static Color surfaceColor = Colors.white;
   static Color backgroundColor = const Color(0xFFF5F5F5);
 
+  // New colors for better readability
+  static Color scheduleTextColor =
+      const Color(0xFF333333); // Dark gray for better contrast
+  static Color scheduleIconColor =
+      const Color(0xFF1565C0); // Darker blue for icons
+  static Color scheduleHeaderColor =
+      const Color(0xFF1976D2); // Slightly lighter blue for headers
+  static Color scheduleSubtextColor =
+      const Color(0xFF616161); // Medium gray for secondary text
+  static Color scheduleBackgroundColor =
+      const Color(0xFFFAFAFA); // Very light gray background
+  static Color scheduleCardColor = Colors.white;
+  static Color scheduleSelectedItemColor =
+      const Color(0xFFE3F2FD); // Very light blue for selected items
+  static Color scheduleHighlightColor =
+      const Color(0xFF2196F3); // Bright blue for highlights
+
   // Shadow
   static List<BoxShadow> defaultShadow = [
     BoxShadow(
@@ -63,8 +80,8 @@ class AppTheme {
       onPrimary: Colors.white,
       onSecondary: Colors.white,
       onTertiary: Colors.white,
-      onSurface: primaryTextColor,
-      onBackground: primaryTextColor,
+      onSurface: scheduleTextColor,
+      onBackground: scheduleTextColor,
       onError: Colors.white,
       brightness: Brightness.light,
     );
@@ -78,7 +95,7 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       primaryColor: colorScheme.primary,
-      scaffoldBackgroundColor: backgroundColor,
+      scaffoldBackgroundColor: scheduleBackgroundColor,
       appBarTheme: AppBarTheme(
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
@@ -333,15 +350,15 @@ class AppTheme {
 
   static ThemeData darkTheme() {
     const ColorScheme colorScheme = ColorScheme(
-      primary:  Color(0xFF90CAF9), // Biru yang lebih terang
-      primaryContainer:  Color(0xFF1976D2), // Biru yang lebih gelap
-      secondary:  Color(0xFF80CBC4), // Teal yang lebih terang
-      secondaryContainer:  Color(0xFF00796B), // Teal yang lebih gelap
-      tertiary:  Color(0xFFCE93D8), // Ungu yang lebih terang
-      tertiaryContainer:  Color(0xFF7B1FA2), // Ungu yang lebih gelap
-      surface:  Color(0xFF1F1F1F),
-      background:  Color(0xFF121212),
-      error:  Color(0xFFEF5350), // Merah yang lebih terang
+      primary: Color(0xFF90CAF9), // Biru yang lebih terang
+      primaryContainer: Color(0xFF1976D2), // Biru yang lebih gelap
+      secondary: Color(0xFF80CBC4), // Teal yang lebih terang
+      secondaryContainer: Color(0xFF00796B), // Teal yang lebih gelap
+      tertiary: Color(0xFFCE93D8), // Ungu yang lebih terang
+      tertiaryContainer: Color(0xFF7B1FA2), // Ungu yang lebih gelap
+      surface: Color(0xFF1F1F1F),
+      background: Color(0xFF121212),
+      error: Color(0xFFEF5350), // Merah yang lebih terang
       onPrimary: Colors.black,
       onSecondary: Colors.black,
       onTertiary: Colors.black,
