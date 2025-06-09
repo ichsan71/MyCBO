@@ -39,6 +39,28 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
+# Tambahan untuk file besar atau sementara
+*.hprof
+*.tmp
+*.crash
+*.stacktrace
+
+# Optional - VS Code
+.vscode/
+
+# Generated iOS artifacts
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/Flutter.podspec
+
+# macOS artifacts
+/macos/Flutter/ephemeral/
+/macos/Flutter/GeneratedPluginRegistrant.swift
+
+# Windows thumbnails
+Thumbs.db
+ehthumbs.db
+
+
 # Android Studio will place build artifacts here
 /android/app/debug
 /android/app/profile
