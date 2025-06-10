@@ -5,20 +5,45 @@ import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/logout_usecase.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:logger/logger.dart';
+import '../../../../features/notifications/presentation/bloc/notification_bloc.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final LoginUseCase loginUseCase;
   final LogoutUseCase logoutUseCase;
   final GetCurrentUserUseCase getCurrentUserUseCase;
+  final NotificationBloc notificationBloc;
+  final logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 0,
+      errorMethodCount: 5,
+      lineLength: 50,
+      colors: true,
+      printEmojis: true,
+      printTime: true,
+    ),
+  );
 
   AuthBloc({
     required this.loginUseCase,
     required this.logoutUseCase,
     required this.getCurrentUserUseCase,
+    required this.notificationBloc,
   }) : super(const AuthInitial()) {
     on<LoginEvent>(_onLoginEvent);
     on<LogoutEvent>(_onLogoutEvent);
     on<CheckAuthStatusEvent>(_onCheckAuthStatusEvent);
+  }
+
+  Future<void> _updateUsername(String username) async {
+    try {
+      logger.d('Updating username in notification settings: $username');
+      notificationBloc.add(UpdateUsername(username));
+      logger.i('Username update event dispatched to notification bloc');
+    } catch (e) {
+      logger.e('Error dispatching username update event: $e');
+    }
   }
 
   Future<void> _onLoginEvent(
@@ -34,9 +59,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       ),
     );
 
-    result.fold(
-      (failure) => emit(AuthError(failure.toString())),
-      (user) => emit(AuthAuthenticated(user)),
+    await result.fold(
+      (failure) async => emit(AuthError(failure.toString())),
+      (user) async {
+        await _updateUsername(user.name);
+        emit(AuthAuthenticated(user));
+      },
     );
   }
 
@@ -48,9 +76,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     final result = await logoutUseCase(NoParams());
 
-    result.fold(
-      (failure) => emit(AuthError(failure.toString())),
-      (_) => emit(const AuthUnauthenticated()),
+    await result.fold(
+      (failure) async => emit(AuthError(failure.toString())),
+      (_) async {
+        await _updateUsername('');
+        emit(const AuthUnauthenticated());
+      },
     );
   }
 
@@ -62,9 +93,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     final result = await getCurrentUserUseCase(NoParams());
 
-    result.fold(
-      (failure) => emit(const AuthUnauthenticated()),
-      (user) => emit(AuthAuthenticated(user)),
+    await result.fold(
+      (failure) async => emit(const AuthUnauthenticated()),
+      (user) async {
+        await _updateUsername(user.name);
+        emit(AuthAuthenticated(user));
+      },
     );
   }
 }

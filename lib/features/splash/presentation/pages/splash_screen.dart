@@ -3,6 +3,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 import '../../../onboarding/presentation/pages/onboarding_screen.dart';
 import '../../../auth/presentation/pages/login_page.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:test_cbo/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:test_cbo/features/auth/presentation/bloc/auth_event.dart';
+import 'package:test_cbo/features/auth/presentation/bloc/auth_state.dart';
+import 'package:test_cbo/features/notifications/presentation/bloc/notification_bloc.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -30,6 +35,7 @@ class _SplashScreenState extends State<SplashScreen>
     _controller.forward();
 
     _checkFirstTime();
+    _initialize();
   }
 
   Future<void> _checkFirstTime() async {
@@ -78,6 +84,14 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
+  Future<void> _initialize() async {
+    // Initialize notifications
+    context.read<NotificationBloc>().add(InitializeNotifications());
+
+    // Check auth status
+    context.read<AuthBloc>().add(const CheckAuthStatusEvent());
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -86,25 +100,41 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: FadeTransition(
-          opacity: _animation,
-          child: Image.asset(
-            'assets/images/mazta_logo.png',
-            width: 200,
-            height: 200,
-            errorBuilder: (context, error, stackTrace) {
-              if (kDebugMode) {
-                print('Error memuat gambar: $error');
-              }
-              return const Icon(
-                Icons.image_not_supported,
-                size: 200,
-                color: Colors.grey,
-              );
-            },
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthAuthenticated) {
+          Navigator.pushReplacementNamed(context, '/dashboard');
+        } else if (state is AuthUnauthenticated) {
+          Navigator.pushReplacementNamed(context, '/login');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              FadeTransition(
+                opacity: _animation,
+                child: Image.asset(
+                  'assets/images/mazta_logo.png',
+                  width: 200,
+                  height: 200,
+                  errorBuilder: (context, error, stackTrace) {
+                    if (kDebugMode) {
+                      print('Error memuat gambar: $error');
+                    }
+                    return const Icon(
+                      Icons.image_not_supported,
+                      size: 200,
+                      color: Colors.grey,
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
+              const CircularProgressIndicator(),
+            ],
           ),
         ),
       ),

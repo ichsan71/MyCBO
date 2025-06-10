@@ -113,7 +113,8 @@ class _HomeContent extends StatelessWidget {
                     title: 'Pengaturan',
                     icon: Icons.settings,
                     color: Colors.grey,
-                    onTap: () {},
+                    onTap: () =>
+                        Navigator.pushNamed(context, '/notification_settings'),
                   ),
                   MenuCard(
                     title: 'Bantuan',

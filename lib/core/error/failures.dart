@@ -14,21 +14,24 @@ abstract class Failure extends Equatable {
 
 // General Failures
 class ServerFailure extends Failure {
-  const ServerFailure({String message = 'Server error occurred'}) : super(message: message);
+  const ServerFailure({String message = 'Server error occurred'})
+      : super(message: message);
 
   @override
   String toString() => message;
 }
 
 class CacheFailure extends Failure {
-  const CacheFailure({String message = 'Cache error occurred'}) : super(message: message);
+  const CacheFailure({String message = 'Cache error occurred'})
+      : super(message: message);
 
   @override
   String toString() => message;
 }
 
 class NetworkFailure extends Failure {
-  const NetworkFailure({String message = 'Network error occurred'}) : super(message: message);
+  const NetworkFailure({String message = 'Network error occurred'})
+      : super(message: message);
 
   @override
   String toString() => message;
@@ -58,5 +61,11 @@ class UnauthorizedFailure extends Failure {
 }
 
 class ValidationFailure extends Failure {
-  const ValidationFailure({String message = 'Validation error occurred'}) : super(message: message);
+  const ValidationFailure({String message = 'Validation error occurred'})
+      : super(message: message);
+}
+
+class NotificationFailure extends Failure {
+  const NotificationFailure({String message = 'Notification error occurred'})
+      : super(message: message);
 }

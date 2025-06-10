@@ -7,8 +7,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:test_cbo/core/database/app_database.dart';
 import 'package:test_cbo/core/network/network_info.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/tipe_schedule_bloc.dart';
-import 'package:test_cbo/features/notification/data/datasources/local_notification_service.dart';
-import 'package:test_cbo/features/notification/presentation/bloc/notification_bloc.dart';
 
 import '../../features/auth/di/auth_injection.dart';
 import '../../features/schedule/di/schedule_injection.dart';
@@ -24,11 +22,10 @@ import '../../features/schedule/domain/usecases/get_schedules.dart';
 import '../../features/schedule/domain/usecases/get_schedules_by_range_date.dart';
 import '../../features/schedule/domain/usecases/update_schedule.dart';
 import '../../features/schedule/domain/usecases/get_rejected_schedules.dart';
-import '../../features/notification/domain/repositories/notification_repository.dart';
-import '../../features/notification/data/repositories/notification_repository_impl.dart';
-import '../../features/notification/domain/usecases/get_notification_settings.dart';
-import '../../features/notification/domain/usecases/save_notification_settings.dart';
-import '../../features/notification/presentation/bloc/notification_settings_bloc.dart';
+import '../../features/notifications/data/datasources/local_notification_service.dart';
+import '../../features/notifications/data/repositories/notification_repository_impl.dart';
+import '../../features/notifications/domain/repositories/notification_repository.dart';
+import '../../features/notifications/presentation/bloc/notification_bloc.dart';
 
 /// Service locator instance
 final sl = GetIt.instance;
@@ -51,13 +48,13 @@ Future<void> init() async {
   _initCoreDependencies();
 
   //! Feature dependencies
+  // Initialize Notification Service first
+  _initNotificationDependencies();
+
   await initAuthDependencies();
   await initScheduleDependencies();
   await initApprovalDependencies();
   await initRealisasiVisitDependencies();
-
-  // Initialize Notification Service
-  _initNotificationDependencies();
 
   // Inisialisasi Tipe Schedule
   _initTipeScheduleDependencies();
@@ -112,6 +109,8 @@ void _initNotificationDependencies() {
     () => LocalNotificationServiceImpl(
       flutterLocalNotificationsPlugin: sl(),
       sharedPreferences: sl(),
+      authRepository: sl(),
+      scheduleRepository: sl(),
     ),
   );
 
@@ -119,23 +118,14 @@ void _initNotificationDependencies() {
   sl.registerLazySingleton<NotificationRepository>(
     () => NotificationRepositoryImpl(
       localNotificationService: sl(),
+      sharedPreferences: sl(),
+      authRepository: sl(),
+      scheduleRepository: sl(),
     ),
   );
-
-  // Use cases
-  sl.registerLazySingleton(() => GetNotificationSettings(sl()));
-  sl.registerLazySingleton(() => SaveNotificationSettings(sl()));
 
   // Blocs
-  sl.registerFactory(
-    () => NotificationSettingsBloc(
-      getNotificationSettings: sl(),
-      saveNotificationSettings: sl(),
-      notificationService: sl(),
-    ),
-  );
-
-  sl.registerFactory(
+  sl.registerLazySingleton(
     () => NotificationBloc(
       notificationRepository: sl(),
     ),
