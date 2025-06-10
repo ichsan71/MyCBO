@@ -13,6 +13,8 @@ import 'package:test_cbo/features/schedule/presentation/bloc/schedule_event.dart
 import '../widgets/menu_card.dart';
 import 'package:test_cbo/core/presentation/widgets/kpi_chart.dart';
 import 'package:test_cbo/core/presentation/theme/app_theme.dart';
+import 'package:provider/provider.dart';
+import 'package:test_cbo/core/presentation/theme/theme_provider.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -20,6 +22,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, state) {
           if (state is AuthAuthenticated) {
@@ -52,6 +55,7 @@ class _HomeContent extends StatelessWidget {
         role == 'RSM' ||
         role == 'DM' ||
         role == 'AM';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SafeArea(
       child: CustomScrollView(
@@ -73,7 +77,7 @@ class _HomeContent extends StatelessWidget {
                       l10n.welcomeMessage,
                       style: GoogleFonts.poppins(
                         fontSize: 16,
-                        color: Colors.grey[600],
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -109,11 +113,11 @@ class _HomeContent extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
+                          color: Colors.grey.withOpacity(isDark ? 0.3 : 0.1),
                           spreadRadius: 1,
                           blurRadius: 10,
                           offset: const Offset(0, 1),
@@ -166,18 +170,27 @@ class _HomeContent extends StatelessWidget {
                           context: context,
                           title: 'Persetujuan',
                           icon: Icons.approval,
-                          color: Colors.red[600]!,
-                          onTap: () =>
-                              Navigator.pushNamed(context, '/approval'),
+                          color: Colors.orange[600]!,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ApprovalListPage(),
+                            ),
+                          ),
                         ),
                       if (hasRealisasiVisitAccess)
                         _buildMenuCard(
                           context: context,
                           title: 'Realisasi Visit',
-                          icon: Icons.check_circle,
-                          color: Colors.amber[700]!,
-                          onTap: () =>
-                              Navigator.pushNamed(context, '/realisasi_visit'),
+                          icon: Icons.assignment_turned_in,
+                          color: Colors.purple[600]!,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const RealisasiVisitListPage(),
+                            ),
+                          ),
                         ),
                       _buildMenuCard(
                         context: context,
@@ -187,16 +200,8 @@ class _HomeContent extends StatelessWidget {
                         onTap: () => Navigator.pushNamed(
                             context, '/notification_settings'),
                       ),
-                      _buildMenuCard(
-                        context: context,
-                        title: 'Bantuan',
-                        icon: Icons.help,
-                        color: Colors.teal[600]!,
-                        onTap: () {},
-                      ),
                     ],
                   ),
-                  const SizedBox(height: 20),
                 ],
               ),
             ),
@@ -213,47 +218,55 @@ class _HomeContent extends StatelessWidget {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 2,
-      shadowColor: color.withOpacity(0.3),
-      shape: RoundedRectangleBorder(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(isDark ? 0.3 : 0.1),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: const Offset(0, 1),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  shape: BoxShape.circle,
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(isDark ? 0.2 : 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: 32,
+                  ),
                 ),
-                child: Icon(
-                  icon,
-                  size: 32,
-                  color: color,
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).textTheme.titleLarge?.color,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

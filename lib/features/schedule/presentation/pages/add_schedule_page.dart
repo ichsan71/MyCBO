@@ -1,56 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:test_cbo/core/presentation/widgets/app_bar_widget.dart';
 import 'package:test_cbo/core/presentation/widgets/app_button.dart';
 import 'package:test_cbo/core/presentation/widgets/app_card.dart';
 import 'package:test_cbo/core/presentation/widgets/app_dropdown.dart';
 import 'package:test_cbo/core/presentation/widgets/app_text_field.dart';
-import 'package:test_cbo/core/presentation/widgets/app_bar_widget.dart';
-import 'package:test_cbo/core/di/injection_container.dart' as di;
-import 'package:test_cbo/core/utils/logger.dart';
+import 'package:test_cbo/core/presentation/widgets/shimmer_schedule_loading.dart';
 import 'package:test_cbo/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:test_cbo/features/auth/presentation/bloc/auth_state.dart';
-import 'package:test_cbo/features/schedule/data/models/doctor_clinic_model.dart'
-    as model;
-import 'package:test_cbo/features/schedule/data/models/doctor_model.dart';
-import 'package:test_cbo/features/schedule/data/models/responses/doctor_response.dart';
-import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic_base.dart';
+import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic.dart';
 import 'package:test_cbo/features/schedule/domain/entities/product.dart';
 import 'package:test_cbo/features/schedule/domain/entities/schedule_type.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_bloc.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_event.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_state.dart';
+import 'package:test_cbo/core/di/injection_container.dart' as di;
+import 'package:test_cbo/core/utils/logger.dart';
+import 'package:test_cbo/features/schedule/data/models/doctor_clinic_model.dart'
+    as model;
+import 'package:test_cbo/features/schedule/data/models/doctor_model.dart';
+import 'package:test_cbo/features/schedule/data/models/responses/doctor_response.dart';
+import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic_base.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_bloc.dart';
-import 'package:test_cbo/core/presentation/widgets/shimmer_schedule_loading.dart';
 import 'package:test_cbo/core/presentation/theme/app_theme.dart';
 
-class AddSchedulePage extends StatelessWidget {
+class AddSchedulePage extends StatefulWidget {
   const AddSchedulePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (_) => di.sl<AddScheduleBloc>(),
-        ),
-        BlocProvider(
-          create: (_) => di.sl<ScheduleBloc>(),
-        ),
-      ],
-      child: const _AddScheduleView(),
-    );
-  }
+  State<AddSchedulePage> createState() => _AddSchedulePageState();
 }
 
-class _AddScheduleView extends StatefulWidget {
-  const _AddScheduleView();
-
-  @override
-  State<_AddScheduleView> createState() => _AddScheduleViewState();
-}
-
-class _AddScheduleViewState extends State<_AddScheduleView> {
+class _AddSchedulePageState extends State<AddSchedulePage> {
   final _formKey = GlobalKey<FormState>();
   static const String _tag = 'AddSchedulePage';
 
@@ -60,12 +43,12 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
 
   // Konstanta untuk validasi catatan
   static const int _minimumNoteCharacters = 10;
-  static const int _maximumNoteCharacters = 200;
+  static const int _maximumNoteCharacters = 500;
   String? _noteError;
 
   // Selected values
   ScheduleType? _selectedScheduleType;
-  DoctorClinicBase? _selectedDoctor;
+  DoctorClinic? _selectedDoctor;
   String _selectedShift = 'pagi';
   final String _selectedJenis = 'suddenly';
   final List<Product> _selectedProducts = [];
@@ -73,8 +56,8 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
   final List<int> _selectedProductSpesialisIds = [];
 
   // Lists for doctors
-  final List<DoctorClinicBase> doctors = [];
-  final List<DoctorClinicBase> filteredDoctors = [];
+  final List<DoctorClinic> doctors = [];
+  final List<DoctorClinic> filteredDoctors = [];
 
   // Tambahkan variabel untuk menyimpan nama-nama
   final List<String> _selectedProductNames = [];
@@ -85,11 +68,11 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
   String _selectedDestinationType = 'dokter'; // Default: dokter
 
   // Search controllers
+  final TextEditingController _doctorSearchController = TextEditingController();
   final TextEditingController _productSearchController =
       TextEditingController();
-  String _productSearchQuery = '';
-  final TextEditingController _doctorSearchController = TextEditingController();
   String _doctorSearchQuery = '';
+  String _productSearchQuery = '';
 
   // Mapping ID spesialis ke nama spesialis
   final Map<int, String> _spesialisNames = {
@@ -141,10 +124,15 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
   @override
   void initState() {
     super.initState();
-
-    // Pastikan data dimuat dengan segera saat widget dibuat
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadData();
+    _doctorSearchController.addListener(() {
+      setState(() {
+        _doctorSearchQuery = _doctorSearchController.text;
+      });
+    });
+    _productSearchController.addListener(() {
+      setState(() {
+        _productSearchQuery = _productSearchController.text;
+      });
     });
   }
 
@@ -152,47 +140,9 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
   void dispose() {
     _tanggalController.dispose();
     _noteController.dispose();
-    _productSearchController.dispose();
     _doctorSearchController.dispose();
+    _productSearchController.dispose();
     super.dispose();
-  }
-
-  void _loadData() {
-    final authState = context.read<AuthBloc>().state;
-    if (authState is AuthAuthenticated) {
-      Logger.info(_tag, 'Memuat data untuk user ID: ${authState.user.idUser}');
-
-      final bloc = context.read<AddScheduleBloc>();
-
-      // Muat semua data secara bersamaan
-      bloc.add(GetDoctorsAndClinicsEvent(userId: authState.user.idUser));
-      bloc.add(GetProductsEvent(userId: authState.user.idUser));
-      bloc.add(GetScheduleTypesEvent());
-      bloc.add(GetDoctorsEvent());
-
-      // Menambahkan data dummy untuk divisi dan spesialis saat produk dipilih
-      _selectedProductDivisiIds.addAll([22, 23]);
-      _selectedDivisiNames.addAll(['Divisi A', 'Divisi B']);
-
-      _selectedProductSpesialisIds.addAll([18, 24]);
-      _selectedSpesialisNames.addAll(['Spesialis X', 'Spesialis Y']);
-
-      // Set timeout untuk memastikan produk selalu tersedia
-      Future.delayed(const Duration(seconds: 5), () {
-        // Cek apakah state masih loading atau belum ada produk
-        if (bloc.state is AddScheduleLoading ||
-            (bloc.state is AddScheduleFormLoaded &&
-                (bloc.state as AddScheduleFormLoaded).products.isEmpty)) {
-          Logger.warning(
-              _tag, 'Timeout loading produk, menggunakan data dummy');
-
-          if (mounted) {
-            // Jangan gunakan emit, gunakan add untuk event
-            bloc.add(GetProductsEvent(userId: authState.user.idUser));
-          }
-        }
-      });
-    }
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -204,7 +154,7 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
     );
     if (picked != null) {
       setState(() {
-        _tanggalController.text = DateFormat('yyyy-MM-dd').format(picked);
+        _tanggalController.text = DateFormat('dd/MM/yyyy').format(picked);
       });
     }
   }
@@ -310,7 +260,9 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
               note: _noteController.text.trim(),
               idUser: userId,
               dokter: _selectedDoctor!.id!,
-              klinik: _selectedDoctor!.tipeKlinik ?? '',
+              klinik: _selectedDestinationType == 'klinik'
+                  ? _selectedDoctor!.nama
+                  : '',
               productForIdDivisi: _selectedProductDivisiIds,
               productForIdSpesialis: _selectedProductSpesialisIds,
               shift: _selectedShift,
@@ -326,1010 +278,798 @@ class _AddScheduleViewState extends State<_AddScheduleView> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: const AppBarWidget(
+      appBar: AppBarWidget(
         title: 'Tambah Jadwal',
-        elevation: 0,
-        backgroundColor: null,
+        centerTitle: true,
+        automaticallyImplyLeading: true,
+        showShadow: true,
       ),
-      body: BlocConsumer<AddScheduleBloc, AddScheduleState>(
-        listener: (context, state) {
-          if (state is AddScheduleSuccess) {
-            // Tampilkan pesan sukses
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Jadwal berhasil ditambahkan'),
-                backgroundColor: Colors.green,
-              ),
-            );
-
-            // Kembali ke halaman jadwal dengan membawa data refresh = true
-            Navigator.pop(context, true);
-          } else if (state is AddScheduleError) {
-            // Tampilkan pesan error
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        },
-        builder: (context, state) {
-          if (state is AddScheduleLoading) {
-            return const ShimmerScheduleLoading();
-          }
-
-          // Build form if products and doctors are loaded
-          if (state is AddScheduleFormLoaded ||
-              state is ProductsLoaded ||
-              state is DoctorsAndClinicsLoaded ||
-              state is DoctorsLoaded ||
-              state is ScheduleTypesLoaded) {
-            List<Product> products = [];
-            List<DoctorClinicBase> doctors = [];
-            List<ScheduleType> scheduleTypes = [];
-            DoctorResponse? doctorResponse;
-
-            if (state is AddScheduleFormLoaded) {
-              products = state.products;
-              // Convert DoctorClinic to DoctorClinicBase
-              doctors.addAll(
-                  state.doctorsAndClinics.map((doctor) => DoctorClinicBase(
-                        id: doctor.id,
-                        nama: doctor.nama,
-                        spesialis: doctor.spesialis,
-                        alamat: doctor.alamat,
-                        noTelp: doctor.noTelp,
-                        email: doctor.email,
-                        tipeDokter: doctor.tipeDokter,
-                        tipeKlinik: doctor.tipeKlinik,
-                        kodeRayon: doctor.kodeRayon,
-                      )));
-              scheduleTypes = state.scheduleTypes;
-              doctorResponse = state.doctorResponse;
-            } else if (state is ProductsLoaded) {
-              products = state.products;
-            } else if (state is DoctorsAndClinicsLoaded) {
-              // Convert DoctorClinic to DoctorClinicBase
-              doctors.addAll(
-                  state.doctorsAndClinics.map((doctor) => DoctorClinicBase(
-                        id: doctor.id,
-                        nama: doctor.nama,
-                        spesialis: doctor.spesialis,
-                        alamat: doctor.alamat,
-                        noTelp: doctor.noTelp,
-                        email: doctor.email,
-                        tipeDokter: doctor.tipeDokter,
-                        tipeKlinik: doctor.tipeKlinik,
-                        kodeRayon: doctor.kodeRayon,
-                      )));
-            } else if (state is DoctorsLoaded) {
-              doctorResponse = state.doctorResponse;
-            } else if (state is ScheduleTypesLoaded) {
-              scheduleTypes = state.scheduleTypes;
-            }
-
-            // Filter doctors by search query
-            final filteredDoctors = doctors.where((doctor) {
-              // Filter dokter yang valid (tidak kosong atau null)
-              if (doctor == null) return false;
-              return doctor.id > 0 &&
-                  doctor.nama.trim().isNotEmpty &&
-                  doctor.nama
-                      .toLowerCase()
-                      .contains(_doctorSearchQuery.toLowerCase());
-            }).toList();
-
-            // Log dokter dari API untuk debugging
-            if (doctorResponse != null && doctorResponse.dokter.isNotEmpty) {
-              Logger.info(_tag, 'Dokter dari API:');
-              for (var doctor in doctorResponse.dokter) {
-                Logger.info(_tag,
-                    '- ID: ${doctor.id}, Nama: ${doctor.nama}, Spesialis: ${doctor.spesialis} (${_getSpesialisName(doctor.spesialis)})');
-              }
-
-              // Konversi DoctorModel ke DoctorClinicBase untuk ditampilkan di ListView
-              for (var doctor in doctorResponse.dokter) {
-                // Skip dokter jika id atau nama kosong
-                if (doctor.id <= 0 || doctor.nama.isEmpty) {
-                  Logger.warning(_tag,
-                      'Melewati dokter dengan data tidak valid: ${doctor.id} - ${doctor.nama}');
-                  continue;
+      body: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, authState) {
+          if (authState is AuthAuthenticated) {
+            return BlocConsumer<AddScheduleBloc, AddScheduleState>(
+              listener: (context, state) {
+                if (state is AddScheduleSuccess) {
+                  Navigator.pop(context, true);
+                } else if (state is AddScheduleError) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
                 }
-
-                // Buat DoctorClinicBase dari DoctorModel
-                final doctorClinic = DoctorClinicBase(
-                  id: doctor.id,
-                  nama: doctor.nama,
-                  spesialis: _getSpesialisName(doctor.spesialis),
-                );
-
-                // Tambahkan ke daftar dokter untuk ditampilkan
-                if (!doctors.any((d) => d.id == doctor.id)) {
-                  doctors.add(doctorClinic);
-                }
-              }
-
-              // Filter ulang setelah menambahkan dokter dari API
-              filteredDoctors.clear();
-              filteredDoctors.addAll(doctors.where((doctor) {
-                if (doctor == null) return false;
-                return doctor.id > 0 &&
-                    doctor.nama.isNotEmpty &&
-                    doctor.nama
-                        .toLowerCase()
-                        .contains(_doctorSearchQuery.toLowerCase());
-              }).toList());
-            }
-
-            // Gabungkan dokter dari kedua sumber data jika tersedia
-            List<DropdownMenuItem<DoctorClinicBase>> doctorItems = [];
-
-            // Tambahkan item dari DoctorClinic
-            doctorItems.addAll(filteredDoctors
-                .map((doctor) => DropdownMenuItem<DoctorClinicBase>(
-                      value: doctor,
-                      child: Text(doctor.nama),
-                    ))
-                .toList());
-
-            // Tambahkan dokter dari API jika tersedia
-            if (doctorResponse != null && doctorResponse.dokter.isNotEmpty) {
-              doctorItems.addAll(doctorResponse.dokter
-                  .where((doctor) => doctor.id > 0 && doctor.nama.isNotEmpty)
-                  .map((doctor) {
-                final doctorClinic = DoctorClinicBase(
-                  id: doctor.id,
-                  nama: doctor.nama,
-                  spesialis: _getSpesialisName(doctor.spesialis),
-                );
-                return DropdownMenuItem<DoctorClinicBase>(
-                  value: doctorClinic,
-                  child: Text(doctor.nama),
-                );
-              }).toList());
-            }
-
-            // Filter products by search query
-            final filteredProducts = products.where((product) {
-              return product.nama
-                  .toLowerCase()
-                  .contains(_productSearchQuery.toLowerCase());
-            }).toList();
-
-            return BlocBuilder<AuthBloc, AuthState>(
-              builder: (context, authState) {
-                if (authState is AuthAuthenticated) {
+              },
+              builder: (context, state) {
+                if (state is AddScheduleInitial) {
+                  context.read<AddScheduleBloc>().add(
+                        GetDoctorsAndClinicsEvent(
+                          userId: authState.user.idUser,
+                        ),
+                      );
+                  context.read<AddScheduleBloc>().add(GetScheduleTypesEvent());
+                  context.read<AddScheduleBloc>().add(
+                        GetProductsEvent(
+                          userId: authState.user.idUser,
+                        ),
+                      );
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                } else if (state is AddScheduleLoading) {
+                  return const ShimmerScheduleLoading();
+                } else if (state is AddScheduleFormLoaded) {
                   return SingleChildScrollView(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(16),
                     child: Form(
                       key: _formKey,
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Form Header
                           AppCard(
-                            elevation: 2,
-                            backgroundColor: AppTheme.scheduleCardColor,
-                            padding: const EdgeInsets.all(20),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.calendar_today,
-                                      color: AppTheme.scheduleIconColor,
-                                      size: 24,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      'Informasi Jadwal',
-                                      style:
-                                          theme.textTheme.titleLarge?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: AppTheme.scheduleHeaderColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const Divider(height: 30),
-
-                                // Jadwal Type Dropdown
-                                if (scheduleTypes.isNotEmpty)
-                                  AppDropdown<ScheduleType>(
-                                    hintText: 'Pilih Tipe Jadwal',
-                                    labelText: 'Tipe Jadwal',
-                                    value: _selectedScheduleType,
-                                    items: scheduleTypes
-                                        .map((type) =>
-                                            DropdownMenuItem<ScheduleType>(
-                                              value: type,
-                                              child: Text(type.nama),
-                                            ))
-                                        .toList(),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _selectedScheduleType = value;
-                                      });
-                                    },
-                                    validator: (value) {
-                                      if (value == null) {
-                                        return 'Tipe jadwal harus dipilih';
-                                      }
-                                      return null;
-                                    },
+                                Text(
+                                  'Informasi Jadwal',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.color,
                                   ),
+                                ),
                                 const SizedBox(height: 16),
-
-                                // Date Picker
+                                AppDropdown<ScheduleType>(
+                                  labelText: 'Tipe Jadwal',
+                                  hintText: 'Pilih tipe jadwal',
+                                  value: _selectedScheduleType,
+                                  items: state.scheduleTypes
+                                      .map((type) => DropdownMenuItem(
+                                            value: type,
+                                            child: Text(type.nama),
+                                          ))
+                                      .toList(),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _selectedScheduleType = value;
+                                    });
+                                  },
+                                  validator: (value) {
+                                    if (value == null) {
+                                      return 'Pilih tipe jadwal';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 16),
                                 AppTextField(
                                   controller: _tanggalController,
                                   hintText: 'Pilih Tanggal',
                                   labelText: 'Tanggal',
                                   readOnly: true,
                                   onTap: () => _selectDate(context),
-                                  suffixIcon: const Icon(Icons.calendar_today),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
-                                      return 'Tanggal harus diisi';
+                                      return 'Pilih tanggal';
                                     }
                                     return null;
                                   },
+                                  suffixIcon: Icon(
+                                    Icons.calendar_today,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
                                 ),
                                 const SizedBox(height: 16),
-
-                                // Shift Selection
-                                Text(
-                                  'Shift',
-                                  style: theme.textTheme.titleMedium,
-                                ),
-                                const SizedBox(height: 8),
-                                Column(
-                                  children: [
-                                    RadioListTile<String>(
-                                      title: const Text('Pagi'),
-                                      value: 'pagi',
-                                      groupValue: _selectedShift,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _selectedShift = value!;
-                                        });
-                                      },
-                                    ),
-                                    RadioListTile<String>(
-                                      title: const Text('Sore'),
-                                      value: 'sore',
-                                      groupValue: _selectedShift,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _selectedShift = value!;
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Doctor Selection
-                          AppCard(
-                            elevation: 2,
-                            backgroundColor: AppTheme.scheduleCardColor,
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
                                 Row(
                                   children: [
-                                    Icon(
-                                      Icons.person,
-                                      color: AppTheme.scheduleIconColor,
-                                      size: 24,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      'Tujuan',
-                                      style:
-                                          theme.textTheme.titleLarge?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: AppTheme.scheduleHeaderColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const Divider(height: 30),
-
-                                // Destination Type Selection
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    RadioListTile<String>(
-                                      title: const Text('Dokter'),
-                                      value: 'dokter',
-                                      groupValue: _selectedDestinationType,
-                                      contentPadding: EdgeInsets.zero,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _selectedDestinationType = value!;
-                                          _selectedDoctor = null;
-                                        });
-                                      },
-                                    ),
-                                    RadioListTile<String>(
-                                      title: const Text('Klinik'),
-                                      value: 'klinik',
-                                      groupValue: _selectedDestinationType,
-                                      contentPadding: EdgeInsets.zero,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _selectedDestinationType = value!;
-                                          _selectedDoctor = null;
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-
-                                if (_selectedDestinationType == 'dokter') ...[
-                                  // Doctor Selection (when destination is doctor)
-                                  AppCard(
-                                    elevation: 2,
-                                    backgroundColor: Colors.white,
-                                    padding: const EdgeInsets.all(16),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              Icons.person,
-                                              color: theme.colorScheme.primary,
-                                              size: 20,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              'Pilih Dokter',
-                                              style: theme.textTheme.titleMedium
-                                                  ?.copyWith(
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 16),
-                                        TextField(
-                                          controller: _doctorSearchController,
-                                          decoration: InputDecoration(
-                                            hintText: 'Cari dokter...',
-                                            prefixIcon:
-                                                const Icon(Icons.search),
-                                            border: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                          ),
-                                          onChanged: (value) {
-                                            setState(() {
-                                              _doctorSearchQuery = value;
-                                            });
-                                          },
-                                        ),
-                                        const SizedBox(height: 16),
-                                        // Tampilan daftar dokter dalam bentuk list
-                                        if (filteredDoctors.isEmpty)
-                                          Container(
-                                            padding: const EdgeInsets.all(16),
-                                            decoration: BoxDecoration(
-                                              color: Colors.grey[300]!
-                                                  .withAlpha(
-                                                      (0.3 * 255).round()),
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              border: Border.all(
-                                                color: Colors.black.withAlpha(
-                                                    (0.03 * 255).round()),
-                                                width: 1,
-                                              ),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.info,
-                                                  color: Colors.black.withAlpha(
-                                                      (0.03 * 255).round()),
-                                                  size: 24,
-                                                ),
-                                                const SizedBox(width: 12),
-                                                Expanded(
-                                                  child: Text(
-                                                    doctors.isEmpty
-                                                        ? 'Tidak ada data dokter yang tersedia. Harap pastikan koneksi internet Anda stabil dan coba lagi.'
-                                                        : 'Tidak ada dokter yang sesuai dengan pencarian.',
-                                                    style: TextStyle(
-                                                      color: Colors.black
-                                                          .withAlpha(
-                                                              (0.03 * 255)
-                                                                  .round()),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          )
-                                        else
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Pilih Dokter (${filteredDoctors.length} dokter ditemukan)',
-                                                style:
-                                                    theme.textTheme.bodyMedium,
-                                              ),
-                                              const SizedBox(height: 8),
-                                              Container(
-                                                constraints:
-                                                    const BoxConstraints(
-                                                        maxHeight: 300),
-                                                decoration: BoxDecoration(
-                                                  color: theme.primaryColor
-                                                      .withAlpha(
-                                                          (0.1 * 255).round()),
-                                                  border: Border.all(
-                                                    color: Colors.grey[400]!
-                                                        .withAlpha((0.5 * 255)
-                                                            .round()),
-                                                    width: 1.5,
-                                                  ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: Colors.black
-                                                          .withAlpha(
-                                                              (0.05 * 255)
-                                                                  .round()),
-                                                      blurRadius: 5,
-                                                      offset:
-                                                          const Offset(0, 2),
-                                                    ),
-                                                  ],
-                                                ),
-                                                clipBehavior: Clip.antiAlias,
-                                                child: Material(
-                                                  color: Colors.transparent,
-                                                  child: ListView.separated(
-                                                    shrinkWrap: true,
-                                                    itemCount:
-                                                        filteredDoctors.length,
-                                                    separatorBuilder:
-                                                        (context, index) =>
-                                                            Divider(
-                                                      height: 1,
-                                                      thickness: 1,
-                                                      color: Colors.grey[400]!
-                                                          .withAlpha((0.5 * 255)
-                                                              .round()),
-                                                    ),
-                                                    itemBuilder:
-                                                        (context, index) {
-                                                      final doctor =
-                                                          filteredDoctors[
-                                                              index];
-                                                      final isSelected =
-                                                          _selectedDoctor ==
-                                                              doctor;
-
-                                                      return InkWell(
-                                                        onTap: () {
-                                                          setState(() {
-                                                            _selectedDoctor =
-                                                                doctor;
-                                                          });
-                                                          Logger.debug(_tag,
-                                                              'Dokter dipilih: ${doctor.nama}');
-                                                        },
-                                                        child: Container(
-                                                          color: isSelected
-                                                              ? AppTheme
-                                                                  .scheduleSelectedItemColor
-                                                              : AppTheme
-                                                                  .scheduleCardColor,
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                            vertical: 12,
-                                                            horizontal: 16,
-                                                          ),
-                                                          child: Row(
-                                                            children: [
-                                                              CircleAvatar(
-                                                                backgroundColor: isSelected
-                                                                    ? AppTheme
-                                                                        .scheduleHighlightColor
-                                                                        .withOpacity(
-                                                                            0.1)
-                                                                    : AppTheme
-                                                                        .scheduleBackgroundColor,
-                                                                child: Icon(
-                                                                  Icons.person,
-                                                                  color: isSelected
-                                                                      ? AppTheme
-                                                                          .scheduleHighlightColor
-                                                                      : AppTheme
-                                                                          .scheduleIconColor,
-                                                                ),
-                                                              ),
-                                                              const SizedBox(
-                                                                  width: 16),
-                                                              Expanded(
-                                                                child: Column(
-                                                                  crossAxisAlignment:
-                                                                      CrossAxisAlignment
-                                                                          .start,
-                                                                  children: [
-                                                                    Text(
-                                                                      doctor
-                                                                          .nama!,
-                                                                      style: theme
-                                                                          .textTheme
-                                                                          .titleMedium
-                                                                          ?.copyWith(
-                                                                        fontWeight:
-                                                                            FontWeight.bold,
-                                                                        color: isSelected
-                                                                            ? AppTheme.scheduleHighlightColor
-                                                                            : AppTheme.scheduleTextColor,
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                              if (isSelected)
-                                                                Icon(
-                                                                  Icons
-                                                                      .check_circle,
-                                                                  color: AppTheme
-                                                                      .scheduleHighlightColor,
-                                                                ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      );
-                                                    },
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                ] else ...[
-                                  // Klinik placeholder: future implementation
-                                  const Center(
-                                    child: Text(
-                                        'Fitur pemilihan klinik akan segera hadir'),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Product Selection
-                          AppCard(
-                            elevation: 2,
-                            backgroundColor: AppTheme.scheduleCardColor,
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.shopping_bag,
-                                      color: AppTheme.scheduleIconColor,
-                                      size: 24,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      'Produk',
-                                      style:
-                                          theme.textTheme.titleLarge?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: AppTheme.scheduleHeaderColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const Divider(height: 30),
-
-                                // Product Search
-                                AppTextField(
-                                  controller: _productSearchController,
-                                  hintText: 'Cari Produk',
-                                  prefixIcon: const Icon(Icons.search),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _productSearchQuery = value;
-                                    });
-                                  },
-                                ),
-                                const SizedBox(height: 16),
-
-                                // Selected Products
-                                if (_selectedProducts.isNotEmpty) ...[
-                                  Text(
-                                    'Produk Terpilih',
-                                    style: theme.textTheme.titleMedium,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: _selectedProducts
-                                        .map(
-                                          (product) => Chip(
-                                            label: Text(product.nama),
-                                            deleteIcon: Icon(
-                                              Icons.close,
-                                              size: 18,
-                                              color: AppTheme
-                                                  .scheduleHighlightColor,
-                                            ),
-                                            onDeleted: () =>
-                                                _onProductSelected(product),
-                                            backgroundColor: AppTheme
-                                                .scheduleSelectedItemColor,
-                                            labelStyle: TextStyle(
-                                                color: AppTheme
-                                                    .scheduleHighlightColor,
-                                                fontWeight: FontWeight.w500),
-                                            side: BorderSide(
-                                              color: AppTheme
-                                                  .scheduleHighlightColor
-                                                  .withOpacity(0.5),
-                                              width: 1,
-                                            ),
-                                          ),
-                                        )
-                                        .toList(),
-                                  ),
-                                  const SizedBox(height: 16),
-                                ],
-
-                                // Product List
-                                if (filteredProducts.isEmpty)
-                                  Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[300]!
-                                          .withAlpha((0.3 * 255).round()),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: Colors.black
-                                            .withAlpha((0.03 * 255).round()),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.info,
-                                          color: Colors.black
-                                              .withAlpha((0.03 * 255).round()),
-                                          size: 24,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(
-                                            products.isEmpty
-                                                ? 'Tidak ada data produk yang tersedia. Harap pastikan koneksi internet Anda stabil dan coba lagi.'
-                                                : 'Tidak ada produk yang sesuai dengan pencarian.',
-                                            style: TextStyle(
-                                              color: Colors.black.withAlpha(
-                                                  (0.03 * 255).round()),
-                                            ),
+                                    Expanded(
+                                      child: RadioListTile(
+                                        title: Text(
+                                          'Pagi',
+                                          style: TextStyle(
+                                            color: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium
+                                                ?.color,
                                           ),
                                         ),
-                                      ],
-                                    ),
-                                  )
-                                else
-                                  Container(
-                                    constraints:
-                                        const BoxConstraints(maxHeight: 300),
-                                    decoration: BoxDecoration(
-                                      color: theme.primaryColor
-                                          .withAlpha((0.1 * 255).round()),
-                                      border: Border.all(
-                                        color: Colors.grey[400]!
-                                            .withAlpha((0.5 * 255).round()),
-                                        width: 1.5,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black
-                                              .withAlpha((0.05 * 255).round()),
-                                          blurRadius: 5,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: Material(
-                                      color: Colors.transparent,
-                                      child: ListView.separated(
-                                        shrinkWrap: true,
-                                        itemCount: filteredProducts.length,
-                                        separatorBuilder: (context, index) =>
-                                            Divider(
-                                          height: 1,
-                                          thickness: 1,
-                                          color: Colors.grey[400]!
-                                              .withAlpha((0.5 * 255).round()),
-                                        ),
-                                        itemBuilder: (context, index) {
-                                          final product =
-                                              filteredProducts[index];
-                                          final isSelected = _selectedProducts
-                                              .contains(product);
-
-                                          return InkWell(
-                                            onTap: () =>
-                                                _onProductSelected(product),
-                                            child: Container(
-                                              color: isSelected
-                                                  ? AppTheme
-                                                      .scheduleSelectedItemColor
-                                                  : AppTheme.scheduleCardColor,
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                vertical: 12,
-                                                horizontal: 16,
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  CircleAvatar(
-                                                    backgroundColor: isSelected
-                                                        ? AppTheme
-                                                            .scheduleHighlightColor
-                                                            .withOpacity(0.1)
-                                                        : AppTheme
-                                                            .scheduleBackgroundColor,
-                                                    child: Icon(
-                                                      Icons.medical_services,
-                                                      color: isSelected
-                                                          ? AppTheme
-                                                              .scheduleHighlightColor
-                                                          : AppTheme
-                                                              .scheduleIconColor,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 16),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(
-                                                          product.nama,
-                                                          style: theme.textTheme
-                                                              .titleMedium
-                                                              ?.copyWith(
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            color: isSelected
-                                                                ? AppTheme
-                                                                    .scheduleHighlightColor
-                                                                : AppTheme
-                                                                    .scheduleTextColor,
-                                                          ),
-                                                        ),
-                                                        if (product.keterangan
-                                                            .isNotEmpty)
-                                                          Text(
-                                                            product.keterangan,
-                                                            style: theme
-                                                                .textTheme
-                                                                .bodySmall
-                                                                ?.copyWith(
-                                                              color: AppTheme
-                                                                  .scheduleSubtextColor,
-                                                            ),
-                                                            maxLines: 1,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
-                                                          ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  if (isSelected)
-                                                    Icon(
-                                                      Icons.check_circle,
-                                                      color: AppTheme
-                                                          .scheduleHighlightColor,
-                                                    ),
-                                                ],
-                                              ),
-                                            ),
-                                          );
+                                        value: 'pagi',
+                                        groupValue: _selectedShift,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _selectedShift = value.toString();
+                                          });
                                         },
                                       ),
                                     ),
-                                  ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Notes
-                          AppCard(
-                            elevation: 2,
-                            backgroundColor: AppTheme.scheduleCardColor,
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.note,
-                                      color: AppTheme.scheduleIconColor,
-                                      size: 24,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      'Catatan',
-                                      style:
-                                          theme.textTheme.titleLarge?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: AppTheme.scheduleHeaderColor,
-                                      ),
-                                    ),
-                                    const Text(
-                                      ' *',
-                                      style: TextStyle(
-                                        color: Colors.red,
-                                        fontSize: 18,
+                                    Expanded(
+                                      child: RadioListTile(
+                                        title: Text(
+                                          'Sore',
+                                          style: TextStyle(
+                                            color: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium
+                                                ?.color,
+                                          ),
+                                        ),
+                                        value: 'sore',
+                                        groupValue: _selectedShift,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _selectedShift = value.toString();
+                                          });
+                                        },
                                       ),
                                     ),
                                   ],
                                 ),
-                                const Divider(height: 30),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          AppCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Tujuan',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.color,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: RadioListTile(
+                                        title: Text(
+                                          'Dokter',
+                                          style: TextStyle(
+                                            color: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium
+                                                ?.color,
+                                          ),
+                                        ),
+                                        value: 'dokter',
+                                        groupValue: _selectedDestinationType,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _selectedDestinationType =
+                                                value.toString();
+                                            _selectedDoctor = null;
+                                            _doctorSearchController.clear();
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: RadioListTile(
+                                        title: Text(
+                                          'Klinik',
+                                          style: TextStyle(
+                                            color: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium
+                                                ?.color,
+                                          ),
+                                        ),
+                                        value: 'klinik',
+                                        groupValue: _selectedDestinationType,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _selectedDestinationType =
+                                                value.toString();
+                                            _selectedDoctor = null;
+                                            _doctorSearchController.clear();
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
                                 AppTextField(
-                                  controller: _noteController,
-                                  hintText:
-                                      'Tulis catatan kunjungan (minimal $_minimumNoteCharacters karakter)',
-                                  maxLines: 5,
-                                  keyboardType: TextInputType.multiline,
+                                  controller: _doctorSearchController,
+                                  hintText: _selectedDestinationType == 'dokter'
+                                      ? 'Cari Dokter'
+                                      : 'Cari Klinik',
+                                  labelText:
+                                      _selectedDestinationType == 'dokter'
+                                          ? 'Cari Dokter'
+                                          : 'Cari Klinik',
                                   onChanged: (value) {
                                     setState(() {
-                                      if (value.trim().isEmpty) {
-                                        _noteError = 'Catatan wajib diisi';
-                                      } else if (value.trim().length <
-                                          _minimumNoteCharacters) {
-                                        _noteError =
-                                            'Catatan minimal $_minimumNoteCharacters karakter';
-                                      } else if (value.trim().length >
-                                          _maximumNoteCharacters) {
-                                        _noteError =
-                                            'Catatan maksimal $_maximumNoteCharacters karakter';
-                                      } else {
-                                        _noteError = null;
-                                      }
+                                      _doctorSearchQuery = value.toLowerCase();
                                     });
                                   },
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Catatan wajib diisi';
-                                    }
-                                    if (value.trim().length <
-                                        _minimumNoteCharacters) {
-                                      return 'Catatan minimal $_minimumNoteCharacters karakter';
-                                    }
-                                    if (value.trim().length >
-                                        _maximumNoteCharacters) {
-                                      return 'Catatan maksimal $_maximumNoteCharacters karakter';
-                                    }
-                                    return null;
-                                  },
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  contentPadding: const EdgeInsets.all(16),
-                                  suffixIcon: _noteController.text.isNotEmpty
-                                      ? IconButton(
-                                          icon: const Icon(Icons.clear),
-                                          onPressed: () {
-                                            setState(() {
-                                              _noteController.clear();
-                                              _noteError =
-                                                  'Catatan wajib diisi';
-                                            });
-                                          },
-                                        )
-                                      : null,
+                                  suffixIcon: Icon(
+                                    Icons.search,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
                                 ),
-                                if (_noteError != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.error_outline,
-                                            color: Colors.red.shade700,
-                                            size: 16),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          _noteError!,
-                                          style: TextStyle(
-                                              color: Colors.red.shade700,
-                                              fontSize: 12),
-                                        ),
-                                      ],
-                                    ),
+                                const SizedBox(height: 16),
+                                if (_selectedDestinationType == 'dokter')
+                                  _buildDoctorList(state.doctorsAndClinics)
+                                else
+                                  _buildClinicList(state.doctorsAndClinics),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          AppCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Produk',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.color,
                                   ),
-                                // Tambahkan counter karakter
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8),
-                                  child: Text(
-                                    'Karakter: ${_noteController.text.length}/$_maximumNoteCharacters',
-                                    style: TextStyle(
-                                      color: _noteController.text.length >
-                                              _maximumNoteCharacters
-                                          ? Colors.red.shade700
-                                          : Colors.grey[600],
-                                      fontSize: 12,
-                                    ),
+                                ),
+                                const SizedBox(height: 16),
+                                AppTextField(
+                                  controller: _productSearchController,
+                                  hintText: 'Cari Produk',
+                                  labelText: 'Cari Produk',
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _productSearchQuery = value.toLowerCase();
+                                    });
+                                  },
+                                  suffixIcon: Icon(
+                                    Icons.search,
+                                    color: Theme.of(context).primaryColor,
                                   ),
+                                ),
+                                const SizedBox(height: 16),
+                                _buildProductList(state.products),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          AppCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Catatan',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.color,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                AppTextField(
+                                  controller: _noteController,
+                                  hintText: 'Catatan Kunjungan',
+                                  labelText: 'Catatan Kunjungan',
+                                  maxLines: 4,
+                                  errorText: _noteError,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _noteError = null;
+                                    });
+                                  },
                                 ),
                               ],
                             ),
                           ),
-
                           const SizedBox(height: 24),
+                          AppButton(
+                            text: 'Simpan',
+                            onPressed: () {
+                              if (_formKey.currentState!.validate()) {
+                                if (_selectedDoctor == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Pilih dokter atau klinik'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                  return;
+                                }
 
-                          // Submit Button
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 24.0),
-                            child: AppButton(
-                              text: 'Simpan Jadwal',
-                              onPressed: () =>
-                                  _submitForm(authState.user.idUser),
-                              isFullWidth: true,
-                              isLoading: state is AddScheduleLoading,
-                              type: AppButtonType.primary,
-                              prefixIcon: const Icon(Icons.add, size: 20),
-                            ),
+                                if (_selectedProducts.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content:
+                                          Text('Pilih minimal satu produk'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                final note = _noteController.text;
+                                if (note.length < _minimumNoteCharacters) {
+                                  setState(() {
+                                    _noteError =
+                                        'Catatan minimal $_minimumNoteCharacters karakter';
+                                  });
+                                  return;
+                                }
+
+                                if (note.length > _maximumNoteCharacters) {
+                                  setState(() {
+                                    _noteError =
+                                        'Catatan maksimal $_maximumNoteCharacters karakter';
+                                  });
+                                  return;
+                                }
+
+                                context.read<AddScheduleBloc>().add(
+                                      SubmitScheduleEvent(
+                                        typeSchedule: _selectedScheduleType!.id,
+                                        tujuan: _selectedDestinationType,
+                                        tglVisit: _tanggalController.text,
+                                        product: _selectedProducts
+                                            .map((p) => p.id)
+                                            .toList(),
+                                        note: note,
+                                        idUser: authState.user.idUser,
+                                        dokter: _selectedDoctor!.id,
+                                        klinik:
+                                            _selectedDestinationType == 'klinik'
+                                                ? _selectedDoctor!.nama
+                                                : '',
+                                        productForIdDivisi:
+                                            _selectedProductDivisiIds,
+                                        productForIdSpesialis:
+                                            _selectedProductSpesialisIds,
+                                        shift: _selectedShift,
+                                        jenis: _selectedJenis,
+                                        productNames: _selectedProductNames,
+                                        divisiNames: _selectedDivisiNames,
+                                        spesialisNames: _selectedSpesialisNames,
+                                      ),
+                                    );
+                              }
+                            },
                           ),
                         ],
                       ),
                     ),
                   );
+                } else if (state is AddScheduleError) {
+                  return Center(
+                    child: Text(state.message),
+                  );
                 }
                 return const Center(
-                    child:
-                        Text('Anda harus login untuk mengakses halaman ini'));
+                  child: CircularProgressIndicator(),
+                );
               },
             );
           }
-
-          return const Center(child: Text('Gagal memuat data jadwal'));
+          return const Center(
+            child: Text('Silakan login terlebih dahulu'),
+          );
         },
       ),
+    );
+  }
+
+  Widget _buildDoctorList(List<DoctorClinic> doctors) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final filteredDoctors = doctors.where((doctor) {
+      final searchQuery = _doctorSearchQuery.toLowerCase();
+      return doctor.nama.toLowerCase().contains(searchQuery) ||
+          (doctor.alamat ?? '').toLowerCase().contains(searchQuery);
+    }).toList();
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 300),
+      child: ListView.builder(
+        shrinkWrap: true,
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: filteredDoctors.length,
+        itemBuilder: (context, index) {
+          final doctor = filteredDoctors[index];
+          final isSelected = _selectedDoctor?.id == doctor.id;
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? Theme.of(context)
+                      .primaryColor
+                      .withOpacity(isDark ? 0.2 : 0.1)
+                  : Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected
+                    ? isDark
+                        ? Colors.white
+                        : Theme.of(context).primaryColor
+                    : isDark
+                        ? Colors.grey[700]!
+                        : Colors.grey[300]!,
+                width: isSelected ? 2 : 1,
+              ),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    _selectedDoctor = doctor;
+                  });
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .primaryColor
+                              .withOpacity(isDark ? 0.2 : 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.person,
+                          color: isDark
+                              ? Colors.white
+                              : Theme.of(context).primaryColor,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              doctor.nama,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                            if (doctor.alamat != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                doctor.alamat!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color:
+                                      isDark ? Colors.white70 : Colors.black54,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      if (isSelected)
+                        Icon(
+                          Icons.check_circle,
+                          color: isDark
+                              ? Colors.white
+                              : Theme.of(context).primaryColor,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildClinicList(List<DoctorClinic> clinics) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final filteredClinics = clinics.where((clinic) {
+      final searchQuery = _doctorSearchQuery.toLowerCase();
+      return clinic.nama.toLowerCase().contains(searchQuery) ||
+          (clinic.alamat ?? '').toLowerCase().contains(searchQuery);
+    }).toList();
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 300),
+      child: ListView.builder(
+        shrinkWrap: true,
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: filteredClinics.length,
+        itemBuilder: (context, index) {
+          final clinic = filteredClinics[index];
+          final isSelected = _selectedDoctor?.id == clinic.id;
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? Theme.of(context)
+                      .primaryColor
+                      .withOpacity(isDark ? 0.2 : 0.1)
+                  : Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected
+                    ? isDark
+                        ? Colors.white
+                        : Theme.of(context).primaryColor
+                    : isDark
+                        ? Colors.grey[700]!
+                        : Colors.grey[300]!,
+                width: isSelected ? 2 : 1,
+              ),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    _selectedDoctor = clinic;
+                  });
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .primaryColor
+                              .withOpacity(isDark ? 0.2 : 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.local_hospital,
+                          color: isDark
+                              ? Colors.white
+                              : Theme.of(context).primaryColor,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              clinic.nama,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                            if (clinic.alamat != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                clinic.alamat!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color:
+                                      isDark ? Colors.white70 : Colors.black54,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      if (isSelected)
+                        Icon(
+                          Icons.check_circle,
+                          color: isDark
+                              ? Colors.white
+                              : Theme.of(context).primaryColor,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildProductList(List<Product> products) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final filteredProducts = products.where((product) {
+      final searchQuery = _productSearchQuery.toLowerCase();
+      return product.nama.toLowerCase().contains(searchQuery);
+    }).toList();
+
+    return Column(
+      children: [
+        // Selected Products Display
+        if (_selectedProducts.isNotEmpty) ...[
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _selectedProducts.map((product) {
+              return Chip(
+                label: Text(
+                  product.nama,
+                  style: TextStyle(
+                    color:
+                        isDark ? Colors.white : Theme.of(context).primaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                backgroundColor: Theme.of(context)
+                    .primaryColor
+                    .withOpacity(isDark ? 0.2 : 0.1),
+                deleteIcon: Icon(
+                  Icons.close,
+                  size: 18,
+                  color: isDark ? Colors.white : Theme.of(context).primaryColor,
+                ),
+                onDeleted: () => _onProductSelected(product),
+                side: BorderSide(
+                  color: isDark
+                      ? Colors.white54
+                      : Theme.of(context).primaryColor.withOpacity(0.5),
+                  width: 1,
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 16),
+          Divider(
+            color: isDark ? Colors.white24 : Colors.grey[300],
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        // Product List
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 300),
+          child: ListView.builder(
+            shrinkWrap: true,
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: filteredProducts.length,
+            itemBuilder: (context, index) {
+              final product = filteredProducts[index];
+              final isSelected = _selectedProducts.contains(product);
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Theme.of(context)
+                          .primaryColor
+                          .withOpacity(isDark ? 0.2 : 0.1)
+                      : Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected
+                        ? isDark
+                            ? Colors.white
+                            : Theme.of(context).primaryColor
+                        : isDark
+                            ? Colors.grey[700]!
+                            : Colors.grey[300]!,
+                    width: isSelected ? 2 : 1,
+                  ),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _onProductSelected(product),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .primaryColor
+                                  .withOpacity(isDark ? 0.2 : 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.medical_services,
+                              color: isDark
+                                  ? Colors.white
+                                  : Theme.of(context).primaryColor,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  product.nama,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color:
+                                        isDark ? Colors.white : Colors.black87,
+                                  ),
+                                ),
+                                if (product.kode != null) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Kode: ${product.kode}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: isDark
+                                          ? Colors.white70
+                                          : Colors.black54,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          if (isSelected)
+                            Icon(
+                              Icons.check_circle,
+                              color: isDark
+                                  ? Colors.white
+                                  : Theme.of(context).primaryColor,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

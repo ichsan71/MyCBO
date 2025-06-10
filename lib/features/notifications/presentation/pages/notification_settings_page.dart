@@ -16,6 +16,9 @@ class NotificationSettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBarWidget(
@@ -49,11 +52,11 @@ class NotificationSettingsPage extends StatelessWidget {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
+                      color: Colors.grey.withOpacity(isDark ? 0.3 : 0.1),
                       spreadRadius: 1,
                       blurRadius: 10,
                       offset: const Offset(0, 1),
@@ -62,6 +65,19 @@ class NotificationSettingsPage extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
+                    _buildSettingTile(
+                      context: context,
+                      title: 'Dark Mode',
+                      subtitle: 'Toggle dark/light theme',
+                      icon: isDark ? Icons.dark_mode : Icons.light_mode,
+                      color: isDark ? Colors.indigo[400]! : Colors.amber[600]!,
+                      value: isDark,
+                      onChanged: (value) {
+                        Logger.debug(_tag, 'Toggling theme mode');
+                        themeProvider.toggleThemeMode();
+                      },
+                    ),
+                    const Divider(height: 1),
                     _buildSettingTile(
                       context: context,
                       title: 'Checkout Notifications',
@@ -97,11 +113,11 @@ class NotificationSettingsPage extends StatelessWidget {
               const SizedBox(height: 24),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
+                      color: Colors.grey.withOpacity(isDark ? 0.3 : 0.1),
                       spreadRadius: 1,
                       blurRadius: 10,
                       offset: const Offset(0, 1),
@@ -144,6 +160,8 @@ class NotificationSettingsPage extends StatelessWidget {
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -151,7 +169,7 @@ class NotificationSettingsPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withOpacity(isDark ? 0.2 : 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -170,14 +188,14 @@ class NotificationSettingsPage extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
+                    color: Theme.of(context).textTheme.titleLarge?.color,
                   ),
                 ),
                 Text(
                   subtitle,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                   ),
                 ),
               ],
@@ -200,6 +218,8 @@ class NotificationSettingsPage extends StatelessWidget {
     required IconData icon,
     required Color color,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -207,7 +227,7 @@ class NotificationSettingsPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withOpacity(isDark ? 0.2 : 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -226,14 +246,14 @@ class NotificationSettingsPage extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
+                    color: Theme.of(context).textTheme.titleLarge?.color,
                   ),
                 ),
                 Text(
                   subtitle,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                   ),
                 ),
               ],

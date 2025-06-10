@@ -20,6 +20,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:test_cbo/features/notifications/presentation/pages/notification_settings_page.dart';
 import 'package:test_cbo/features/notifications/presentation/bloc/notification_bloc.dart';
 import 'package:test_cbo/features/notifications/data/datasources/local_notification_service.dart';
+import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -95,7 +96,10 @@ class MyApp extends StatelessWidget {
                 '/login': (context) => const LoginPage(),
                 '/dashboard': (context) => const DashboardPage(),
                 '/schedule': (context) => const SchedulePage(),
-                '/add_schedule': (context) => const AddSchedulePage(),
+                '/add_schedule': (context) => BlocProvider(
+                      create: (context) => di.sl<AddScheduleBloc>(),
+                      child: const AddSchedulePage(),
+                    ),
                 '/edit_schedule': (context) => EditSchedulePage(
                       scheduleId:
                           ModalRoute.of(context)!.settings.arguments as int,

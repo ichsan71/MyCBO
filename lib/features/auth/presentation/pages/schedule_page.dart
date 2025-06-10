@@ -638,38 +638,27 @@ class _ScheduleViewState extends State<_ScheduleView> {
     );
   }
 
-  Color _getStatusColor(String status, String draft) {
+  Color _getStatusColor(String status, String draft, int approved) {
     final lowerStatus = status.toLowerCase().trim();
     final lowerDraft = draft.toLowerCase().trim();
 
-    Logger.info('SchedulePage', 'Getting status color:');
-    Logger.info('SchedulePage', '🔄 Status: $lowerStatus');
-    Logger.info('SchedulePage', '🔄 Draft: $lowerDraft');
-    Logger.info('SchedulePage',
-        '🔄 Draft Contains Rejected?: ${lowerDraft.contains("rejected")}');
-
-    // Prioritas 1: Cek Draft Rejected
     if (lowerDraft.contains('rejected')) {
-      Logger.info('SchedulePage', 'Using red color for rejected draft');
-      return Colors.red;
+      return Colors.red[700]!;
+    } else if (approved == 0) {
+      return Colors.orange[700]!;
+    } else if (approved == 1) {
+      return Colors.green[600]!;
+    } else if (lowerStatus == 'selesai') {
+      return Colors.purple[600]!;
+    } else if (lowerStatus == 'check-in') {
+      return Colors.blue[600]!;
+    } else if (lowerStatus == 'belum checkout') {
+      return Colors.amber[700]!;
+    } else if (lowerStatus == 'batal') {
+      return Colors.grey[700]!;
     }
 
-    // Prioritas 2: Cek Status
-    switch (lowerStatus) {
-      case 'belum checkin':
-        return Colors.blue;
-      case 'check-in':
-      case 'belum checkout':
-        return Colors.green;
-      case 'selesai':
-        return Colors.purple;
-      case 'batal':
-        return Colors.grey;
-      case 'ditolak':
-        return Colors.red;
-      default:
-        return Colors.orange;
-    }
+    return Colors.grey[600]!;
   }
 
   String _getDisplayStatus(
@@ -725,28 +714,24 @@ class _ScheduleViewState extends State<_ScheduleView> {
 
   Widget _buildScheduleCard(BuildContext context, Schedule schedule) {
     final lowerDraft = schedule.draft.toLowerCase().trim();
-    final statusColor = _getStatusColor(schedule.statusCheckin, schedule.draft);
-    final displayStatus = _getDisplayStatus(
-      schedule.statusCheckin,
-      schedule.draft,
-      schedule.approved,
-      schedule.namaApprover,
-    );
+    final lowerStatus = schedule.statusCheckin.toLowerCase().trim();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         border: lowerDraft.contains('rejected')
             ? Border.all(color: Colors.red.shade200, width: 1.5)
-            : Border.all(color: Colors.grey.shade200),
+            : Border.all(
+                color: isDark ? Colors.grey.shade800 : Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
             color: lowerDraft.contains('rejected')
-                ? Colors.red.withOpacity(0.08)
-                : Colors.black.withOpacity(0.05),
+                ? Colors.red.withOpacity(isDark ? 0.2 : 0.08)
+                : Colors.black.withOpacity(isDark ? 0.3 : 0.05),
             blurRadius: 10,
             spreadRadius: 1,
             offset: const Offset(0, 3),
@@ -792,15 +777,16 @@ class _ScheduleViewState extends State<_ScheduleView> {
                                   ? Colors.red.shade50
                                   : Theme.of(context)
                                       .primaryColor
-                                      .withOpacity(0.1),
+                                      .withOpacity(isDark ? 0.2 : 0.1),
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
                                   color: lowerDraft.contains('rejected')
-                                      ? Colors.red.shade100.withOpacity(0.5)
+                                      ? Colors.red.shade100
+                                          .withOpacity(isDark ? 0.3 : 0.5)
                                       : Theme.of(context)
                                           .primaryColor
-                                          .withOpacity(0.15),
+                                          .withOpacity(isDark ? 0.3 : 0.15),
                                   blurRadius: 4,
                                   spreadRadius: 1,
                                 ),
@@ -824,9 +810,10 @@ class _ScheduleViewState extends State<_ScheduleView> {
                                   style: GoogleFonts.poppins(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    color: lowerDraft.contains('rejected')
-                                        ? Colors.red.shade700
-                                        : Colors.black87,
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.color,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
@@ -857,33 +844,30 @@ class _ScheduleViewState extends State<_ScheduleView> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: statusColor.withOpacity(0.3)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: statusColor.withOpacity(0.1),
-                            blurRadius: 4,
-                            spreadRadius: 1,
-                          ),
-                        ],
+                        color: _getStatusColor(
+                                lowerStatus, lowerDraft, schedule.approved)
+                            .withOpacity(isDark ? 0.2 : 0.1),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            _getStatusIcon(schedule.statusCheckin,
-                                schedule.draft, schedule.approved),
-                            size: 14,
-                            color: statusColor,
+                            _getStatusIcon(
+                                lowerStatus, lowerDraft, schedule.approved),
+                            size: 16,
+                            color: _getStatusColor(
+                                lowerStatus, lowerDraft, schedule.approved),
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            displayStatus,
+                            _getStatusText(
+                                lowerStatus, lowerDraft, schedule.approved),
                             style: GoogleFonts.poppins(
                               fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: statusColor,
+                              fontWeight: FontWeight.w500,
+                              color: _getStatusColor(
+                                  lowerStatus, lowerDraft, schedule.approved),
                             ),
                           ),
                         ],
@@ -1059,6 +1043,10 @@ class _ScheduleViewState extends State<_ScheduleView> {
 
   Widget _buildDetailRow(IconData icon, String label, String value,
       [Color? customColor]) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor =
+        customColor ?? Theme.of(context).textTheme.bodyMedium?.color;
+
     return Row(
       children: [
         Icon(
@@ -1071,7 +1059,7 @@ class _ScheduleViewState extends State<_ScheduleView> {
           '$label ',
           style: GoogleFonts.poppins(
             fontSize: 14,
-            color: customColor ?? Colors.grey[600],
+            color: textColor,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -1081,7 +1069,7 @@ class _ScheduleViewState extends State<_ScheduleView> {
             style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: customColor ?? Colors.grey[800],
+              color: textColor,
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -1091,8 +1079,8 @@ class _ScheduleViewState extends State<_ScheduleView> {
   }
 
   IconData _getStatusIcon(String status, String draft, int approved) {
-    final lowerDraft = draft.toLowerCase().trim();
     final lowerStatus = status.toLowerCase().trim();
+    final lowerDraft = draft.toLowerCase().trim();
 
     if (lowerDraft.contains('rejected')) {
       return Icons.cancel;
@@ -1113,8 +1101,33 @@ class _ScheduleViewState extends State<_ScheduleView> {
     return Icons.info;
   }
 
+  String _getStatusText(String status, String draft, int approved) {
+    final l10n = AppLocalizations.of(context)!;
+    final lowerStatus = status.toLowerCase().trim();
+    final lowerDraft = draft.toLowerCase().trim();
+
+    if (lowerDraft.contains('rejected')) {
+      return l10n.rejected;
+    } else if (approved == 0) {
+      return l10n.pendingApproval;
+    } else if (approved == 1) {
+      return l10n.filterApproved;
+    } else if (lowerStatus == 'selesai') {
+      return l10n.completed;
+    } else if (lowerStatus == 'check-in') {
+      return l10n.checkedIn;
+    } else if (lowerStatus == 'belum checkout') {
+      return l10n.notCheckedOut;
+    } else if (lowerStatus == 'batal') {
+      return l10n.cancelled;
+    } else {
+      return status;
+    }
+  }
+
   Widget _buildFilterChip(String filter) {
     final bool isSelected = _selectedFilter == filter;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     IconData? iconData;
 
     // Determine appropriate icon for each filter
@@ -1166,20 +1179,24 @@ class _ScheduleViewState extends State<_ScheduleView> {
               duration: const Duration(milliseconds: 300),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color:
-                    isSelected ? Theme.of(context).primaryColor : Colors.white,
+                color: isSelected
+                    ? Theme.of(context).primaryColor
+                    : Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isSelected
                       ? Theme.of(context).primaryColor
-                      : Colors.grey[300]!,
+                      : isDark
+                          ? Colors.grey.shade700
+                          : Colors.grey.shade300,
                   width: isSelected ? 1.5 : 1.0,
                 ),
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color:
-                              Theme.of(context).primaryColor.withOpacity(0.3),
+                          color: Theme.of(context)
+                              .primaryColor
+                              .withOpacity(isDark ? 0.3 : 0.2),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
@@ -1214,7 +1231,9 @@ class _ScheduleViewState extends State<_ScheduleView> {
                       fontSize: 13,
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w500,
-                      color: isSelected ? Colors.white : Colors.grey[700],
+                      color: isSelected
+                          ? Colors.white
+                          : Theme.of(context).textTheme.bodyMedium?.color,
                     ),
                   ),
                 ],
