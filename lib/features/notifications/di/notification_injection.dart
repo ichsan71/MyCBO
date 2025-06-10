@@ -1,5 +1,4 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/di/injection_container.dart';
 import '../data/datasources/local_notification_service.dart';
 import '../data/repositories/notification_repository_impl.dart';
@@ -16,7 +15,7 @@ Future<void> initNotificationDependencies() async {
   // BLoC
   sl.registerLazySingleton(
     () => NotificationBloc(
-      notificationRepository: sl(),
+      repository: sl(),
     ),
   );
 

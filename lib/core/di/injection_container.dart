@@ -125,9 +125,9 @@ void _initNotificationDependencies() {
   );
 
   // Blocs
-  sl.registerLazySingleton(
+  sl.registerFactory(
     () => NotificationBloc(
-      notificationRepository: sl(),
+      repository: sl(),
     ),
   );
 }

@@ -8,6 +8,7 @@ import 'package:test_cbo/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:test_cbo/features/auth/presentation/bloc/auth_event.dart';
 import 'package:test_cbo/features/auth/presentation/bloc/auth_state.dart';
 import 'package:test_cbo/features/notifications/presentation/bloc/notification_bloc.dart';
+import 'package:test_cbo/features/notifications/presentation/bloc/notification_event.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -86,7 +87,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _initialize() async {
     // Initialize notifications
-    context.read<NotificationBloc>().add(InitializeNotifications());
+    context.read<NotificationBloc>().add(const InitializeNotifications());
 
     // Check auth status
     context.read<AuthBloc>().add(const CheckAuthStatusEvent());

@@ -16,7 +16,7 @@ dependencies:
   dio: ^5.3.3
   internet_connection_checker: ^1.0.0+1
   # Local Storage
-  shared_preferences: ^2.2.2
+  shared_preferences: ^2.5.3
   # Functional Programming
   dartz: ^0.10.1
   # Dependency Injection
@@ -43,6 +43,7 @@ dependencies:
   timezone: ^0.10.0
   logging: ^1.2.0
   logger: ^2.0.2+1
+  provider: ^6.1.5
 
 dev_dependencies:
   flutter_test:
