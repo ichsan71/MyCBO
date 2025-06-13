@@ -29,12 +29,38 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         print('Mencoba login dengan email: $email');
       }
 
+      // Validasi input
+      if (email.isEmpty) {
+        throw AuthenticationException(
+          message: 'Email tidak boleh kosong',
+        );
+      }
+
+      if (password.isEmpty) {
+        throw AuthenticationException(
+          message: 'Password tidak boleh kosong',
+        );
+      }
+
+      if (!email.contains('@')) {
+        throw AuthenticationException(
+          message: 'Format email tidak valid',
+        );
+      }
+
       final response = await dio.post(
         '${Constants.baseUrl}/login',
         data: {
           'email': email,
           'password': password,
         },
+        options: Options(
+          validateStatus: (status) => true, // Handle all status codes
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ),
       );
 
       if (kDebugMode) {
@@ -42,66 +68,85 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         print('Response data: ${response.data}');
       }
 
-      if (response.statusCode == 200) {
-        // Memastikan data respons berupa Map<String, dynamic>
-        Map<String, dynamic> responseData;
-
-        if (response.data is String) {
-          // Jika respons berupa string, coba parse sebagai JSON
-          try {
-            responseData = json.decode(response.data);
-          } catch (e) {
+      // Handle specific HTTP status codes
+      switch (response.statusCode) {
+        case 200:
+          // Handle successful response
+          Map<String, dynamic> responseData;
+          if (response.data is String) {
+            try {
+              responseData = json.decode(response.data);
+            } catch (e) {
+              throw AuthenticationException(
+                message: 'Format respons server tidak valid',
+              );
+            }
+          } else if (response.data is Map<String, dynamic>) {
+            responseData = response.data;
+          } else {
             throw AuthenticationException(
-                message: 'Format respons tidak valid');
-          }
-        } else if (response.data is Map<String, dynamic>) {
-          // Jika sudah berupa Map, gunakan langsung
-          responseData = response.data;
-        } else {
-          // Jika format lain, lempar exception
-          throw AuthenticationException(
-              message: 'Format respons tidak didukung');
-        }
-
-        if (responseData['status'] == true) {
-          final token = responseData['token'];
-          final userData = responseData['data'];
-
-          if (kDebugMode) {
-            print('Token: $token');
-            print('User data: $userData');
+              message: 'Format respons server tidak sesuai',
+            );
           }
 
-          // Buat UserModel dari data dan token
-          try {
-            final user = UserModel.fromJson(userData, token);
+          if (responseData['status'] == true) {
+            final token = responseData['token'];
+            final userData = responseData['data'];
 
-            if (kDebugMode) {
-              print('UserModel created successfully: ${user.toJson()}');
+            if (token == null || userData == null) {
+              throw AuthenticationException(
+                message: 'Data login tidak lengkap dari server',
+              );
             }
 
-            // Simpan token dan data user ke SharedPreferences menggunakan konstanta
-            await sharedPreferences.setString(Constants.tokenKey, token);
-            await sharedPreferences.setString(
-                Constants.userDataKey, json.encode(user.toJson()));
-
-            return user;
-          } catch (e) {
-            if (kDebugMode) {
-              print('Error creating UserModel: $e');
+            try {
+              final user = UserModel.fromJson(userData, token);
+              await sharedPreferences.setString(Constants.tokenKey, token);
+              await sharedPreferences.setString(
+                Constants.userDataKey,
+                json.encode(user.toJson()),
+              );
+              return user;
+            } catch (e) {
+              throw AuthenticationException(
+                message: 'Gagal memproses data user: ${e.toString()}',
+              );
             }
+          } else {
             throw AuthenticationException(
-                message: 'Gagal membuat model user: ${e.toString()}');
+              message: responseData['message'] ?? 'Login gagal, silakan coba lagi',
+            );
           }
-        } else {
+
+        case 401:
           throw AuthenticationException(
-            message: responseData['message'] ?? 'Login gagal',
+            message: 'Email atau password salah',
           );
-        }
-      } else {
-        throw AuthenticationException(
-          message: response.data['message'] ?? 'Login gagal',
-        );
+
+        case 404:
+          throw AuthenticationException(
+            message: 'Akun tidak ditemukan',
+          );
+
+        case 422:
+          throw AuthenticationException(
+            message: 'Data yang dimasukkan tidak valid',
+          );
+
+        case 429:
+          throw AuthenticationException(
+            message: 'Terlalu banyak percobaan login. Silakan tunggu beberapa saat',
+          );
+
+        case 500:
+          throw ServerException(
+            message: 'Terjadi kesalahan pada server. Silakan coba beberapa saat lagi',
+          );
+
+        default:
+          throw ServerException(
+            message: 'Terjadi kesalahan tidak terduga (${response.statusCode})',
+          );
       }
     } on DioException catch (e) {
       if (kDebugMode) {
@@ -109,18 +154,45 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         print('DioException response: ${e.response?.data}');
       }
 
-      if (e.response != null) {
-        throw AuthenticationException(
-          message: e.response?.data?['message'] ?? 'Login gagal',
-        );
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+          throw ServerException(
+            message: 'Koneksi timeout. Periksa koneksi internet Anda',
+          );
+
+        case DioExceptionType.connectionError:
+          throw ServerException(
+            message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda',
+          );
+
+        case DioExceptionType.badResponse:
+          final responseData = e.response?.data;
+          if (responseData != null && responseData is Map<String, dynamic>) {
+            throw AuthenticationException(
+              message: responseData['message'] ?? 'Login gagal',
+            );
+          }
+          throw ServerException(
+            message: 'Respons server tidak valid',
+          );
+
+        default:
+          throw ServerException(
+            message: 'Terjadi kesalahan: ${e.message}',
+          );
       }
-      throw ServerException(
-          message: e.message ?? 'Terjadi kesalahan pada server');
     } catch (e) {
       if (kDebugMode) {
         print('General exception during login: $e');
       }
-      throw ServerException(message: 'Terjadi kesalahan tidak terduga: $e');
+      if (e is AuthenticationException || e is ServerException) {
+        rethrow;
+      }
+      throw ServerException(
+        message: 'Terjadi kesalahan tidak terduga: ${e.toString()}',
+      );
     }
   }
 

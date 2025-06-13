@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,6 +12,7 @@ import 'package:test_cbo/features/schedule/presentation/bloc/schedule_bloc.dart'
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_event.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_state.dart';
 import 'package:test_cbo/features/kpi/presentation/bloc/kpi_bloc.dart';
+import 'package:test_cbo/core/presentation/widgets/custom_snackbar.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -19,12 +21,38 @@ class DashboardPage extends StatefulWidget {
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserver {
   int _selectedIndex = 0;
+  DateTime? _lastBackPressTime;
+  bool _isExiting = false;
+  bool _canPop = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _initializeData();
+    
+    // Capture hardware back button
+    SystemChannels.platform.setMethodCallHandler((call) async {
+      if (call.method == 'SystemNavigator.pop') {
+        final shouldPop = await _onWillPop();
+        if (!shouldPop) {
+          return false;
+        }
+      }
+      return null;
+    });
+  }
+
+  @override
+  void dispose() {
+    SystemChannels.platform.setMethodCallHandler(null);
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  void _initializeData() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Get initial index from route arguments
       final args = ModalRoute.of(context)?.settings.arguments;
@@ -33,10 +61,15 @@ class _DashboardPageState extends State<DashboardPage> {
           _selectedIndex = args;
         });
       }
-      _refreshScheduleIfNeeded();
+
+      // Initialize data based on authenticated user
+      final authState = context.read<AuthBloc>().state;
+      if (authState is AuthAuthenticated) {
+        // Initialize KPI data with actual user ID
+        context.read<KpiBloc>().add(GetKpiDataEvent(authState.user.idUser.toString()));
+        _refreshScheduleIfNeeded();
+      }
     });
-    // Assuming you have the user ID stored somewhere, replace '2144' with the actual user ID
-    context.read<KpiBloc>().add(GetKpiDataEvent('2144'));
   }
 
   // Method untuk refresh data jadwal saat masuk tab jadwal
@@ -51,61 +84,149 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  Future<bool> _onWillPop() async {
+    if (_isExiting) {
+      return true; // Allow exit if already in exit process
+    }
+
+    if (_selectedIndex != 0) {
+      // If not on home page, go to home page
+      setState(() {
+        _selectedIndex = 0;
+      });
+      return false;
+    }
+
+    final now = DateTime.now();
+    if (_lastBackPressTime == null || 
+        now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+      // First tap or more than 2 seconds since last tap
+      _lastBackPressTime = now;
+      
+      if (!mounted) return false;
+
+      // Show snackbar with custom styling
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(
+                Icons.info_outline,
+                color: Colors.white,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Tekan sekali lagi untuk keluar',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.9),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.only(
+            bottom: MediaQuery.of(context).size.height * 0.1,
+            left: 16,
+            right: 16,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          elevation: 4,
+        ),
+      );
+      return false;
+    }
+
+    // Set exiting flag to true
+    setState(() {
+      _isExiting = true;
+    });
+
+    // Add slight delay before actual exit to show visual feedback
+    await Future.delayed(const Duration(milliseconds: 200));
+    
+    if (!mounted) return false;
+    
+    // Show loading indicator before exit
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    // Add delay to show loading
+    await Future.delayed(const Duration(milliseconds: 300));
+    
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: const [
-          HomePage(),
-          SchedulePage(),
-          ProfilePage(),
-        ],
-      ),
-      bottomNavigationBar:
-          BlocBuilder<ScheduleBloc, ScheduleState>(builder: (context, state) {
-        return BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: (index) {
-            setState(() {
-              _selectedIndex = index;
-            });
-
-            // Refresh jadwal saat tab jadwal dipilih
-            _refreshScheduleIfNeeded();
-          },
-          items: [
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.home_outlined),
-              activeIcon: const Icon(Icons.home),
-              label: l10n.home,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.calendar_today_outlined),
-              activeIcon: const Icon(Icons.calendar_today),
-              label: l10n.schedules,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.person_outline),
-              activeIcon: const Icon(Icons.person),
-              label: l10n.profile,
-            ),
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        body: IndexedStack(
+          index: _selectedIndex,
+          children: const [
+            HomePage(),
+            SchedulePage(),
+            ProfilePage(),
           ],
-          selectedItemColor: Theme.of(context).primaryColor,
-          unselectedItemColor: Colors.grey,
-          selectedLabelStyle: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
-          ),
-          unselectedLabelStyle: GoogleFonts.poppins(
-            fontWeight: FontWeight.normal,
-            fontSize: 12,
-          ),
-          type: BottomNavigationBarType.fixed,
-        );
-      }),
+        ),
+        bottomNavigationBar:
+            BlocBuilder<ScheduleBloc, ScheduleState>(builder: (context, state) {
+          return BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: (index) {
+              setState(() {
+                _selectedIndex = index;
+              });
+
+              // Refresh jadwal saat tab jadwal dipilih
+              _refreshScheduleIfNeeded();
+            },
+            items: [
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.home_outlined),
+                activeIcon: const Icon(Icons.home),
+                label: l10n.home,
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.calendar_today_outlined),
+                activeIcon: const Icon(Icons.calendar_today),
+                label: l10n.schedules,
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.person_outline),
+                activeIcon: const Icon(Icons.person),
+                label: l10n.profile,
+              ),
+            ],
+            selectedItemColor: Theme.of(context).primaryColor,
+            unselectedItemColor: Colors.grey,
+            selectedLabelStyle: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+            unselectedLabelStyle: GoogleFonts.poppins(
+              fontWeight: FontWeight.normal,
+              fontSize: 12,
+            ),
+            type: BottomNavigationBarType.fixed,
+          );
+        }),
+      ),
     );
   }
 }

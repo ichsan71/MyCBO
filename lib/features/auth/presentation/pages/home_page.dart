@@ -46,25 +46,43 @@ class _HomeContent extends StatefulWidget {
   State<_HomeContent> createState() => _HomeContentState();
 }
 
-class _HomeContentState extends State<_HomeContent> {
+class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver {
   String? _currentUserId;
   bool _isFirstLoad = true;
+  bool _mounted = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _currentUserId = widget.user.user.idUser.toString();
     // Delay the first load slightly to ensure proper initialization
     Future.microtask(() {
-      if (mounted) {
+      if (_mounted) {
         _refreshKpiData(isForceRefresh: true);
       }
     });
   }
 
   @override
+  void dispose() {
+    _mounted = false;
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _mounted) {
+      _refreshKpiData(isForceRefresh: true);
+    }
+  }
+
+  @override
   void didUpdateWidget(covariant _HomeContent oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!_mounted) return;
+    
     final newUserId = widget.user.user.idUser.toString();
     
     // Always refresh on user change
@@ -73,14 +91,14 @@ class _HomeContentState extends State<_HomeContent> {
       _isFirstLoad = true; // Reset first load flag for new user
       
       // Ensure widget is mounted and use force refresh
-      if (mounted) {
+      if (_mounted) {
         _refreshKpiData(isForceRefresh: true);
       }
     }
   }
 
   void _refreshKpiData({bool isForceRefresh = false}) {
-    if (!mounted) return;
+    if (!_mounted) return;
     
     final bloc = context.read<KpiBloc>();
     
