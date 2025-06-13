@@ -1,31 +1,104 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../domain/entities/schedule.dart';
 
 class ScheduleStatusHelper {
-  static Color getStatusColor(String status, String draft) {
-    final lowerStatus = status.toLowerCase().trim();
-    final lowerDraft = draft.toLowerCase().trim();
+  static String getStatusText(Schedule schedule) {
+    final lowerStatus = schedule.statusCheckin.toLowerCase().trim();
+    final lowerDraft = schedule.draft.toLowerCase().trim();
 
-    // Prioritas 1: Cek Draft Rejected
+    // Jika jadwal ditolak
     if (lowerDraft.contains('rejected')) {
-      return Colors.red;
+      return 'Ditolak';
     }
 
-    // Prioritas 2: Cek Status
-    switch (lowerStatus) {
-      case 'belum checkin':
-        return Colors.blue;
-      case 'check-in':
-      case 'belum checkout':
-        return Colors.green;
-      case 'selesai':
-        return Colors.purple;
-      case 'batal':
-        return Colors.grey;
-      case 'ditolak':
-        return Colors.red;
+    // Jika jadwal sudah check-out tapi menunggu persetujuan realisasi
+    if ((lowerStatus == 'check-out' || lowerStatus == 'selesai') &&
+        (schedule.realisasiApprove == null || schedule.realisasiApprove == 0)) {
+      return 'Menunggu Persetujuan';
+    }
+
+    // Jika jadwal sudah disetujui (approved == 1)
+    if (schedule.approved == 1) {
+      switch (lowerStatus) {
+        case 'belum checkin':
+          return 'Check-in';
+        case 'check-in':
+        case 'belum checkout':
+          return 'Check-out';
+        case 'check-out':
+        case 'selesai':
+          return schedule.realisasiApprove == 1
+              ? 'Selesai'
+              : 'Menunggu Persetujuan';
+      }
+    }
+
+    // Jika jadwal belum disetujui
+    if (schedule.approved == 0) {
+      return 'Menunggu Persetujuan';
+    }
+
+    return 'Status Tidak Diketahui';
+  }
+
+  static Color getStatusColor(Schedule schedule) {
+    final status = getStatusText(schedule);
+
+    switch (status) {
+      case 'Ditolak':
+        return Colors.red.shade700;
+      case 'Menunggu Persetujuan':
+        return Colors.orange.shade700;
+      case 'Check-in':
+        return Colors.blue.shade700;
+      case 'Check-out':
+        return Colors.green.shade700;
+      case 'Selesai':
+        return Colors.teal.shade700;
       default:
-        return Colors.orange;
+        return Colors.grey.shade700;
+    }
+  }
+
+  static IconData getStatusIcon(Schedule schedule) {
+    final status = getStatusText(schedule);
+
+    switch (status) {
+      case 'Ditolak':
+        return Icons.cancel_outlined;
+      case 'Menunggu Persetujuan':
+        return Icons.pending_outlined;
+      case 'Check-in':
+        return Icons.login_outlined;
+      case 'Check-out':
+        return Icons.logout_outlined;
+      case 'Selesai':
+        return Icons.check_circle_outlined;
+      default:
+        return Icons.help_outline;
+    }
+  }
+
+  static bool isFilterMatch(Schedule schedule, String filterStatus) {
+    final currentStatus = getStatusText(schedule);
+    final lowerFilter = filterStatus.toLowerCase();
+
+    switch (lowerFilter) {
+      case 'semua':
+        return true;
+      case 'menunggu persetujuan':
+        return currentStatus == 'Menunggu Persetujuan';
+      case 'check-in':
+        return currentStatus == 'Check-in';
+      case 'check-out':
+        return currentStatus == 'Check-out';
+      case 'selesai':
+        return currentStatus == 'Selesai';
+      case 'ditolak':
+        return currentStatus == 'Ditolak';
+      default:
+        return false;
     }
   }
 

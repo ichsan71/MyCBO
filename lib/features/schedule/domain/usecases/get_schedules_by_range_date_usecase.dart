@@ -19,10 +19,14 @@ class GetSchedulesByRangeDateUseCase {
 class ScheduleByRangeDateParams extends Equatable {
   final int userId;
   final String rangeDate;
+  final int page;
 
-  const ScheduleByRangeDateParams(
-      {required this.userId, required this.rangeDate});
+  const ScheduleByRangeDateParams({
+    required this.userId,
+    required this.rangeDate,
+    this.page = 1,
+  });
 
   @override
-  List<Object?> get props => [userId, rangeDate];
+  List<Object?> get props => [userId, rangeDate, page];
 }

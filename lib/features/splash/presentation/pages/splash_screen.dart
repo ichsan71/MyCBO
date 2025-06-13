@@ -9,6 +9,7 @@ import 'package:test_cbo/features/auth/presentation/bloc/auth_event.dart';
 import 'package:test_cbo/features/auth/presentation/bloc/auth_state.dart';
 import 'package:test_cbo/features/notifications/presentation/bloc/notification_bloc.dart';
 import 'package:test_cbo/features/notifications/presentation/bloc/notification_event.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -29,68 +30,15 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(seconds: 2),
       vsync: this,
     );
+
     _animation = CurvedAnimation(
       parent: _controller,
       curve: Curves.easeIn,
     );
+
     _controller.forward();
 
     _checkFirstTime();
-    _initialize();
-  }
-
-  Future<void> _checkFirstTime() async {
-    try {
-      if (kDebugMode) {
-        print('Memulai pengecekan status first time...');
-      }
-
-      final prefs = await SharedPreferences.getInstance();
-      final isFirstTime = prefs.getBool('isFirstTime') ?? true;
-
-      if (kDebugMode) {
-        print('Status first time: $isFirstTime');
-      }
-
-      await Future.delayed(const Duration(seconds: 3));
-
-      if (!mounted) {
-        if (kDebugMode) {
-          print('Widget tidak lagi mounted, navigasi dibatalkan');
-        }
-        return;
-      }
-
-      if (kDebugMode) {
-        print('Navigasi ke ${isFirstTime ? 'OnboardingScreen' : 'LoginPage'}');
-      }
-
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) =>
-              isFirstTime ? const OnboardingScreen() : const LoginPage(),
-        ),
-      );
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error di splash screen: $e');
-      }
-
-      // Fallback ke LoginPage jika terjadi error
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginPage()),
-        );
-      }
-    }
-  }
-
-  Future<void> _initialize() async {
-    // Initialize notifications
-    context.read<NotificationBloc>().add(const InitializeNotifications());
-
-    // Check auth status
-    context.read<AuthBloc>().add(const CheckAuthStatusEvent());
   }
 
   @override
@@ -99,8 +47,43 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
+  Future<void> _checkFirstTime() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final isFirstTime = prefs.getBool('isFirstTime') ?? true;
+
+      if (isFirstTime) {
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+        MaterialPageRoute(
+              builder: (context) => const OnboardingScreen(),
+            ),
+          );
+        }
+      } else {
+        context.read<AuthBloc>().add(const CheckAuthStatusEvent());
+        context.read<NotificationBloc>().add(const InitializeNotifications());
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error checking first time: $e');
+      }
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const LoginPage(),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthAuthenticated) {
@@ -134,6 +117,14 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
               const SizedBox(height: 24),
+              Text(
+                l10n.loading,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 16),
               const CircularProgressIndicator(),
             ],
           ),

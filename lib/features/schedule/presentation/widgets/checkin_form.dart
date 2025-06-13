@@ -11,6 +11,7 @@ import 'package:image/image.dart' as img;
 import '../../data/models/checkin_request_model.dart';
 import '../bloc/schedule_bloc.dart';
 import '../bloc/schedule_event.dart';
+import '../bloc/schedule_state.dart';
 import 'package:test_cbo/core/presentation/widgets/shimmer_button_loading.dart';
 
 class CheckinForm extends StatefulWidget {
@@ -136,12 +137,12 @@ class _CheckinFormState extends State<CheckinForm> {
       if (isMockLocation) {
         if (mounted) {
           setState(() {
-            _locationError = 'Lokasi palsu terdeteksi';
+            _locationError = 'Lokasi palsu terdeteksi, silahkan cek kembali lokasi anda';
           });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
-                'Anda terdeteksi menggunakan lokasi palsu. Mohon nonaktifkan aplikasi pihak ketiga yang menyediakan fitur Fake Location untuk melakukan check-in.',
+                'Anda terdeteksi menggunakan lokasi palsu (Mock Location). Mohon nonaktifkan fitur Mock Location untuk melakukan check-in.',
               ),
               backgroundColor: Colors.red,
               duration: Duration(seconds: 5),
@@ -281,11 +282,11 @@ class _CheckinFormState extends State<CheckinForm> {
     if (_isLoading) return;
 
     // Check for mock location error
-    if (_locationError == 'Lokasi palsu terdeteksi') {
+    if (_locationError == 'Lokasi palsu terdeteksi, silahkan cek kembali lokasi anda') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              'Tidak dapat melakukan check-in dengan lokasi palsu. Mohon nonaktifkan aplikasi pihak ketiga yang menyediakan fitur Fake Location.'),
+              'Tidak dapat melakukan check-in dengan lokasi palsu. Mohon nonaktifkan Mock Location.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -333,6 +334,7 @@ class _CheckinFormState extends State<CheckinForm> {
     // Create the request model
     final request = CheckinRequestModel(
       idSchedule: widget.scheduleId,
+      userId: widget.userId,
       foto: _compressedImagePath ?? _imageFile!.path,
       lokasi: _currentAddress ?? 'Unknown Location',
       note: _noteController.text.trim(),
@@ -344,306 +346,334 @@ class _CheckinFormState extends State<CheckinForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Check-in',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-
-          // Location section dengan error message
-          if (_currentPosition != null && _currentAddress != null) ...[
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green.shade300),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.location_on, color: Colors.green.shade700),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        child: Text(
-                          'Lokasi saat ini:',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.refresh, color: Colors.green.shade700),
-                        onPressed: _getCurrentLocation,
-                        tooltip: 'Perbarui lokasi',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(_currentAddress!),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Lat: ${_currentPosition!.latitude.toStringAsFixed(6)}, Long: ${_currentPosition!.longitude.toStringAsFixed(6)}',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ],
-              ),
+    return BlocListener<ScheduleBloc, ScheduleState>(
+      listener: (context, state) {
+        if (state is CheckInSuccess) {
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Check-in berhasil!'),
+              backgroundColor: Colors.green,
             ),
-          ] else ...[
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: _locationError != null
-                    ? Colors.red.shade50
-                    : Colors.orange.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: _locationError != null
-                      ? Colors.red.shade300
-                      : Colors.orange.shade300,
+          );
+          // Pop back to schedule page
+          Navigator.of(context).pop();
+        } else if (state is ScheduleError) {
+          // Show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red,
+            ),
+          );
+          // Reset loading state
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Check-in',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+
+            // Location section dengan error message
+            if (_currentPosition != null && _currentAddress != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green.shade300),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.location_on, color: Colors.green.shade700),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Lokasi saat ini:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon:
+                              Icon(Icons.refresh, color: Colors.green.shade700),
+                          onPressed: _getCurrentLocation,
+                          tooltip: 'Perbarui lokasi',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(_currentAddress!),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Lat: ${_currentPosition!.latitude.toStringAsFixed(6)}, Long: ${_currentPosition!.longitude.toStringAsFixed(6)}',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
                 ),
               ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.location_off,
-                        color:
-                            _locationError != null ? Colors.red : Colors.orange,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _locationError ??
-                              'Sedang mendapatkan lokasi saat ini...',
-                          style: TextStyle(
-                            color: _locationError != null
-                                ? Colors.red
-                                : Colors.orange,
+            ] else ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _locationError != null
+                      ? Colors.red.shade50
+                      : Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _locationError != null
+                        ? Colors.red.shade300
+                        : Colors.orange.shade300,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_off,
+                          color: _locationError != null
+                              ? Colors.red
+                              : Colors.orange,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _locationError ??
+                                'Sedang mendapatkan lokasi saat ini...',
+                            style: TextStyle(
+                              color: _locationError != null
+                                  ? Colors.red
+                                  : Colors.orange,
+                            ),
                           ),
+                        ),
+                      ],
+                    ),
+                    if (_locationError != null) ...[
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: _getCurrentLocation,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Coba Lagi'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
                         ),
                       ),
                     ],
-                  ),
-                  if (_locationError != null) ...[
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      onPressed: _getCurrentLocation,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Coba Lagi'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+
+            // Foto section dengan error message
+            if (_imageError != null)
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline,
+                        color: Colors.red.shade700, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _imageError!,
+                        style:
+                            TextStyle(color: Colors.red.shade700, fontSize: 12),
                       ),
                     ),
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
-          const SizedBox(height: 16),
 
-          // Foto section dengan error message
-          if (_imageError != null)
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.error_outline,
-                      color: Colors.red.shade700, size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _imageError!,
-                      style:
-                          TextStyle(color: Colors.red.shade700, fontSize: 12),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            const SizedBox(height: 8),
 
-          const SizedBox(height: 8),
-
-          // Foto section
-          if (_imageFile != null) ...[
-            GestureDetector(
-              onTap: () {
-                // Show full screen image preview
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => Scaffold(
-                      appBar: AppBar(
-                        title: const Text('Preview Foto'),
-                        backgroundColor: Colors.black,
-                      ),
-                      body: Container(
-                        color: Colors.black,
-                        child: Center(
-                          child: InteractiveViewer(
-                            panEnabled: true,
-                            boundaryMargin: const EdgeInsets.all(20),
-                            minScale: 0.5,
-                            maxScale: 4,
-                            child: Image.file(
-                              File(_compressedImagePath ?? _imageFile!.path),
-                              fit: BoxFit.contain,
+            // Foto section
+            if (_imageFile != null) ...[
+              GestureDetector(
+                onTap: () {
+                  // Show full screen image preview
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => Scaffold(
+                        appBar: AppBar(
+                          title: const Text('Preview Foto'),
+                          backgroundColor: Colors.black,
+                        ),
+                        body: Container(
+                          color: Colors.black,
+                          child: Center(
+                            child: InteractiveViewer(
+                              panEnabled: true,
+                              boundaryMargin: const EdgeInsets.all(20),
+                              minScale: 0.5,
+                              maxScale: 4,
+                              child: Image.file(
+                                File(_compressedImagePath ?? _imageFile!.path),
+                                fit: BoxFit.contain,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
-              child: Stack(
-                children: [
-                  AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        image: DecorationImage(
-                          image: FileImage(
-                              File(_compressedImagePath ?? _imageFile!.path)),
-                          fit: BoxFit.cover,
+                  );
+                },
+                child: Stack(
+                  children: [
+                    AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          image: DecorationImage(
+                            image: FileImage(
+                                File(_compressedImagePath ?? _imageFile!.path)),
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  Positioned(
-                    right: 8,
-                    bottom: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Icon(
-                        Icons.zoom_in,
-                        color: Colors.white,
-                        size: 20,
+                    Positioned(
+                      right: 8,
+                      bottom: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Icon(
+                          Icons.zoom_in,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            if (_imageTimestamp != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Foto diambil pada: $_imageTimestamp',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
+                  ],
                 ),
-                textAlign: TextAlign.center,
               ),
-            ],
-            const SizedBox(height: 16),
-          ],
-
-          ElevatedButton.icon(
-            onPressed: _takePicture,
-            icon: const Icon(Icons.camera_alt, color: Colors.white),
-            label: Text(
-              _imageFile == null ? 'Ambil Foto' : 'Ambil Ulang Foto',
-              style: const TextStyle(color: Colors.white),
-            ),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              foregroundColor: Colors.white,
-              backgroundColor: Theme.of(context).primaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Modified note input field with character count
-          TextField(
-            controller: _noteController,
-            maxLength: _maxNoteCharacters,
-            maxLines: 3,
-            decoration: InputDecoration(
-              labelText: 'Catatan',
-              alignLabelWithHint: true,
-              errorText: _noteError,
-              counterText: '${_noteController.text.length}/$_maxNoteCharacters',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Submit button
-          ElevatedButton(
-            onPressed: _isLoading ? null : _submitForm,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              foregroundColor: Colors.white,
-              backgroundColor: Theme.of(context).primaryColor,
-              disabledBackgroundColor: Colors.blue.shade200,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: _isLoading
-                ? const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ShimmerButtonLoading(
-                        width: 80,
-                        height: 20,
-                        baseColor: Colors.white70,
-                        highlightColor: Colors.white,
-                      ),
-                      SizedBox(width: 16),
-                      Text(
-                        'Memproses...',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  )
-                : const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.check_circle, size: 20, color: Colors.white),
-                      SizedBox(width: 8),
-                      Text(
-                        'Check-in',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
+              if (_imageTimestamp != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Foto diambil pada: $_imageTimestamp',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
                   ),
-          ),
-        ],
+                  textAlign: TextAlign.center,
+                ),
+              ],
+              const SizedBox(height: 16),
+            ],
+
+            ElevatedButton.icon(
+              onPressed: _takePicture,
+              icon: const Icon(Icons.camera_alt, color: Colors.white),
+              label: Text(
+                _imageFile == null ? 'Ambil Foto' : 'Ambil Ulang Foto',
+                style: const TextStyle(color: Colors.white),
+              ),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Modified note input field with character count
+            TextField(
+              controller: _noteController,
+              maxLength: _maxNoteCharacters,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: 'Catatan',
+                alignLabelWithHint: true,
+                errorText: _noteError,
+                counterText:
+                    '${_noteController.text.length}/$_maxNoteCharacters',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Submit button
+            ElevatedButton(
+              onPressed: _isLoading ? null : _submitForm,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).primaryColor,
+                disabledBackgroundColor: Colors.blue.shade200,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: _isLoading
+                  ? const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ShimmerButtonLoading(
+                          width: 80,
+                          height: 20,
+                        ),
+                        SizedBox(width: 16),
+                        Text(
+                          'Memproses...',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    )
+                  : const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.check_circle, size: 20, color: Colors.white),
+                        SizedBox(width: 8),
+                        Text(
+                          'Check-in',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

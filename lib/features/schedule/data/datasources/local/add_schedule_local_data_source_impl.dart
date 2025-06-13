@@ -6,6 +6,7 @@ import 'package:test_cbo/features/schedule/data/datasources/local/add_schedule_l
 import 'package:test_cbo/features/schedule/data/models/doctor_clinic_model.dart';
 import 'package:test_cbo/features/schedule/data/models/product_model.dart';
 import 'package:test_cbo/features/schedule/data/models/schedule_type_model.dart';
+import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic_base.dart';
 
 class AddScheduleLocalDataSourceImpl implements AddScheduleLocalDataSource {
   final AppDatabase database;
@@ -17,7 +18,7 @@ class AddScheduleLocalDataSourceImpl implements AddScheduleLocalDataSource {
   AddScheduleLocalDataSourceImpl({required this.database});
 
   @override
-  Future<List<DoctorClinicModel>> getDoctorsAndClinics() async {
+  Future<List<DoctorClinicBase>> getDoctorsAndClinics() async {
     try {
       Logger.info(_tag, 'Mengambil data dokter dari database lokal');
       final doctorsData = await database.getDoctors();
@@ -35,13 +36,13 @@ class AddScheduleLocalDataSourceImpl implements AddScheduleLocalDataSource {
         return DoctorClinicModel(
           id: json['id'] as int,
           nama: json['name'] as String,
-          alamat: '',
-          noTelp: '',
-          email: '',
+          alamat: json['address'] as String? ?? '',
+          noTelp: json['phone'] as String? ?? '',
+          email: json['email'] as String? ?? '',
           spesialis: json['specialization'] as String? ?? '',
-          tipeDokter: '',
-          tipeKlinik: '',
-          kodeRayon: '',
+          tipeDokter: json['doctor_type'] as String? ?? '',
+          tipeKlinik: json['clinic_type'] as String? ?? '',
+          kodeRayon: json['rayon_code'] as String? ?? '',
         );
       }).toList();
     } catch (e) {
@@ -118,7 +119,7 @@ class AddScheduleLocalDataSourceImpl implements AddScheduleLocalDataSource {
   }
 
   @override
-  Future<void> cacheDoctors(List<DoctorClinicModel> doctors) async {
+  Future<void> cacheDoctors(List<DoctorClinicBase> doctors) async {
     try {
       Logger.info(_tag, 'Menyimpan ${doctors.length} dokter ke database lokal');
 
@@ -126,7 +127,13 @@ class AddScheduleLocalDataSourceImpl implements AddScheduleLocalDataSource {
         return {
           'id': doctor.id,
           'name': doctor.nama,
+          'address': doctor.alamat,
+          'phone': doctor.noTelp,
+          'email': doctor.email,
           'specialization': doctor.spesialis,
+          'doctor_type': doctor.tipeDokter,
+          'clinic_type': doctor.tipeKlinik,
+          'rayon_code': doctor.kodeRayon,
         };
       }).toList();
 

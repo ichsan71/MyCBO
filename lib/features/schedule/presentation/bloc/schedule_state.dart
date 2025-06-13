@@ -19,11 +19,17 @@ class ScheduleLoading extends ScheduleState {
 
 class ScheduleLoaded extends ScheduleState {
   final List<Schedule> schedules;
+  final int currentPage;
+  final bool hasMoreData;
 
-  const ScheduleLoaded(this.schedules);
+  const ScheduleLoaded({
+    required this.schedules,
+    this.currentPage = 1,
+    this.hasMoreData = true,
+  });
 
   @override
-  List<Object?> get props => [schedules];
+  List<Object> get props => [schedules, currentPage, hasMoreData];
 }
 
 class ScheduleEmpty extends ScheduleState {
@@ -91,4 +97,41 @@ class ScheduleUpdateError extends ScheduleState {
 
   @override
   List<Object?> get props => [message];
+}
+
+class CheckInSuccess extends ScheduleState {
+  const CheckInSuccess();
+}
+
+class CheckOutSuccess extends ScheduleState {
+  const CheckOutSuccess();
+}
+
+class CheckOutFormData extends ScheduleState {
+  final String? imagePath;
+  final String? imageTimestamp;
+  final String note;
+  final String status;
+  final int scheduleId;
+
+  const CheckOutFormData({
+    this.imagePath,
+    this.imageTimestamp,
+    required this.note,
+    required this.status,
+    required this.scheduleId,
+  });
+
+  @override
+  List<Object?> get props =>
+      [imagePath, imageTimestamp, note, status, scheduleId];
+}
+
+class ScheduleLoadingMore extends ScheduleState {
+  final List<Schedule> currentSchedules;
+
+  const ScheduleLoadingMore({required this.currentSchedules});
+
+  @override
+  List<Object> get props => [currentSchedules];
 }

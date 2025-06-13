@@ -8,7 +8,7 @@ abstract class AddScheduleEvent extends Equatable {
 }
 
 class GetDoctorsAndClinicsEvent extends AddScheduleEvent {
-  final int userId;
+  final String userId;
 
   const GetDoctorsAndClinicsEvent({required this.userId});
 
@@ -18,10 +18,8 @@ class GetDoctorsAndClinicsEvent extends AddScheduleEvent {
 
 class GetScheduleTypesEvent extends AddScheduleEvent {}
 
-class GetDoctorsEvent extends AddScheduleEvent {}
-
 class GetProductsEvent extends AddScheduleEvent {
-  final int userId;
+  final String userId;
 
   const GetProductsEvent({required this.userId});
 
@@ -30,16 +28,16 @@ class GetProductsEvent extends AddScheduleEvent {
 }
 
 class SubmitScheduleEvent extends AddScheduleEvent {
-  final int typeSchedule;
+  final String typeSchedule;
   final String tujuan;
   final String tglVisit;
-  final List<int> product;
+  final List<String> product;
   final String note;
-  final int idUser;
-  final int dokter;
+  final String idUser;
+  final String dokter;
   final String klinik;
-  final List<int> productForIdDivisi;
-  final List<int> productForIdSpesialis;
+  final List<String> productForIdDivisi;
+  final List<String> productForIdSpesialis;
   final String shift;
   final String jenis;
   final List<String> productNames;

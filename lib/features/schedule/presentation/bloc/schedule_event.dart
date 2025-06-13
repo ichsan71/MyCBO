@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 import '../../data/models/update_schedule_request_model.dart';
+import '../../data/models/checkin_request_model.dart';
+import '../../data/models/checkout_request_model.dart';
 
 abstract class ScheduleEvent extends Equatable {
   const ScheduleEvent();
@@ -19,11 +21,15 @@ class GetSchedulesEvent extends ScheduleEvent {
 
 class RefreshSchedulesEvent extends ScheduleEvent {
   final int userId;
+  final String rangeDate;
 
-  const RefreshSchedulesEvent({required this.userId});
+  const RefreshSchedulesEvent({
+    required this.userId,
+    this.rangeDate = '',
+  });
 
   @override
-  List<Object?> get props => [userId];
+  List<Object?> get props => [userId, rangeDate];
 }
 
 class UpdateScheduleStatusEvent extends ScheduleEvent {
@@ -44,9 +50,26 @@ class UpdateScheduleStatusEvent extends ScheduleEvent {
 class GetSchedulesByRangeDateEvent extends ScheduleEvent {
   final int userId;
   final String rangeDate; // format: MM/dd/yyyy - MM/dd/yyyy
+  final int page;
 
-  const GetSchedulesByRangeDateEvent(
-      {required this.userId, required this.rangeDate});
+  const GetSchedulesByRangeDateEvent({
+    required this.userId,
+    required this.rangeDate,
+    this.page = 1,
+  });
+
+  @override
+  List<Object?> get props => [userId, rangeDate, page];
+}
+
+class LoadMoreSchedulesEvent extends ScheduleEvent {
+  final int userId;
+  final String rangeDate;
+
+  const LoadMoreSchedulesEvent({
+    required this.userId,
+    required this.rangeDate,
+  });
 
   @override
   List<Object?> get props => [userId, rangeDate];
@@ -79,4 +102,48 @@ class UpdateScheduleEvent extends ScheduleEvent {
 
   @override
   List<Object?> get props => [requestModel];
+}
+
+// Add check-in event
+class CheckInEvent extends ScheduleEvent {
+  final CheckinRequestModel request;
+
+  const CheckInEvent({required this.request});
+
+  @override
+  List<Object?> get props => [request];
+}
+
+// Add check-out event
+class CheckOutEvent extends ScheduleEvent {
+  final CheckoutRequestModel request;
+  final int userId;
+
+  const CheckOutEvent({
+    required this.request,
+    required this.userId,
+  });
+
+  @override
+  List<Object?> get props => [request, userId];
+}
+
+class SaveCheckOutFormEvent extends ScheduleEvent {
+  final String? imagePath;
+  final String? imageTimestamp;
+  final String note;
+  final String status;
+  final int scheduleId;
+
+  const SaveCheckOutFormEvent({
+    this.imagePath,
+    this.imageTimestamp,
+    required this.note,
+    required this.status,
+    required this.scheduleId,
+  });
+
+  @override
+  List<Object?> get props =>
+      [imagePath, imageTimestamp, note, status, scheduleId];
 }

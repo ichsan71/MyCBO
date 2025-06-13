@@ -287,7 +287,6 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
                     onPressed: _selectedScheduleIds.isEmpty || _isLoading
                         ? null
                         : () => _handleApprove(),
-                    icon: const Icon(Icons.check),
                     label: Text(
                       'Setujui yang Dipilih',
                       style: GoogleFonts.poppins(),
@@ -310,7 +309,6 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
                     onPressed: _selectedScheduleIds.isEmpty || _isLoading
                         ? null
                         : () => _handleReject(),
-                    icon: const Icon(Icons.close),
                     label: Text(
                       'Tolak yang Dipilih',
                       style: GoogleFonts.poppins(),

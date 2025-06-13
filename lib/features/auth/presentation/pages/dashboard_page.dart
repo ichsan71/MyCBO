@@ -10,6 +10,7 @@ import 'package:test_cbo/features/auth/presentation/pages/schedule_page.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_bloc.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_event.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_state.dart';
+import 'package:test_cbo/features/kpi/presentation/bloc/kpi_bloc.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -34,6 +35,8 @@ class _DashboardPageState extends State<DashboardPage> {
       }
       _refreshScheduleIfNeeded();
     });
+    // Assuming you have the user ID stored somewhere, replace '2144' with the actual user ID
+    context.read<KpiBloc>().add(GetKpiDataEvent('2144'));
   }
 
   // Method untuk refresh data jadwal saat masuk tab jadwal

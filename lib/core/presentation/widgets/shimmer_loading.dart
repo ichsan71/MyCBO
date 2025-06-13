@@ -1,29 +1,87 @@
 import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
 
-class ShimmerLoading extends StatelessWidget {
+class ShimmerLoading extends StatefulWidget {
   final Widget child;
-  final Color? baseColor;
-  final Color? highlightColor;
-  final Duration duration;
+  final bool isLoading;
 
   const ShimmerLoading({
     Key? key,
     required this.child,
-    this.baseColor,
-    this.highlightColor,
-    this.duration = const Duration(milliseconds: 1500),
+    this.isLoading = true,
+  }) : super(key: key);
+
+  @override
+  State<ShimmerLoading> createState() => _ShimmerLoadingState();
+}
+
+class _ShimmerLoadingState extends State<ShimmerLoading>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _shimmerController;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmerController = AnimationController.unbounded(vsync: this)
+      ..repeat(min: -0.5, max: 1.5, period: const Duration(milliseconds: 1000));
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.isLoading) {
+      return widget.child;
+    }
+
+    return ShaderMask(
+      blendMode: BlendMode.srcATop,
+      shaderCallback: (bounds) {
+        return LinearGradient(
+          colors: [
+            Colors.grey[300]!,
+            Colors.grey[100]!,
+            Colors.grey[300]!,
+          ],
+          stops: const [
+            0.0,
+            0.5,
+            1.0,
+          ],
+          begin: const Alignment(-1.0, -0.3),
+          end: const Alignment(1.0, 0.3),
+          tileMode: TileMode.clamp,
+        ).createShader(bounds);
+      },
+      child: widget.child,
+    );
+  }
+}
+
+class ShimmerContainer extends StatelessWidget {
+  final double width;
+  final double height;
+  final double borderRadius;
+
+  const ShimmerContainer({
+    Key? key,
+    this.width = double.infinity,
+    required this.height,
+    this.borderRadius = 8,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Shimmer.fromColors(
-      baseColor: baseColor ?? theme.colorScheme.surfaceVariant.withOpacity(0.8),
-      highlightColor: highlightColor ?? theme.colorScheme.surface,
-      period: duration,
-      child: child,
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(borderRadius),
+      ),
     );
   }
 }

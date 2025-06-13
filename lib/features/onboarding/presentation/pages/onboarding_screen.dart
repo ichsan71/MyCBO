@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 import '../../../auth/presentation/pages/login_page.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -15,24 +16,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  final List<OnboardingItem> _items = [
-    OnboardingItem(
-      title: 'Kelola Jadwal Kunjungan',
-      description:
-          'Atur dan kelola jadwal kunjungan Anda dengan mudah dan efisien',
-      image: 'assets/images/schedule.png',
-    ),
-    OnboardingItem(
-      title: 'Persetujuan Jadwal Kunjungan',
-      description: 'Permudah persetujuan jadwal kunjungan Anda',
-      image: 'assets/images/product.png',
-    ),
-    OnboardingItem(
-      title: 'Laporan Real-time',
-      description: 'Pantau aktivitas dan capaian Anda secara real-time',
-      image: 'assets/images/report.png',
-    ),
-  ];
+  List<OnboardingItem> _getOnboardingItems(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return [
+      OnboardingItem(
+        title: l10n.manageSchedule,
+        description: l10n.manageScheduleDesc,
+        image: 'assets/images/schedule.png',
+      ),
+      OnboardingItem(
+        title: l10n.scheduleApproval,
+        description: l10n.scheduleApprovalDesc,
+        image: 'assets/images/product.png',
+      ),
+      OnboardingItem(
+        title: l10n.realTimeReport,
+        description: l10n.realTimeReportDesc,
+        image: 'assets/images/report.png',
+      ),
+    ];
+  }
 
   void _finishOnboarding() async {
     try {
@@ -78,6 +81,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final items = _getOnboardingItems(context);
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -104,7 +109,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 Expanded(
                   child: PageView.builder(
                     controller: _pageController,
-                    itemCount: _items.length,
+                    itemCount: items.length,
                     onPageChanged: (int page) {
                       setState(() {
                         _currentPage = page;
@@ -117,7 +122,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Image.asset(
-                              _items[index].image,
+                              items[index].image,
                               height: 300,
                               errorBuilder: (context, error, stackTrace) {
                                 if (kDebugMode) {
@@ -132,7 +137,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ),
                             const SizedBox(height: 40),
                             Text(
-                              _items[index].title,
+                              items[index].title,
                               style: GoogleFonts.poppins(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
@@ -142,7 +147,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              _items[index].description,
+                              items[index].description,
                               style: GoogleFonts.poppins(
                                 fontSize: 16,
                                 color: Colors.black54,
@@ -185,7 +190,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       // Page indicators
                       Row(
                         children: List.generate(
-                          _items.length,
+                          items.length,
                           (index) => Container(
                             margin: const EdgeInsets.symmetric(horizontal: 4),
                             width: 8,
@@ -203,7 +208,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       // Next/Finish button
                       TextButton(
                         onPressed: () {
-                          if (_currentPage == _items.length - 1) {
+                          if (_currentPage == items.length - 1) {
                             _finishOnboarding();
                           } else {
                             _pageController.nextPage(
@@ -213,9 +218,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           }
                         },
                         child: Text(
-                          _currentPage == _items.length - 1
-                              ? 'Mulai'
-                              : 'Lanjut',
+                          _currentPage == items.length - 1 ? 'Mulai' : 'Lanjut',
                           style: GoogleFonts.poppins(
                             color: Colors.blue,
                             fontSize: 16,

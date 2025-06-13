@@ -8,6 +8,7 @@ import 'package:test_cbo/features/notifications/presentation/bloc/notification_e
 import 'package:test_cbo/features/notifications/presentation/bloc/notification_state.dart';
 import 'package:test_cbo/core/presentation/widgets/app_bar_widget.dart';
 import 'package:test_cbo/core/utils/logger.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class NotificationSettingsPage extends StatelessWidget {
   const NotificationSettingsPage({super.key});
@@ -16,250 +17,334 @@ class NotificationSettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final isDark = themeProvider.isDarkMode;
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBarWidget(
-        title: 'Pengaturan',
+        title: l10n.settingsTitle,
         automaticallyImplyLeading: true,
         showShadow: true,
       ),
       body: BlocBuilder<NotificationBloc, NotificationState>(
         builder: (context, state) {
+          if (state is NotificationLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
           if (state is NotificationError) {
             Logger.error(
                 _tag, 'Error in notification settings: ${state.message}');
             return Center(
-              child: Text(
-                'Error: ${state.message}',
-                style: const TextStyle(color: Colors.red),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: Colors.red[300],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '${l10n.error}: ${state.message}',
+                    style: GoogleFonts.poppins(
+                      color: Colors.red[700],
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             );
           }
 
-          Logger.debug(_tag, 'Current notification state: $state');
-          Logger.debug(_tag,
-              'Checkout notifications enabled: ${state.isCheckoutEnabled}');
-          Logger.debug(
-              _tag, 'Daily greeting enabled: ${state.isDailyGreetingEnabled}');
-          Logger.debug(_tag, 'Last checkout check: ${state.lastCheckoutCheck}');
-          Logger.debug(_tag, 'Last daily greeting: ${state.lastDailyGreeting}');
+          if (state is NotificationSettingsLoaded) {
+            return _buildSettingsContent(context, state, l10n);
+          }
 
-          return ListView(
-            padding: const EdgeInsets.all(20.0),
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(isDark ? 0.3 : 0.1),
-                      spreadRadius: 1,
-                      blurRadius: 10,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    _buildSettingTile(
-                      context: context,
-                      title: 'Dark Mode',
-                      subtitle: 'Toggle dark/light theme',
-                      icon: isDark ? Icons.dark_mode : Icons.light_mode,
-                      color: isDark ? Colors.indigo[400]! : Colors.amber[600]!,
-                      value: isDark,
-                      onChanged: (value) {
-                        Logger.debug(_tag, 'Toggling theme mode');
-                        themeProvider.toggleThemeMode();
-                      },
-                    ),
-                    const Divider(height: 1),
-                    _buildSettingTile(
-                      context: context,
-                      title: 'Checkout Notifications',
-                      subtitle: 'Get notified when you need to checkout',
-                      icon: Icons.notifications_active,
-                      color: Colors.blue[600]!,
-                      value: state.isCheckoutEnabled,
-                      onChanged: (value) {
-                        Logger.debug(_tag, 'Toggling checkout notifications');
-                        context
-                            .read<NotificationBloc>()
-                            .add(const ToggleScheduleNotifications());
-                      },
-                    ),
-                    const Divider(height: 1),
-                    _buildSettingTile(
-                      context: context,
-                      title: 'Daily Greeting',
-                      subtitle: 'Get a friendly greeting every morning',
-                      icon: Icons.wb_sunny,
-                      color: Colors.amber[700]!,
-                      value: state.isDailyGreetingEnabled,
-                      onChanged: (value) {
-                        Logger.debug(_tag, 'Toggling daily greeting');
-                        context
-                            .read<NotificationBloc>()
-                            .add(const ToggleApprovalNotifications());
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(isDark ? 0.3 : 0.1),
-                      spreadRadius: 1,
-                      blurRadius: 10,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    _buildInfoTile(
-                      context: context,
-                      title: 'Last Checkout Check',
-                      subtitle: state.lastCheckoutCheck.toString(),
-                      icon: Icons.history,
-                      color: Colors.green[600]!,
-                    ),
-                    const Divider(height: 1),
-                    _buildInfoTile(
-                      context: context,
-                      title: 'Last Daily Greeting',
-                      subtitle: state.lastDailyGreeting.toString(),
-                      icon: Icons.access_time,
-                      color: Colors.purple[600]!,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
+          return const SizedBox.shrink();
         },
       ),
     );
   }
 
-  Widget _buildSettingTile({
-    required BuildContext context,
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
+  Widget _buildSettingsContent(
+    BuildContext context,
+    NotificationSettingsLoaded state,
+    AppLocalizations l10n,
+  ) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(isDark ? 0.2 : 0.1),
-              shape: BoxShape.circle,
+    return ListView(
+      padding: const EdgeInsets.all(16.0),
+      children: [
+        _buildSettingsSection(
+          context,
+          l10n.notificationSettingsTitle,
+          Icons.notifications_active,
+          Colors.orange,
+          [
+            _buildAnimatedSwitchTile(
+              context,
+              title: l10n.checkoutNotifications,
+              subtitle: l10n.checkoutNotificationsDesc,
+              value: state.isCheckoutEnabled,
+              icon: Icons.logout,
+              onChanged: (value) {
+                context.read<NotificationBloc>().add(
+                      ToggleCheckoutNotification(enabled: value),
+                    );
+              },
             ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 24,
+            _buildAnimatedSwitchTile(
+              context,
+              title: l10n.dailyGreeting,
+              subtitle: l10n.dailyGreetingDesc,
+              value: state.isDailyGreetingEnabled,
+              icon: Icons.wb_sunny,
+              onChanged: (value) {
+                context.read<NotificationBloc>().add(
+                      ToggleDailyGreetingNotification(enabled: value),
+                    );
+              },
             ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildSettingsSection(
+          context,
+          l10n.appearanceSettingsTitle,
+          Icons.palette,
+          Colors.purple,
+          [
+            _buildAnimatedSwitchTile(
+              context,
+              title: l10n.darkMode,
+              subtitle: l10n.darkModeDesc,
+              value: themeProvider.isDarkMode,
+              icon:
+                  themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+              onChanged: (bool value) {
+                Logger.debug(_tag, 'Toggling theme mode');
+                themeProvider.toggleThemeMode();
+              },
+            ),
+            _buildLanguageSelector(context, l10n),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSettingsSection(
+    BuildContext context,
+    String title,
+    IconData icon,
+    Color color,
+    List<Widget> children,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
               children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(isDark ? 0.2 : 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
                 Text(
                   title,
                   style: GoogleFonts.poppins(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).textTheme.titleLarge?.color,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Theme.of(context).textTheme.bodyMedium?.color,
                   ),
                 ),
               ],
             ),
           ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: Theme.of(context).primaryColor,
-          ),
+          ...children,
         ],
       ),
     );
   }
 
-  Widget _buildInfoTile({
-    required BuildContext context,
+  Widget _buildAnimatedSwitchTile(
+    BuildContext context, {
     required String title,
     required String subtitle,
+    required bool value,
     required IconData icon,
-    required Color color,
+    required ValueChanged<bool> onChanged,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(isDark ? 0.2 : 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => onChanged(!value),
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Row(
               children: [
-                Text(
-                  title,
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).textTheme.titleLarge?.color,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: value
+                        ? Theme.of(context)
+                            .primaryColor
+                            .withOpacity(isDark ? 0.2 : 0.1)
+                        : Colors.grey.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: value ? Theme.of(context).primaryColor : Colors.grey,
+                    size: 20,
                   ),
                 ),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Theme.of(context).textTheme.titleLarge?.color,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.color
+                              ?.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                const SizedBox(width: 8),
+                Switch.adaptive(
+                  value: value,
+                  onChanged: onChanged,
+                  activeColor: Theme.of(context).primaryColor,
                 ),
               ],
             ),
           ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageSelector(BuildContext context, AppLocalizations l10n) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            // TODO: Implement language selection
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .primaryColor
+                        .withOpacity(isDark ? 0.2 : 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.language,
+                    color: Theme.of(context).primaryColor,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.language,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Theme.of(context).textTheme.titleLarge?.color,
+                        ),
+                      ),
+                      Text(
+                        l10n.languageDesc,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.color
+                              ?.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.color
+                      ?.withOpacity(0.5),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

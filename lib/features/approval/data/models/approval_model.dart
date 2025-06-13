@@ -1,5 +1,6 @@
 import '../../domain/entities/approval.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/utils/logger.dart';
 
 class ApprovalModel extends Approval {
   const ApprovalModel({
@@ -38,27 +39,79 @@ class ApprovalModel extends Approval {
 
   factory ApprovalModel.fromJson(Map<String, dynamic> json) {
     try {
+      // Parse integer fields with proper type conversion
+      int parseIntField(dynamic value, String fieldName) {
+        Logger.info('ApprovalModel',
+            'Parsing $fieldName: value=$value, type=${value?.runtimeType}');
+        if (value == null) return 0;
+        if (value is int) return value;
+        return int.tryParse(value.toString()) ?? 0;
+      }
+
+      // Parse all integer fields
+      final id = parseIntField(json['id'], 'id');
+      final userId = parseIntField(json['user_id'], 'user_id');
+      final approved = parseIntField(json['approved'], 'approved');
+      final idBawahan = parseIntField(json['id_bawahan'], 'id_bawahan');
+      final month = parseIntField(json['month'], 'month');
+      final year = parseIntField(json['year'], 'year');
+      final totalSchedule =
+          parseIntField(json['total_schedule'], 'total_schedule');
+
+      // Parse details list with null safety
+      List<Detail> detailsList = [];
+      Logger.info('ApprovalModel', 'Parsing details: ${json['details']}');
+      if (json['details'] != null) {
+        if (json['details'] is List) {
+          Logger.info('ApprovalModel',
+              'Details is a List with ${(json['details'] as List).length} items');
+          detailsList = (json['details'] as List)
+              .where((detail) => detail != null)
+              .map((detail) {
+            try {
+              if (detail is Map<String, dynamic>) {
+                Logger.info('ApprovalModel', 'Processing detail item: $detail');
+                return DetailModel.fromJson(detail);
+              }
+              Logger.error('ApprovalModel',
+                  'Invalid detail format: $detail (type: ${detail.runtimeType})');
+              throw ServerException(
+                  message: 'Invalid detail format in approval data');
+            } catch (e, stackTrace) {
+              Logger.error('ApprovalModel',
+                  'Error parsing detail: $e\nStack trace: $stackTrace');
+              rethrow;
+            }
+          }).toList();
+        } else {
+          Logger.error('ApprovalModel',
+              'Details is not a List: ${json['details'].runtimeType}');
+        }
+      } else {
+        Logger.info('ApprovalModel', 'Details is null');
+      }
+
       return ApprovalModel(
-        id: json['id'] ?? 0,
-        userId: json['user_id'] ?? 0,
-        namaBawahan: json['nama_bawahan'] ?? '',
-        tglVisit: json['tgl_visit'] ?? '',
-        tujuan: json['tujuan'] ?? '',
-        note: json['note'] ?? '',
-        isApproved: json['is_approved'] == 1,
-        approved: json['approved'] ?? 0,
-        idBawahan: json['id_bawahan'] ?? 0,
-        month: json['month'] ?? 0,
-        year: json['year'] ?? 0,
-        totalSchedule: json['total_schedule'] ?? 0,
+        id: id,
+        userId: userId,
+        namaBawahan: (json['nama_bawahan'] ?? '').toString(),
+        tglVisit: (json['tgl_visit'] ?? '').toString(),
+        tujuan: (json['tujuan'] ?? '').toString(),
+        note: (json['note'] ?? '').toString(),
+        isApproved: json['is_approved'] == 1 || json['is_approved'] == true,
+        approved: approved,
+        idBawahan: idBawahan,
+        month: month,
+        year: year,
+        totalSchedule: totalSchedule,
         jumlahDokter: (json['jumlah_dokter'] ?? '0').toString(),
         jumlahKlinik: (json['jumlah_klinik'] ?? '0').toString(),
-        details: (json['details'] as List?)
-                ?.map((detail) => DetailModel.fromJson(detail))
-                .toList() ??
-            [],
+        details: detailsList,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Logger.error(
+          'ApprovalModel', 'Error in fromJson: $e\nStack trace: $stackTrace');
+      Logger.error('ApprovalModel', 'Problematic JSON: $json');
       throw ServerException(
           message: 'Error parsing ApprovalModel: ${e.toString()}');
     }
@@ -117,16 +170,43 @@ class DetailModel extends Detail {
 
   factory DetailModel.fromJson(Map<String, dynamic> json) {
     try {
+      Logger.info('DetailModel', 'Starting to parse JSON: $json');
+
+      // Parse product string if it's a JSON string
+      String productStr = (json['product'] ?? '[]').toString();
+      Logger.info('DetailModel', 'Raw product string: $productStr');
+
+      // Remove escaped quotes if present
+      productStr = productStr.replaceAll('\\"', '"');
+      Logger.info('DetailModel', 'Unescaped product string: $productStr');
+
       // Memastikan bahwa product_data adalah array yang valid
       List<ProductDataModel> productDataList = [];
       if (json.containsKey('product_data') && json['product_data'] != null) {
         if (json['product_data'] is List) {
+          Logger.info('DetailModel',
+              'Processing product_data list: ${json['product_data']}');
           productDataList = (json['product_data'] as List)
               .where((item) => item != null)
-              .map((product) => product is Map<String, dynamic>
-                  ? ProductDataModel.fromJson(product)
-                  : ProductDataModel(idProduct: 0, namaProduct: 'Unknown'))
-              .toList();
+              .map((product) {
+            try {
+              if (product is Map<String, dynamic>) {
+                Logger.info('DetailModel', 'Processing product item: $product');
+                return ProductDataModel.fromJson(product);
+              }
+              Logger.error('DetailModel',
+                  'Invalid product format: $product (type: ${product.runtimeType})');
+              return ProductDataModel(idProduct: 0, namaProduct: 'Unknown');
+            } catch (e, stackTrace) {
+              Logger.error('DetailModel',
+                  'Error parsing product: $e\nStack trace: $stackTrace');
+              return ProductDataModel(
+                  idProduct: 0, namaProduct: 'Error: ${e.toString()}');
+            }
+          }).toList();
+        } else {
+          Logger.error('DetailModel',
+              'product_data is not a List: ${json['product_data'].runtimeType}');
         }
       }
 
@@ -135,34 +215,62 @@ class DetailModel extends Detail {
       if (json.containsKey('tujuan_data') &&
           json['tujuan_data'] != null &&
           json['tujuan_data'] is Map<String, dynamic>) {
+        Logger.info(
+            'DetailModel', 'Processing tujuan_data: ${json['tujuan_data']}');
         tujuanDataModel = TujuanDataModel.fromJson(json['tujuan_data']);
       } else {
+        Logger.info('DetailModel',
+            'Creating default tujuan_data with id_tujuan: ${json['id_tujuan']}');
         tujuanDataModel = TujuanDataModel(
-          idDokter: json['id_tujuan'] as int? ?? 0,
+          idDokter: json['id_tujuan'] is int
+              ? json['id_tujuan']
+              : (int.tryParse(json['id_tujuan']?.toString() ?? '0') ?? 0),
           namaDokter: '',
           namaKlinik: '',
         );
       }
 
+      // Parse id with proper type conversion
+      int id = json['id'] is int
+          ? json['id']
+          : (int.tryParse(json['id']?.toString() ?? '0') ?? 0);
+
+      // Parse idTujuan with proper type conversion
+      int idTujuan = json['id_tujuan'] is int
+          ? json['id_tujuan']
+          : (int.tryParse(json['id_tujuan']?.toString() ?? '0') ?? 0);
+
+      // Parse approved with proper type conversion
+      int approved = json['approved'] is int
+          ? json['approved']
+          : (int.tryParse(json['approved']?.toString() ?? '0') ?? 0);
+
+      // Parse realisasiApprove with proper type conversion
+      int? realisasiApprove;
+      if (json['realisasi_approve'] != null) {
+        realisasiApprove = json['realisasi_approve'] is int
+            ? json['realisasi_approve']
+            : (int.tryParse(json['realisasi_approve'].toString()) ?? 0);
+      }
+
       return DetailModel(
-        id: json['id'] as int? ??
-            (throw ServerException(message: 'id tidak ditemukan atau invalid')),
+        id: id,
         typeSchedule: (json['type_schedule'] ?? '').toString(),
         tujuan: (json['tujuan'] ?? '').toString(),
-        idTujuan: json['id_tujuan'] as int? ??
-            (throw ServerException(
-                message: 'id_tujuan tidak ditemukan atau invalid')),
+        idTujuan: idTujuan,
         tglVisit: (json['tgl_visit'] ?? '').toString(),
-        product: (json['product'] ?? '[]').toString(),
+        product: productStr,
         note: (json['note'] ?? '').toString(),
         shift: (json['shift'] ?? '').toString(),
         productData: productDataList,
         tujuanData: tujuanDataModel,
-        approved: json['approved'] as int? ?? 0,
-        realisasiApprove: json['realisasi_approve'] as int?,
+        approved: approved,
+        realisasiApprove: realisasiApprove,
       );
-    } catch (e) {
-      if (e is ServerException) rethrow;
+    } catch (e, stackTrace) {
+      Logger.error(
+          'DetailModel', 'Error in fromJson: $e\nStack trace: $stackTrace');
+      Logger.error('DetailModel', 'Problematic JSON: $json');
       throw ServerException(
           message: 'Error parsing DetailModel: ${e.toString()}');
     }
@@ -199,29 +307,19 @@ class ProductDataModel extends ProductData {
 
   factory ProductDataModel.fromJson(Map<String, dynamic> json) {
     try {
-      int productId = 0;
-      try {
-        if (json['id_product'] != null) {
-          if (json['id_product'] is int) {
-            productId = json['id_product'];
-          } else if (json['id_product'] is String) {
-            productId = int.tryParse(json['id_product']) ?? 0;
-          }
-        }
-      } catch (e) {
-        // Fallback ke default jika parsing gagal
-      }
+      // Parse idProduct with proper type conversion
+      int idProduct = json['id_product'] is int
+          ? json['id_product']
+          : (int.tryParse(json['id_product']?.toString() ?? '0') ?? 0);
 
       return ProductDataModel(
-        idProduct: productId,
+        idProduct: idProduct,
         namaProduct: (json['nama_product'] ?? '').toString(),
       );
     } catch (e) {
-      if (e is ServerException) rethrow;
-      // Sebagai fallback, kembalikan objek default
       return const ProductDataModel(
         idProduct: 0,
-        namaProduct: 'Error parsing product',
+        namaProduct: 'Error parsing product data',
       );
     }
   }
@@ -247,26 +345,17 @@ class TujuanDataModel extends TujuanData {
 
   factory TujuanDataModel.fromJson(Map<String, dynamic> json) {
     try {
-      int dokterId = 0;
-      try {
-        if (json['id_dokter'] != null) {
-          if (json['id_dokter'] is int) {
-            dokterId = json['id_dokter'];
-          } else if (json['id_dokter'] is String) {
-            dokterId = int.tryParse(json['id_dokter']) ?? 0;
-          }
-        }
-      } catch (e) {
-        // Fallback ke default jika parsing gagal
-      }
+      // Parse idDokter with proper type conversion
+      int idDokter = json['id_dokter'] is int
+          ? json['id_dokter']
+          : (int.tryParse(json['id_dokter']?.toString() ?? '0') ?? 0);
 
       return TujuanDataModel(
-        idDokter: dokterId,
+        idDokter: idDokter,
         namaDokter: (json['nama_dokter'] ?? '').toString(),
         namaKlinik: (json['nama_klinik'] ?? '').toString(),
       );
     } catch (e) {
-      if (e is ServerException) rethrow;
       // Sebagai fallback, kembalikan objek default
       return const TujuanDataModel(
         idDokter: 0,

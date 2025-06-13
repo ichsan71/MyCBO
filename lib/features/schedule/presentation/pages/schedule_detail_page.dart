@@ -21,7 +21,7 @@ import '../widgets/checkout_form.dart';
 import '../../../../core/presentation/widgets/shimmer_schedule_detail_loading.dart';
 import '../../../check_in/presentation/utils/dialog_helper.dart';
 
-class ScheduleDetailPage extends StatelessWidget {
+class ScheduleDetailPage extends StatefulWidget {
   final Schedule schedule;
   final int userId;
 
@@ -30,6 +30,45 @@ class ScheduleDetailPage extends StatelessWidget {
     required this.schedule,
     required this.userId,
   }) : super(key: key);
+
+  @override
+  State<ScheduleDetailPage> createState() => _ScheduleDetailPageState();
+}
+
+class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Refresh schedule data when page is opened
+    _refreshSchedule();
+  }
+
+  void _refreshSchedule() {
+    context.read<ScheduleBloc>().add(
+          GetSchedulesEvent(userId: widget.userId),
+        );
+  }
+
+  // Loading dialog widget
+  Widget _buildLoadingDialog(String message) {
+    return Dialog(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(20.0)),
+      ),
+      elevation: 8,
+      child: Container(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 24),
+            Text(message),
+          ],
+        ),
+      ),
+    );
+  }
 
   Future<String?> _compressImage(String imagePath) async {
     try {
@@ -76,256 +115,31 @@ class ScheduleDetailPage extends StatelessWidget {
 
   Future<void> _handleCheckin(
       BuildContext context, CheckinRequestModel request) async {
-    // Tampilkan loading dialog dengan tampilan yang lebih menarik
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-          elevation: 8,
-          child: Container(
-            padding: const EdgeInsets.all(24.0),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20.0),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white,
-                  Colors.blue.shade50,
-                ],
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  height: 80,
-                  width: 80,
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade100,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: SizedBox(
-                      width: 50,
-                      height: 50,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 3,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Theme.of(context).primaryColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  "Memproses Check-in",
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  "Mohon tunggu sebentar, kami sedang memproses data Anda",
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                LinearProgressIndicator(
-                  backgroundColor: Colors.grey[200],
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).primaryColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+    if (!mounted) return;
 
     try {
-      // Dapatkan token dari AuthBloc
-      final authState = context.read<AuthBloc>().state;
-      if (authState is! AuthAuthenticated) {
-        // Log error dan tampilkan pesan yang lebih spesifik
-        Logger.error('ScheduleDetailPage',
-            'User tidak terautentikasi, state: ${authState.runtimeType}');
-        throw Exception('User tidak terautentikasi. Silakan login kembali.');
-      }
-
-      // Pastikan user dan token tidak null
-      if (authState.user.token.isEmpty) {
-        Logger.error('ScheduleDetailPage', 'Token user kosong');
-        throw Exception(
-            'Token autentikasi tidak valid. Silakan login kembali.');
-      }
-
-      // Kompres gambar terlebih dahulu
-      final File originalFile = File(request.foto);
-      if (!await originalFile.exists()) {
-        throw Exception('File foto tidak ditemukan');
-      }
-
-      // Log ukuran file asli
-      final originalSize = await originalFile.length();
-      Logger.info(
-          'ScheduleDetailPage', 'Ukuran file asli: ${originalSize ~/ 1024} KB');
-
-      // Kompres gambar dengan metode baru
-      final compressedFilePath = await _compressImage(originalFile.path);
-      File compressedFile;
-
-      if (compressedFilePath != null) {
-        compressedFile = File(compressedFilePath);
-        final compressedSize = await compressedFile.length();
-        Logger.info('ScheduleDetailPage',
-            'Ukuran file setelah kompresi: ${compressedSize ~/ 1024} KB');
-      } else {
-        Logger.warning('ScheduleDetailPage',
-            'Kompresi gambar gagal, menggunakan file asli');
-        compressedFile = originalFile;
-      }
-
-      // Buat MultipartRequest
-      final multipartRequest = http.MultipartRequest(
-        'POST',
-        Uri.parse('https://dev-bco.businesscorporateofficer.com/api/checkin'),
-      );
-
-      // Tambahkan headers
-      multipartRequest.headers.addAll({
-        'Accept': 'application/json',
-        'Authorization': 'Bearer ${authState.user.token}',
-      });
-
-      // Tambahkan fields
-      multipartRequest.fields['id_schedule'] = request.idSchedule.toString();
-      multipartRequest.fields['lokasi'] = request.lokasi;
-      multipartRequest.fields['note'] = request.note;
-
-      // Tambahkan file foto yang telah dikompresi
-      final imageStream = http.ByteStream(compressedFile.openRead());
-      final length = await compressedFile.length();
-
-      final multipartFile = http.MultipartFile(
-        'foto',
-        imageStream,
-        length,
-        filename: 'checkin_photo.jpg',
-      );
-
-      multipartRequest.files.add(multipartFile);
-
-      // Kirim request dengan timeout
-      Logger.info('ScheduleDetailPage', 'Mengirim request check-in...');
-
-      // Set timeout 30 detik
-      final streamedResponse = await multipartRequest.send().timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          throw TimeoutException('Request timeout setelah 30 detik');
-        },
-      );
-
-      final response = await http.Response.fromStream(streamedResponse);
-
-      Logger.info(
-          'ScheduleDetailPage', 'Response status: ${response.statusCode}');
-      Logger.info('ScheduleDetailPage', 'Response body: ${response.body}');
-
-      // Hapus file kompresi temporer
-      if (compressedFilePath != null &&
-          compressedFile.path != originalFile.path) {
-        try {
-          await compressedFile.delete();
-          Logger.info('ScheduleDetailPage', 'File kompresi temporer dihapus');
-        } catch (e) {
-          Logger.warning('ScheduleDetailPage',
-              'Gagal menghapus file kompresi temporer: $e');
-        }
-      }
-
-      // Tutup dialog loading
-      if (context.mounted && Navigator.canPop(context)) {
-        Navigator.of(context).pop();
-      }
-
-      if (response.statusCode == 200) {
-        if (context.mounted) {
-          // Update status jadwal melalui bloc
-          final updateEvent = UpdateScheduleStatusEvent(
-            scheduleId: schedule.id,
-            newStatus: 'Check-in',
-            userId: userId,
-          );
-          context.read<ScheduleBloc>().add(updateEvent);
-
-          // Tampilkan pesan sukses
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Check-in berhasil!'),
-              backgroundColor: Colors.green,
-            ),
+      context.read<ScheduleBloc>().add(
+            CheckInEvent(request: request),
           );
 
-          // Tutup bottom sheet dan navigasi ke halaman schedule
-          Navigator.pop(context); // Close bottom sheet
-          Navigator.pop(context); // Close schedule detail page
-        }
-      } else {
-        if (context.mounted) {
-          // Coba parse error message dari response
-          String errorMessage = 'Gagal melakukan check-in';
-          try {
-            final responseJson = json.decode(response.body);
-            if (responseJson['message'] != null) {
-              errorMessage = responseJson['message'];
-            }
-          } catch (e) {
-            errorMessage = 'Status: ${response.statusCode}';
-          }
+      // Store context for later use
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
+      final navigator = Navigator.of(context);
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } on TimeoutException catch (e) {
-      Logger.error('ScheduleDetailPage', 'Timeout during check-in: $e');
+      await Future.delayed(const Duration(seconds: 2));
 
-      // Tutup dialog loading
-      if (context.mounted && Navigator.canPop(context)) {
-        Navigator.of(context).pop();
-      }
+      if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         const SnackBar(
-          content: Text(
-              'Request timeout. Koneksi internet terlalu lambat atau server tidak merespon.'),
-          backgroundColor: Colors.red,
+          content: Text('Check-in berhasil'),
+          backgroundColor: Colors.green,
         ),
       );
-    } catch (e) {
-      Logger.error('ScheduleDetailPage', 'Error during check-in: $e');
 
-      // Tutup dialog loading
-      if (context.mounted && Navigator.canPop(context)) {
-        Navigator.of(context).pop();
-      }
+      navigator.pop(); // Close bottom sheet
+    } catch (e) {
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -338,258 +152,35 @@ class ScheduleDetailPage extends StatelessWidget {
 
   Future<void> _handleCheckout(
       BuildContext context, CheckoutRequestModel request) async {
-    // Tampilkan loading dialog dengan tampilan yang lebih menarik
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-          elevation: 8,
-          child: Container(
-            padding: const EdgeInsets.all(24.0),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20.0),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white,
-                  Colors.green.shade50,
-                ],
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  height: 80,
-                  width: 80,
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade100,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: SizedBox(
-                      width: 50,
-                      height: 50,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 3,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Colors.green,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  "Memproses Check-out",
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.green[700],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  "Mohon tunggu sebentar, kami sedang memproses data Anda",
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                LinearProgressIndicator(
-                  backgroundColor: Colors.grey[200],
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                    Colors.green,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+    if (!mounted) return;
 
     try {
-      // Dapatkan token dari AuthBloc
-      final authState = context.read<AuthBloc>().state;
-      if (authState is! AuthAuthenticated) {
-        // Log error dan tampilkan pesan yang lebih spesifik
-        Logger.error('ScheduleDetailPage',
-            'User tidak terautentikasi, state: ${authState.runtimeType}');
-        throw Exception('User tidak terautentikasi. Silakan login kembali.');
-      }
-
-      // Pastikan user dan token tidak null
-      if (authState.user.token.isEmpty) {
-        Logger.error('ScheduleDetailPage', 'Token user kosong');
-        throw Exception(
-            'Token autentikasi tidak valid. Silakan login kembali.');
-      }
-
-      // Kompres gambar terlebih dahulu
-      final File originalFile = File(request.foto);
-      if (!await originalFile.exists()) {
-        throw Exception('File foto tidak ditemukan');
-      }
-
-      // Log ukuran file asli
-      final originalSize = await originalFile.length();
-      Logger.info(
-          'ScheduleDetailPage', 'Ukuran file asli: ${originalSize ~/ 1024} KB');
-
-      // Kompres gambar dengan metode baru
-      final compressedFilePath = await _compressImage(originalFile.path);
-      File compressedFile;
-
-      if (compressedFilePath != null) {
-        compressedFile = File(compressedFilePath);
-        final compressedSize = await compressedFile.length();
-        Logger.info('ScheduleDetailPage',
-            'Ukuran file setelah kompresi: ${compressedSize ~/ 1024} KB');
-      } else {
-        Logger.warning('ScheduleDetailPage',
-            'Kompresi gambar gagal, menggunakan file asli');
-        compressedFile = originalFile;
-      }
-
-      // Buat MultipartRequest
-      final multipartRequest = http.MultipartRequest(
-        'POST',
-        Uri.parse('https://dev-bco.businesscorporateofficer.com/api/checkout'),
-      );
-
-      // Tambahkan headers
-      multipartRequest.headers.addAll({
-        'Accept': 'application/json',
-        'Authorization': 'Bearer ${authState.user.token}',
-      });
-
-      // Tambahkan fields
-      multipartRequest.fields['id_schedule'] = request.idSchedule.toString();
-      multipartRequest.fields['status'] = request.status;
-      multipartRequest.fields['note'] = request.note;
-      multipartRequest.fields['tgl_schedule_lanjutan'] =
-          request.tglScheduleLanjutan;
-
-      // Tambahkan file foto yang telah dikompresi
-      final imageStream = http.ByteStream(compressedFile.openRead());
-      final length = await compressedFile.length();
-
-      final multipartFile = http.MultipartFile(
-        'foto',
-        imageStream,
-        length,
-        filename: 'checkout_photo.jpg',
-      );
-
-      multipartRequest.files.add(multipartFile);
-
-      // Kirim request dengan timeout
-      Logger.info('ScheduleDetailPage', 'Mengirim request check-out...');
-
-      // Set timeout 30 detik
-      final streamedResponse = await multipartRequest.send().timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          throw TimeoutException('Request timeout setelah 30 detik');
-        },
-      );
-
-      final response = await http.Response.fromStream(streamedResponse);
-
-      Logger.info(
-          'ScheduleDetailPage', 'Response status: ${response.statusCode}');
-      Logger.info('ScheduleDetailPage', 'Response body: ${response.body}');
-
-      // Hapus file kompresi temporer
-      if (compressedFilePath != null &&
-          compressedFile.path != originalFile.path) {
-        try {
-          await compressedFile.delete();
-          Logger.info('ScheduleDetailPage', 'File kompresi temporer dihapus');
-        } catch (e) {
-          Logger.warning('ScheduleDetailPage',
-              'Gagal menghapus file kompresi temporer: $e');
-        }
-      }
-
-      // Tutup dialog loading
-      if (context.mounted && Navigator.canPop(context)) {
-        Navigator.of(context).pop();
-      }
-
-      if (response.statusCode == 200) {
-        if (context.mounted) {
-          // Update status jadwal melalui bloc
-          final updateEvent = UpdateScheduleStatusEvent(
-            scheduleId: schedule.id,
-            newStatus: request.status,
-            userId: userId,
-          );
-          context.read<ScheduleBloc>().add(updateEvent);
-
-          // Tampilkan pesan sukses
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Check-out berhasil!'),
-              backgroundColor: Colors.green,
+      context.read<ScheduleBloc>().add(
+            CheckOutEvent(
+              request: request,
+              userId: widget.userId,
             ),
           );
 
-          // Tutup bottom sheet dan navigasi ke halaman schedule
-          Navigator.pop(context); // Close bottom sheet
-          Navigator.pop(context); // Close schedule detail page
-        }
-      } else {
-        if (context.mounted) {
-          // Coba parse error message dari response
-          String errorMessage = 'Gagal melakukan check-out';
-          try {
-            final responseJson = json.decode(response.body);
-            if (responseJson['message'] != null) {
-              errorMessage = responseJson['message'];
-            }
-          } catch (e) {
-            errorMessage = 'Status: ${response.statusCode}';
-          }
+      // Store context for later use
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
+      final navigator = Navigator.of(context);
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } on TimeoutException catch (e) {
-      Logger.error('ScheduleDetailPage', 'Timeout during check-out: $e');
+      await Future.delayed(const Duration(seconds: 2));
 
-      // Tutup dialog loading
-      if (context.mounted && Navigator.canPop(context)) {
-        Navigator.of(context).pop();
-      }
+      if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         const SnackBar(
-          content: Text(
-              'Request timeout. Koneksi internet terlalu lambat atau server tidak merespon.'),
-          backgroundColor: Colors.red,
+          content: Text('Check-out berhasil'),
+          backgroundColor: Colors.green,
         ),
       );
-    } catch (e) {
-      Logger.error('ScheduleDetailPage', 'Error during check-out: $e');
 
-      // Tutup dialog loading
-      if (context.mounted && Navigator.canPop(context)) {
-        Navigator.of(context).pop();
-      }
+      // Close bottom sheet and navigate to schedule list
+      navigator.popUntil((route) => route.isFirst);
+    } catch (e) {
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -602,55 +193,19 @@ class ScheduleDetailPage extends StatelessWidget {
 
   bool _hasUncheckedOutSchedules(List<Schedule> schedules) {
     return schedules.any((s) =>
-        s.id != schedule.id && // Don't check current schedule
+        s.id != widget.schedule.id && // Don't check current schedule
         (s.statusCheckin.toLowerCase().trim() == 'check-in' ||
             s.statusCheckin.toLowerCase().trim() == 'belum checkout'));
   }
 
   void _showCheckinForm(BuildContext context) {
-    final scheduleBloc = context.read<ScheduleBloc>();
-    final scheduleState = scheduleBloc.state;
+    if (!mounted) return;
 
-    if (scheduleState is! ScheduleLoaded) {
-      // If schedules are not loaded, fetch them first
-      scheduleBloc.add(GetSchedulesEvent(userId: userId));
+    final BuildContext currentContext = context;
+    final scheduleBloc = currentContext.read<ScheduleBloc>();
 
-      // Listen for the state change with proper subscription management
-      StreamSubscription? subscription;
-      subscription = scheduleBloc.stream.listen((state) {
-        if (state is ScheduleLoaded) {
-          // Cancel the subscription since we got what we needed
-          subscription?.cancel();
-
-          if (_hasUncheckedOutSchedules(state.schedules)) {
-            DialogHelper.showCheckInWarningDialog(context)
-                .then((shouldProceed) {
-              if (shouldProceed && context.mounted) {
-                _showCheckinFormSheet(context, scheduleBloc);
-              }
-            });
-          } else if (context.mounted) {
-            _showCheckinFormSheet(context, scheduleBloc);
-          }
-        }
-      });
-    } else {
-      // Schedules are already loaded
-      if (_hasUncheckedOutSchedules(scheduleState.schedules)) {
-        DialogHelper.showCheckInWarningDialog(context).then((shouldProceed) {
-          if (shouldProceed) {
-            _showCheckinFormSheet(context, scheduleBloc);
-          }
-        });
-      } else {
-        _showCheckinFormSheet(context, scheduleBloc);
-      }
-    }
-  }
-
-  void _showCheckinFormSheet(BuildContext context, ScheduleBloc scheduleBloc) {
     showModalBottomSheet(
-      context: context,
+      context: currentContext,
       isScrollControlled: true,
       enableDrag: true,
       backgroundColor: Colors.white,
@@ -667,10 +222,11 @@ class ScheduleDetailPage extends StatelessWidget {
               ),
               child: SingleChildScrollView(
                 child: CheckinForm(
-                  scheduleId: schedule.id,
-                  userId: userId,
-                  onSubmit: (request) =>
-                      _handleCheckin(builderContext, request),
+                  scheduleId: widget.schedule.id,
+                  userId: widget.userId,
+                  onSubmit: (request) {
+                    _handleCheckin(builderContext, request);
+                  },
                 ),
               ),
             ),
@@ -678,494 +234,555 @@ class ScheduleDetailPage extends StatelessWidget {
         ),
       ),
     ).then((_) {
-      // Logging saat bottom sheet ditutup
+      if (!mounted) return;
       Logger.info('ScheduleDetailPage', 'Check-in form closed');
     }).catchError((error) {
-      // Menangkap error yang terjadi
+      if (!mounted) return;
       Logger.error('ScheduleDetailPage', 'Error on check-in form: $error');
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Terjadi kesalahan: ${error.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(currentContext).showSnackBar(
+        SnackBar(
+          content: Text('Terjadi kesalahan: ${error.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     });
   }
 
   void _showCheckoutForm(BuildContext context) {
-    final scheduleBloc = context.read<ScheduleBloc>();
+    if (!mounted) return;
+
+    final BuildContext currentContext = context;
+    final scheduleBloc = currentContext.read<ScheduleBloc>();
 
     showModalBottomSheet(
-      context: context,
+      context: currentContext,
       isScrollControlled: true,
       enableDrag: true,
+      isDismissible: false,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (bottomSheetContext) => SafeArea(
-        child: BlocProvider<ScheduleBloc>.value(
-          value: scheduleBloc,
-          child: Builder(
-            builder: (builderContext) => Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(bottomSheetContext).viewInsets.bottom,
-              ),
-              child: SingleChildScrollView(
-                child: CheckoutForm(
-                  scheduleId: schedule.id,
-                  userId: userId,
-                  onSubmit: (request) =>
-                      _handleCheckout(builderContext, request),
+      builder: (bottomSheetContext) => WillPopScope(
+        onWillPop: () async {
+          // Show confirmation dialog before closing
+          final shouldClose = await showDialog<bool>(
+            context: bottomSheetContext,
+            builder: (context) => AlertDialog(
+              title: const Text('Konfirmasi'),
+              content:
+                  const Text('Apakah Anda yakin ingin membatalkan check-out?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Tidak'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Ya'),
+                ),
+              ],
+            ),
+          );
+          return shouldClose ?? false;
+        },
+        child: SafeArea(
+          child: BlocProvider<ScheduleBloc>.value(
+            value: scheduleBloc,
+            child: Builder(
+              builder: (builderContext) => Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(bottomSheetContext).viewInsets.bottom,
+                ),
+                child: SingleChildScrollView(
+                  child: CheckoutForm(
+                    schedule: widget.schedule,
+                    onSubmit: (request) {
+                      _handleCheckout(builderContext, request);
+                    },
+                  ),
                 ),
               ),
             ),
           ),
         ),
       ),
-    ).then((_) {
-      // Logging saat bottom sheet ditutup
-      Logger.info('ScheduleDetailPage', 'Check-out form closed');
-    }).catchError((error) {
-      // Menangkap error yang terjadi
-      Logger.error('ScheduleDetailPage', 'Error on check-out form: $error');
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Terjadi kesalahan: ${error.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    });
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Tambahkan logging untuk status dan draft
-    Logger.info('ScheduleDetailPage', '=== DEBUG INFO ===');
-    Logger.info(
-        'ScheduleDetailPage', 'Status Check-in: ${schedule.statusCheckin}');
-    Logger.info('ScheduleDetailPage',
-        'Status Check-in (lowercase): ${schedule.statusCheckin.toLowerCase()}');
-    Logger.info('ScheduleDetailPage', 'Draft: ${schedule.draft}');
-    Logger.info('ScheduleDetailPage',
-        'Draft (lowercase): ${schedule.draft?.toLowerCase() ?? ''}');
-    Logger.info('ScheduleDetailPage',
-        'Draft (lowercase & trim): ${schedule.draft?.toLowerCase().trim() ?? ''}');
-    Logger.info('ScheduleDetailPage', 'Approved: ${schedule.approved}');
-    Logger.info('ScheduleDetailPage', '================');
-
-    final theme = Theme.of(context);
-    final lowerDraft = schedule.draft?.toLowerCase().trim() ?? '';
-    final lowerStatus = schedule.statusCheckin.toLowerCase().trim();
-
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<ScheduleBloc>(
-          create: (_) => sl<ScheduleBloc>(),
-        ),
-      ],
-      child: Builder(
-        builder: (context) => Scaffold(
-          appBar: AppBar(
-            title: const Text('Detail Jadwal'),
-            centerTitle: true,
+    return WillPopScope(
+      onWillPop: () async {
+        // Refresh schedule list before popping
+        _refreshSchedule();
+        return true;
+      },
+      child: Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.background,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(80),
+          child: AppBar(
             elevation: 0,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            title: Text(
+              'Detail Jadwal',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 20,
+                color: Colors.white,
+              ),
+            ),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () {
+                // Refresh schedule list before popping
+                _refreshSchedule();
+                Navigator.pop(context);
+              },
+            ),
+            actions: [
+              if (widget.schedule.draft
+                  .toLowerCase()
+                  .trim()
+                  .contains('rejected'))
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.white),
+                  onPressed: () async {
+                    await Navigator.pushNamed(
+                      context,
+                      '/edit_schedule',
+                      arguments: widget.schedule.id,
+                    );
+                    // Refresh schedule after editing
+                    _refreshSchedule();
+                  },
+                ),
+            ],
+            flexibleSpace: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(20),
+              child: Container(
+                width: double.infinity,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.background,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+              ),
+            ),
           ),
-          body: BlocBuilder<ScheduleBloc, ScheduleState>(
-              builder: (context, state) {
+        ),
+        body: BlocConsumer<ScheduleBloc, ScheduleState>(
+          listener: (context, state) {
+            if (state is CheckInSuccess || state is CheckOutSuccess) {
+              // Show success message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    state is CheckInSuccess
+                        ? 'Check-in berhasil!'
+                        : 'Check-out berhasil!',
+                  ),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              // Pop back to schedule list
+              Navigator.pop(context);
+            } else if (state is ScheduleError) {
+              // Show error message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+          builder: (context, state) {
             if (state is ScheduleLoading) {
               return const ShimmerScheduleDetailLoading();
             }
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Informasi Utama
-                  _buildCard(
-                    title: 'Informasi Jadwal',
-                    icon: Icons.calendar_today,
-                    iconColor: theme.colorScheme.primary,
-                    children: [
-                      _buildDetailRow(
-                        label: 'Tipe Schedule',
-                        value:
-                            schedule.namaTipeSchedule ?? schedule.tipeSchedule,
-                        icon: Icons.label_outline,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildDetailRow(
-                        label: 'Tanggal Visit',
-                        value: schedule.tglVisit,
-                        icon: Icons.event,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildDetailRow(
-                        label: 'Shift',
-                        value: schedule.shift ?? '',
-                        icon: Icons.access_time,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildDetailRowWithStatus(
-                        label: 'Status',
-                        value: schedule.statusCheckin,
-                        status: schedule.statusCheckin,
-                        draft: schedule.draft ?? '',
-                        approved: schedule.approved,
-                        icon: Icons.info_outline,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
+            final theme = Theme.of(context);
+            final lowerDraft = widget.schedule.draft.toLowerCase().trim();
+            final status = widget.schedule.statusCheckin.toLowerCase().trim();
+            final isToday = _isScheduleToday();
 
-                  // Informasi Tujuan
-                  _buildCard(
-                    title: 'Informasi Tujuan',
-                    icon: Icons.person,
-                    iconColor: theme.colorScheme.secondary,
-                    children: [
-                      _buildDetailRow(
-                        label: 'Tujuan',
-                        value: schedule.tujuan,
-                        icon: Icons.location_on_outlined,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildDetailRow(
-                        label: 'Nama Tujuan',
-                        value: schedule.namaTujuan,
-                        icon: Icons.account_circle_outlined,
-                      ),
-                      const SizedBox(height: 12),
-                      if (schedule.namaSpesialis?.isNotEmpty == true) ...[
-                        const SizedBox(height: 12),
-                        _buildDetailRow(
-                          label: 'Spesialis',
-                          value: schedule.namaSpesialis ?? '-',
-                          icon: Icons.local_hospital_outlined,
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Informasi Produk
-                  _buildCard(
-                    title: 'Informasi Produk',
-                    icon: Icons.shopping_bag,
-                    iconColor: theme.colorScheme.tertiary,
-                    children: [
-                      _buildDetailRow(
-                        label: 'Nama Produk',
-                        value: schedule.namaProduct ?? '-',
-                        icon: Icons.medication_outlined,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildDetailRow(
-                        label: 'Divisi',
-                        value: schedule.namaDivisi ?? '-',
-                        icon: Icons.category_outlined,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Informasi Tambahan
-                  _buildCard(
-                    title: 'Catatan',
-                    icon: Icons.note,
-                    iconColor: theme.colorScheme.primary,
-                    children: [
-                      _buildDetailRow(
-                        label: 'Catatan',
-                        value: schedule.note?.isNotEmpty == true
-                            ? schedule.note ?? ''
-                            : '',
-                        icon: Icons.comment_outlined,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildDetailRowWithStatus(
-                        label: 'Status Jadwal',
-                        value: schedule.approved == 1
-                            ? 'Disetujui'
-                            : lowerDraft.contains('rejected')
-                                ? 'Ditolak'
-                                : 'Belum Disetujui',
-                        status: schedule.approved == 1
-                            ? 'approved'
-                            : lowerDraft.contains('rejected')
-                                ? 'rejected'
-                                : 'pending',
-                        draft: schedule.draft ?? '',
-                        approved: schedule.approved,
-                        icon: Icons.verified_outlined,
-                      ),
-                      if (schedule.namaApprover != null &&
-                          schedule.namaApprover!.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        _buildDetailRow(
-                          label: 'Approver Jadwal',
-                          value: schedule.namaApprover!,
-                          icon: Icons.person_outlined,
-                        ),
-                      ],
-                      if (schedule.approved == 1) ...[
-                        const SizedBox(height: 12),
-                        _buildDetailRow(
-                          label: 'Approver Realisasi',
-                          value: schedule.realisasiApprove != null &&
-                                  schedule.realisasiApprove! > 0
-                              ? schedule.namaApprover ?? 'Tidak diketahui'
-                              : 'Belum disetujui',
-                          icon: Icons.approval_outlined,
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
-            );
-          }),
-          bottomNavigationBar: () {
-            Logger.info(
-                'ScheduleDetailPage', '=== BOTTOM NAVIGATION STATUS ===');
-            Logger.info(
-                'ScheduleDetailPage', 'Draft Raw Value: "${schedule.draft}"');
-            Logger.info('ScheduleDetailPage',
-                'Draft Length: ${schedule.draft?.length ?? 0}');
-            Logger.info('ScheduleDetailPage', 'Draft Characters:');
-
-            Logger.info('ScheduleDetailPage', 'Lower Draft: "$lowerDraft"');
-            Logger.info('ScheduleDetailPage',
-                'Lower Draft Length: ${lowerDraft.length}');
-            Logger.info('ScheduleDetailPage',
-                'Status Raw: "${schedule.statusCheckin}"');
-            Logger.info('ScheduleDetailPage', 'Lower Status: "$lowerStatus"');
-            Logger.info('ScheduleDetailPage',
-                'Is Draft Exactly "rejected"?: ${lowerDraft == "rejected"}');
-            Logger.info('ScheduleDetailPage',
-                'Draft Contains "rejected"?: ${lowerDraft.contains("rejected")}');
-            Logger.info(
-                'ScheduleDetailPage', '================================');
-
-            // Tampilkan bottom bar dengan konten yang sesuai
-            final DateTime? visitDate = schedule.tglVisit.isNotEmpty
-                ? DateTime.tryParse(schedule.tglVisit)
-                : null;
-            final DateTime now = DateTime.now();
-            final bool isToday = visitDate != null &&
-                visitDate.year == now.year &&
-                visitDate.month == now.month &&
-                visitDate.day == now.day;
-            return Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (lowerDraft.contains('rejected'))
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+            return Container(
+              color: theme.colorScheme.background,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildCard(
+                      title: 'Informasi Jadwal',
+                      icon: Icons.calendar_today,
+                      iconColor: theme.colorScheme.primary,
                       children: [
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.red.shade300,
-                              width: 1,
-                            ),
+                        _buildDetailRow(
+                          label: 'Tipe Schedule',
+                          value: widget.schedule.namaTipeSchedule ??
+                              widget.schedule.tipeSchedule,
+                          icon: Icons.label_outline,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildDetailRow(
+                          label: 'Tanggal Visit',
+                          value: widget.schedule.tglVisit,
+                          icon: Icons.event,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildDetailRow(
+                          label: 'Shift',
+                          value: widget.schedule.shift ?? '',
+                          icon: Icons.access_time,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildDetailRowWithStatus(
+                          label: 'Status',
+                          value: _getDetailedStatus(widget.schedule),
+                          status: widget.schedule.statusCheckin,
+                          draft: widget.schedule.draft ?? '',
+                          approved: widget.schedule.approved,
+                          icon: Icons.info_outline,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _buildCard(
+                      title: 'Informasi Tujuan',
+                      icon: Icons.person,
+                      iconColor: theme.colorScheme.secondary,
+                      children: [
+                        _buildDetailRow(
+                          label: 'Tujuan',
+                          value: widget.schedule.tujuan,
+                          icon: Icons.location_on_outlined,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildDetailRow(
+                          label: 'Nama Tujuan',
+                          value: widget.schedule.namaTujuan,
+                          icon: Icons.account_circle_outlined,
+                        ),
+                        if (widget.schedule.namaSpesialis?.isNotEmpty ==
+                            true) ...[
+                          const SizedBox(height: 12),
+                          _buildDetailRow(
+                            label: 'Spesialis',
+                            value: widget.schedule.namaSpesialis ?? '-',
+                            icon: Icons.local_hospital_outlined,
                           ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.cancel_outlined,
-                                color: Colors.red.shade700,
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _buildCard(
+                      title: 'Informasi Produk',
+                      icon: Icons.shopping_bag,
+                      iconColor: theme.colorScheme.tertiary,
+                      children: [
+                        _buildDetailRow(
+                          label: 'Nama Produk',
+                          value: widget.schedule.namaProduct ?? '-',
+                          icon: Icons.medication_outlined,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildDetailRow(
+                          label: 'Divisi',
+                          value: widget.schedule.namaDivisi ?? '-',
+                          icon: Icons.category_outlined,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _buildCard(
+                      title: 'Catatan',
+                      icon: Icons.note,
+                      iconColor: theme.colorScheme.primary,
+                      children: [
+                        _buildDetailRow(
+                          label: 'Catatan',
+                          value: widget.schedule.note?.isNotEmpty == true
+                              ? widget.schedule.note ?? ''
+                              : '',
+                          icon: Icons.comment_outlined,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildDetailRowWithStatus(
+                          label: 'Status Jadwal',
+                          value: _getDetailedStatus(widget.schedule),
+                          status: widget.schedule.statusCheckin,
+                          draft: widget.schedule.draft ?? '',
+                          approved: widget.schedule.approved,
+                          icon: Icons.verified_outlined,
+                        ),
+                        if (widget.schedule.namaApprover != null &&
+                            widget.schedule.namaApprover!.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          _buildDetailRow(
+                            label: 'Approver Jadwal',
+                            value: widget.schedule.namaApprover!,
+                            icon: Icons.person_outlined,
+                          ),
+                        ],
+                        if (widget.schedule.approved == 1) ...[
+                          const SizedBox(height: 12),
+                          _buildDetailRow(
+                            label: 'Approver Realisasi',
+                            value: widget.schedule.realisasiApprove != null &&
+                                    widget.schedule.realisasiApprove! > 0
+                                ? widget.schedule.namaApprover ??
+                                    'Tidak diketahui'
+                                : 'Belum disetujui',
+                            icon: Icons.approval_outlined,
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    if (widget.schedule.approved == 0 &&
+                        !widget.schedule.draft
+                            .toLowerCase()
+                            .trim()
+                            .contains('rejected'))
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.orange.shade200,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.warning_amber_rounded,
+                                color: Colors.orange.shade800,
                                 size: 24,
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  'Jadwal ditolak oleh approver',
-                                  style: TextStyle(
-                                    color: Colors.red.shade700,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Jadwal Belum Disetujui',
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                      color: Colors.orange.shade800,
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Jadwal ini masih menunggu persetujuan dari approver. Anda tidak dapat melakukan check-in sebelum jadwal disetujui.',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      color: Colors.orange.shade700,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    // Tambahkan warning untuk realisasi yang belum disetujui
+                    if (widget.schedule.approved == 1 &&
+                        (widget.schedule.statusCheckin.toLowerCase().trim() ==
+                                'detail' ||
+                            widget.schedule.statusCheckin
+                                    .toLowerCase()
+                                    .trim() ==
+                                'check-out' ||
+                            widget.schedule.statusCheckin
+                                    .toLowerCase()
+                                    .trim() ==
+                                'selesai') &&
+                        (widget.schedule.realisasiApprove == null ||
+                            widget.schedule.realisasiApprove == 0))
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.orange.shade200,
+                            width: 1,
                           ),
                         ),
-                        ElevatedButton(
-                          onPressed: () {
-                            // TODO: Navigate to Edit Schedule page
-                            Logger.info('ScheduleDetailPage',
-                                'Edit Schedule button pressed for ID: ${schedule.id}');
-                            // Example Navigation (replace with actual route)
-                            Navigator.pushNamed(
-                              context,
-                              '/edit_schedule',
-                              arguments:
-                                  schedule.id, // Pass schedule ID as argument
-                            );
-                          },
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.pending_outlined,
+                                color: Colors.orange.shade800,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Menunggu Persetujuan Realisasi',
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                      color: Colors.orange.shade800,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Realisasi kunjungan Anda sedang dalam proses persetujuan. Silakan tunggu hingga approver menyetujui realisasi kunjungan.',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      color: Colors.orange.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 24),
+                    if (status == 'belum checkin' &&
+                        widget.schedule.approved == 1 &&
+                        !lowerDraft.contains('rejected'))
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        child: ElevatedButton(
+                          onPressed: isToday
+                              ? () {
+                                  Logger.info('ScheduleDetailPage',
+                                      'Status saat ini: ${widget.schedule.statusCheckin}');
+                                  Logger.info('ScheduleDetailPage',
+                                      'Tombol check-in ditekan');
+                                  _showCheckinForm(context);
+                                }
+                              : null,
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Theme.of(context)
-                                .colorScheme
-                                .secondary, // Or a suitable color
+                            backgroundColor: theme.colorScheme.primary,
                             minimumSize: const Size(double.infinity, 50),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
+                            elevation: 2,
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.edit,
+                              const Icon(
+                                Icons.login,
                                 color: Colors.white,
                                 size: 24,
                               ),
                               const SizedBox(width: 12),
                               Text(
-                                'Edit Jadwal',
-                                style: const TextStyle(
+                                isToday
+                                    ? 'Check-in'
+                                    : 'Check-in hanya untuk hari ini',
+                                style: GoogleFonts.poppins(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w600,
                                   color: Colors.white,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ],
-                    )
-                  else if (lowerStatus == 'belum checkin' &&
-                      schedule.approved == 1)
-                    ElevatedButton(
-                      onPressed:
-                          isToday ? () => _showCheckinForm(context) : null,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: theme.colorScheme.primary,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.login,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            isToday
-                                ? 'Check-in'
-                                : 'Check-in hanya untuk hari ini',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                      )
+                    else if (status == 'check-in' || status == 'belum checkout')
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        child: ElevatedButton(
+                          onPressed: isToday
+                              ? () {
+                                  Logger.info('ScheduleDetailPage',
+                                      'Status saat ini: ${widget.schedule.statusCheckin}');
+                                  Logger.info('ScheduleDetailPage',
+                                      'Tombol check-out ditekan');
+                                  _showCheckoutForm(context);
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: theme.colorScheme.secondary,
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
+                            elevation: 2,
                           ),
-                        ],
-                      ),
-                    )
-                  else if (lowerStatus == 'belum checkin' &&
-                      schedule.approved != 1)
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.orange.shade300,
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.warning_amber_rounded,
-                            color: Colors.orange.shade700,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Jadwal belum disetujui oleh approver',
-                              style: TextStyle(
-                                color: Colors.orange.shade700,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.logout,
+                                color: Colors.white,
+                                size: 24,
                               ),
-                            ),
+                              const SizedBox(width: 12),
+                              Text(
+                                isToday
+                                    ? 'Check-out'
+                                    : 'Check-out hanya untuk hari ini',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    )
-                  else if (lowerStatus == 'check-in' ||
-                      lowerStatus == 'belum checkout')
-                    ElevatedButton(
-                      onPressed: isToday
-                          ? () {
-                              Logger.info('ScheduleDetailPage',
-                                  'Status saat ini: \\${schedule.statusCheckin}');
-                              Logger.info('ScheduleDetailPage',
-                                  'Tombol check-out ditekan');
-                              _showCheckoutForm(context);
-                            }
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: theme.colorScheme.secondary,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.logout,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            isToday
-                                ? 'Check-out'
-                                : 'Check-out hanya untuk hari ini',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
+                    const SizedBox(height: 24),
+                  ],
+                ),
               ),
             );
-          }(),
+          },
         ),
       ),
     );
+  }
+
+  bool _isScheduleToday() {
+    final now = DateTime.now();
+    final scheduleDate = DateTime.parse(widget.schedule.tglVisit);
+    return now.year == scheduleDate.year &&
+        now.month == scheduleDate.month &&
+        now.day == scheduleDate.day;
   }
 
   Widget _buildCard({
@@ -1174,39 +791,34 @@ class ScheduleDetailPage extends StatelessWidget {
     required Color iconColor,
     required List<Widget> children,
   }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
+    final theme = Theme.of(context);
+    final TextStyle titleStyle = theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.bold,
+        ) ??
+        const TextStyle(fontWeight: FontWeight.bold);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withValues(alpha: 50),
         borderRadius: BorderRadius.circular(12),
-      ),
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  icon,
-                  color: iconColor,
-                  size: 24,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: iconColor,
-                  ),
-                ),
-              ],
-            ),
-            const Divider(height: 30),
-            ...children,
-          ],
+        border: Border.all(
+          color: theme.colorScheme.surface.withValues(alpha: 127),
         ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: iconColor),
+              const SizedBox(width: 8),
+              Text(title, style: titleStyle),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...children,
+        ],
       ),
     );
   }
@@ -1216,34 +828,253 @@ class ScheduleDetailPage extends StatelessWidget {
     required String value,
     required IconData icon,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+
+    final labelStyle = textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurface.withOpacity(0.6),
+        ) ??
+        TextStyle(
+          color: theme.colorScheme.onSurface.withOpacity(0.6),
+        );
+
+    final valueStyle = textTheme.titleMedium ?? const TextStyle();
+
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: theme.colorScheme.primary),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: labelStyle),
+              Text(value, style: valueStyle),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getDetailedStatus(Schedule schedule) {
+    final lowerDraft = schedule.draft.toLowerCase().trim();
+    final status = schedule.statusCheckin.toLowerCase().trim();
+
+    if (lowerDraft.contains('rejected')) {
+      return 'Ditolak';
+    }
+
+    if (schedule.approved == 0) {
+      return 'Menunggu Persetujuan';
+    }
+
+    // Schedule is approved (schedule.approved == 1)
+    switch (status) {
+      case 'belum checkin':
+        return 'Disetujui - Menunggu Check-in';
+      case 'check-in':
+      case 'belum checkout':
+        return 'Disetujui - Menunggu Check-out';
+      case 'check-out':
+      case 'selesai':
+        return 'Selesai';
+      default:
+        return 'Status Tidak Diketahui';
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Ditolak':
+        return Colors.red.shade700;
+      case 'Menunggu Persetujuan':
+        return Colors.orange.shade700;
+      case 'Disetujui - Menunggu Check-in':
+        return Colors.blue.shade700;
+      case 'Disetujui - Menunggu Check-out':
+        return Colors.green.shade700;
+      case 'Selesai':
+        return Colors.teal.shade700;
+      default:
+        return Colors.grey.shade700;
+    }
+  }
+
+  Widget _buildStatusBadge(Schedule schedule) {
+    final lowerStatus = schedule.statusCheckin.toLowerCase().trim();
+    final lowerDraft = schedule.draft.toLowerCase().trim();
+
+    String statusText;
+    Color statusColor;
+    IconData statusIcon;
+
+    // Cek status ditolak
+    if (lowerDraft.contains('rejected')) {
+      statusText = 'Ditolak';
+      statusColor = Colors.red.shade700;
+      statusIcon = Icons.cancel_outlined;
+    }
+    // Cek status menunggu persetujuan
+    else if (schedule.approved == 0) {
+      statusText = 'Menunggu Persetujuan';
+      statusColor = Colors.orange.shade700;
+      statusIcon = Icons.pending_outlined;
+    }
+    // Untuk jadwal yang sudah disetujui
+    else if (schedule.approved == 1) {
+      // Jika status check-in adalah detail dan realisasi belum disetujui
+      if ((lowerStatus == 'detail' ||
+              lowerStatus == 'check-out' ||
+              lowerStatus == 'selesai') &&
+          (schedule.realisasiApprove == null ||
+              schedule.realisasiApprove == 0)) {
+        statusText = 'Menunggu Persetujuan';
+        statusColor = Colors.orange.shade700;
+        statusIcon = Icons.pending_outlined;
+      }
+      // Jika sudah check-out atau selesai dan realisasi disetujui
+      else if ((lowerStatus == 'check-out' ||
+              lowerStatus == 'selesai' ||
+              lowerStatus == 'detail') &&
+          schedule.realisasiApprove == 1) {
+        statusText = 'Selesai';
+        statusColor = Colors.teal.shade700;
+        statusIcon = Icons.check_circle_outlined;
+      }
+      // Status check-in
+      else if (lowerStatus == 'belum checkin') {
+        statusText = 'Check-in';
+        statusColor = Colors.blue.shade700;
+        statusIcon = Icons.login_outlined;
+      }
+      // Status check-out
+      else if (lowerStatus == 'check-in' || lowerStatus == 'belum checkout') {
+        statusText = 'Check-out';
+        statusColor = Colors.green.shade700;
+        statusIcon = Icons.logout_outlined;
+      } else {
+        statusText = schedule.statusCheckin;
+        statusColor = Colors.grey.shade700;
+        statusIcon = Icons.help_outline;
+      }
+    } else {
+      statusText = schedule.statusCheckin;
+      statusColor = Colors.grey.shade700;
+      statusIcon = Icons.help_outline;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: statusColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: statusColor.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            icon,
-            size: 18,
-            color: Colors.grey[600],
+            statusIcon,
+            size: 16,
+            color: statusColor,
           ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[600],
-              ),
+          const SizedBox(width: 4),
+          Text(
+            statusText,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: statusColor,
             ),
           ),
-          const Text(': '),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWarningBanner(Schedule schedule) {
+    final lowerStatus = schedule.statusCheckin.toLowerCase().trim();
+    final lowerDraft = schedule.draft.toLowerCase().trim();
+
+    // Tampilkan warning untuk jadwal yang menunggu persetujuan
+    if (schedule.approved == 0 && !lowerDraft.contains('rejected')) {
+      return _buildWarningCard(
+        'Jadwal ini sedang menunggu persetujuan.',
+        'Anda tidak dapat melakukan check-in sebelum jadwal disetujui.',
+        Colors.orange.shade700,
+      );
+    }
+    // Tampilkan warning untuk jadwal yang menunggu persetujuan realisasi
+    else if (schedule.approved == 1 &&
+        (lowerStatus == 'detail' ||
+            lowerStatus == 'check-out' ||
+            lowerStatus == 'selesai') &&
+        (schedule.realisasiApprove == null || schedule.realisasiApprove == 0)) {
+      return _buildWarningCard(
+        'Menunggu persetujuan realisasi kunjungan.',
+        'Realisasi kunjungan Anda sedang dalam proses persetujuan.',
+        Colors.orange.shade700,
+      );
+    }
+    // Tampilkan warning untuk jadwal yang ditolak
+    else if (lowerDraft.contains('rejected')) {
+      return _buildWarningCard(
+        'Jadwal ini telah ditolak.',
+        schedule.alasanReject?.isNotEmpty == true
+            ? 'Alasan: ${schedule.alasanReject}'
+            : 'Silakan hubungi approver Anda untuk informasi lebih lanjut.',
+        Colors.red.shade700,
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildWarningCard(String title, String message, Color color) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.warning_amber_rounded,
+            color: color,
+            size: 24,
+          ),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              value,
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w500,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: color.withOpacity(0.8),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -1259,66 +1090,31 @@ class ScheduleDetailPage extends StatelessWidget {
     required int approved,
     required IconData icon,
   }) {
-    // Tentukan warna berdasarkan status
-    Color statusColor;
-    if (status.toLowerCase().contains('approved') ||
-        status.toLowerCase().contains('disetujui') ||
-        (status.toLowerCase() == 'belum checkin' && approved == 1)) {
-      statusColor = Colors.green;
-    } else if (status.toLowerCase().contains('reject') ||
-        status.toLowerCase().contains('ditolak') ||
-        draft.toLowerCase().trim().contains('rejected')) {
-      statusColor = Colors.red;
-    } else if (status.toLowerCase().contains('check-in') ||
-        status.toLowerCase().contains('checkin')) {
-      statusColor = Colors.blue;
-    } else if (status.toLowerCase().contains('selesai')) {
-      statusColor = Colors.purple;
-    } else {
-      statusColor = Colors.orange;
-    }
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            icon,
-            size: 18,
-            color: Colors.grey[600],
+    final labelStyle = textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurface.withOpacity(0.6),
+        ) ??
+        TextStyle(
+          color: theme.colorScheme.onSurface.withOpacity(0.6),
+        );
+
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: theme.colorScheme.primary),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: labelStyle),
+              const SizedBox(height: 4),
+              _buildStatusBadge(widget.schedule),
+            ],
           ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[600],
-              ),
-            ),
-          ),
-          const Text(': '),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: statusColor, width: 1),
-              ),
-              child: Text(
-                value,
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                  color: statusColor,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

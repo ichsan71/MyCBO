@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test_cbo/core/error/exceptions.dart';
+import 'package:test_cbo/core/network/api_config.dart';
+import 'package:test_cbo/core/network/api_helper.dart';
 import 'package:test_cbo/core/utils/constants.dart';
 import 'package:test_cbo/core/utils/logger.dart';
 import '../../domain/entities/approval_filter.dart';
@@ -83,35 +85,65 @@ class ApprovalRemoteDataSourceImpl implements ApprovalRemoteDataSource {
     }
 
     final url = Uri.parse('${Constants.baseUrl}/list-approval-dadakan/$userId');
-
     Logger.info('ApprovalRemoteDataSource', 'URL: $url');
 
     try {
-      final response = await client.get(
-        url,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
+      final response = await ApiHelper.retryRequest(() => client.get(
+            url,
+            headers: ApiConfig.getHeaders(token),
+          ));
 
       Logger.info(
           'ApprovalRemoteDataSource', 'Status Code: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
+        final data = json.decode(response.body);
         Logger.info(
-            'ApprovalRemoteDataSource', 'Response Body: ${response.body}');
-        Logger.info('ApprovalRemoteDataSource',
-            'Response Structure: (status, message, data)');
-        return (responseData['data'] as List)
-            .map((json) => ApprovalModel.fromJson(json))
-            .toList();
+            'ApprovalRemoteDataSource', 'Raw Response: ${response.body}');
+
+        if (data['status'] == true || data['status'] == 200) {
+          final List<dynamic> approvalList = data['data'] as List;
+          Logger.info('ApprovalRemoteDataSource',
+              'Approval List Structure: ${approvalList.map((item) => item.runtimeType).toList()}');
+
+          List<ApprovalModel> result = [];
+          for (var json in approvalList) {
+            try {
+              Logger.info('ApprovalRemoteDataSource',
+                  'Processing approval item: $json');
+
+              final approvalJson = Map<String, dynamic>.from(json);
+              approvalJson['id'] = approvalJson['id_bawahan'];
+              approvalJson['user_id'] = approvalJson['id_bawahan'];
+
+              final approval = ApprovalModel.fromJson(approvalJson);
+              result.add(approval);
+            } catch (e, stackTrace) {
+              Logger.error('ApprovalRemoteDataSource',
+                  'Error parsing approval item: $e\nStack trace: $stackTrace');
+              Logger.error(
+                  'ApprovalRemoteDataSource', 'Problematic JSON: $json');
+              rethrow;
+            }
+          }
+          return result;
+        }
+        throw ServerException(
+            message: data['message'] ?? 'Gagal mengambil data persetujuan');
+      } else if (response.statusCode == 401) {
+        throw UnauthorizedException(message: 'Sesi telah berakhir');
       } else {
-        throw ServerException(message: 'Gagal mengambil data approval');
+        throw ServerException(
+            message:
+                'Gagal mengambil data persetujuan: ${response.statusCode}');
       }
-    } catch (e) {
-      throw ServerException(message: 'Error: $e');
+    } catch (e, stackTrace) {
+      Logger.error(
+          'ApprovalRemoteDataSource', 'Error: $e\nStack trace: $stackTrace');
+      if (e is ServerException || e is UnauthorizedException) {
+        rethrow;
+      }
+      throw ServerException(message: e.toString());
     }
   }
 
@@ -206,9 +238,6 @@ class ApprovalRemoteDataSourceImpl implements ApprovalRemoteDataSource {
     required bool isApproved,
     String? joinScheduleId,
   }) async {
-    Logger.info('ApprovalRemoteDataSource',
-        'Mengirim persetujuan untuk schedule_id: $scheduleId');
-
     final token = sharedPreferences.getString(Constants.tokenKey);
     if (token == null) {
       throw ServerException(message: 'Token tidak ditemukan');
@@ -226,14 +255,11 @@ class ApprovalRemoteDataSourceImpl implements ApprovalRemoteDataSource {
         'URL request: ${url.toString()}\nBody: $body');
 
     try {
-      final response = await client.post(
-        url,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(body),
-      );
+      final response = await ApiHelper.retryRequest(() => client.post(
+            url,
+            headers: ApiConfig.getHeaders(token),
+            body: jsonEncode(body),
+          ));
 
       Logger.info('ApprovalRemoteDataSource',
           'Status response: ${response.statusCode}');
@@ -426,15 +452,46 @@ class ApprovalRemoteDataSourceImpl implements ApprovalRemoteDataSource {
     final token = sharedPreferences.getString(Constants.tokenKey);
     final uri = Uri.parse(
         'https://dev-bco.businesscorporateofficer.com/api/list-rejected-schedule/$userId');
+
+    Logger.info('ApprovalRemoteDataSource',
+        'Fetching rejected schedules for user $userId');
+
     final response = await client.get(uri, headers: {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
     });
+
+    Logger.info('ApprovalRemoteDataSource',
+        'Response status code: ${response.statusCode}');
+
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
+      Logger.info(
+          'ApprovalRemoteDataSource', 'Response body: ${response.body}');
+
       final List<dynamic> data = jsonResponse['data']['data'];
-      return data.map((e) => RejectedSchedule.fromJson(e)).toList();
+      Logger.info('ApprovalRemoteDataSource',
+          'Found ${data.length} rejected schedules');
+
+      final result = data.map((e) {
+        try {
+          return RejectedSchedule.fromJson(e);
+        } catch (error) {
+          Logger.error(
+              'ApprovalRemoteDataSource', 'Error parsing schedule: $error');
+          Logger.error('ApprovalRemoteDataSource', 'Problematic data: $e');
+          rethrow;
+        }
+      }).toList();
+
+      Logger.success('ApprovalRemoteDataSource',
+          'Successfully parsed ${result.length} rejected schedules');
+      return result;
     } else {
+      Logger.error('ApprovalRemoteDataSource',
+          'Failed to load rejected schedules: ${response.statusCode}');
+      Logger.error(
+          'ApprovalRemoteDataSource', 'Response body: ${response.body}');
       throw Exception('Failed to load rejected schedules');
     }
   }
@@ -550,26 +607,26 @@ class RejectedSchedule {
 
   factory RejectedSchedule.fromJson(Map<String, dynamic> json) {
     return RejectedSchedule(
-      id: json['id'],
-      draft: json['draft'],
-      namaUser: json['nama_user'],
-      tipeSchedule: json['tipe_schedule'],
-      tujuan: json['tujuan'],
-      kodeRayon: json['kode_rayon'],
-      kodeRayonAktif: json['kode_rayon_aktif'],
-      tglVisit: json['tgl_visit'],
-      namaProduct: json['nama_product'],
-      note: json['note'],
-      createdAt: json['created_at'],
-      tglSubmitSchedule: json['tgl_submit_schedule'],
-      approved: json['approved'],
-      shift: json['shift'],
-      jenis: json['jenis'],
-      namaTujuan: json['nama_tujuan'],
-      statusCheckin: json['status_checkin'],
-      namaDivisi: json['nama_divisi'],
-      namaSpesialis: json['nama_spesialis'],
-      namaRejecter: json['nama_rejecter'],
+      id: json['id'] ?? 0,
+      draft: json['draft']?.toString() ?? '',
+      namaUser: json['nama_user']?.toString() ?? '',
+      tipeSchedule: json['tipe_schedule']?.toString() ?? '',
+      tujuan: json['tujuan']?.toString() ?? '',
+      kodeRayon: json['kode_rayon']?.toString() ?? '',
+      kodeRayonAktif: json['kode_rayon_aktif']?.toString() ?? '',
+      tglVisit: json['tgl_visit']?.toString() ?? '',
+      namaProduct: json['nama_product']?.toString() ?? '',
+      note: json['note']?.toString() ?? '',
+      createdAt: json['created_at']?.toString() ?? '',
+      tglSubmitSchedule: json['tgl_submit_schedule']?.toString() ?? '',
+      approved: json['approved'] ?? 0,
+      shift: json['shift']?.toString() ?? '',
+      jenis: json['jenis']?.toString() ?? '',
+      namaTujuan: json['nama_tujuan']?.toString() ?? '',
+      statusCheckin: json['status_checkin']?.toString() ?? '',
+      namaDivisi: json['nama_divisi']?.toString() ?? '',
+      namaSpesialis: json['nama_spesialis']?.toString() ?? '',
+      namaRejecter: json['nama_rejecter']?.toString() ?? '',
       historyReject: json['history_reject'],
     );
   }

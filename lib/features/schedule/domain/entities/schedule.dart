@@ -30,6 +30,9 @@ class Schedule extends Equatable {
   final dynamic rejectedBy;
   final dynamic realisasiVisitApproved;
   final String? createdAt;
+  final int? currentPage;
+  final int? lastPage;
+  final int? total;
 
   const Schedule({
     required this.id,
@@ -61,6 +64,9 @@ class Schedule extends Equatable {
     this.rejectedBy,
     this.realisasiVisitApproved,
     this.createdAt,
+    this.currentPage,
+    this.lastPage,
+    this.total,
   });
 
   @override
@@ -94,6 +100,9 @@ class Schedule extends Equatable {
         rejectedBy,
         realisasiVisitApproved,
         createdAt,
+        currentPage,
+        lastPage,
+        total,
       ];
 
   Schedule copyWith({
@@ -126,6 +135,9 @@ class Schedule extends Equatable {
     dynamic rejectedBy,
     dynamic realisasiVisitApproved,
     String? createdAt,
+    int? currentPage,
+    int? lastPage,
+    int? total,
   }) {
     return Schedule(
       id: id ?? this.id,
@@ -159,6 +171,9 @@ class Schedule extends Equatable {
       realisasiVisitApproved:
           realisasiVisitApproved ?? this.realisasiVisitApproved,
       createdAt: createdAt ?? this.createdAt,
+      currentPage: currentPage ?? this.currentPage,
+      lastPage: lastPage ?? this.lastPage,
+      total: total ?? this.total,
     );
   }
 }

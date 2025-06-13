@@ -10,9 +10,11 @@ import 'package:test_cbo/features/schedule/data/models/product_model.dart';
 import 'package:test_cbo/features/schedule/data/models/responses/doctor_response.dart';
 import 'package:test_cbo/features/schedule/data/models/responses/schedule_type_response.dart';
 import 'package:test_cbo/features/schedule/data/models/schedule_type_model.dart';
+import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic_base.dart';
+import 'package:test_cbo/core/presentation/widgets/custom_snackbar.dart';
 
 abstract class AddScheduleRemoteDataSource {
-  Future<List<DoctorClinicModel>> getDoctorsAndClinics(int userId);
+  Future<List<DoctorClinicBase>> getDoctorsAndClinics(int userId);
   Future<List<ScheduleTypeModel>> getScheduleTypes();
   Future<List<ProductModel>> getProducts(int userId);
   Future<DoctorResponse> getDoctors();
@@ -46,7 +48,7 @@ class AddScheduleRemoteDataSourceImpl implements AddScheduleRemoteDataSource {
   });
 
   @override
-  Future<List<DoctorClinicModel>> getDoctorsAndClinics(int userId) async {
+  Future<List<DoctorClinicBase>> getDoctorsAndClinics(int userId) async {
     try {
       Logger.info(_tag,
           '🔄 DataSource: Memulai request ke API dokter dan klinik dengan userId: $userId');
@@ -96,26 +98,61 @@ class AddScheduleRemoteDataSourceImpl implements AddScheduleRemoteDataSource {
         Logger.info(_tag, '✅ DataSource: Berhasil mendapatkan response');
         final responseData = response.data;
 
+        // Log raw response data
+        Logger.debug(_tag, '🔍 Raw response type: ${responseData.runtimeType}');
+        Logger.debug(_tag, '🔍 Raw response data: $responseData');
+
         try {
           List<DoctorClinicModel> doctors = [];
 
           if (responseData is Map<String, dynamic>) {
-            final dynamic doctorData = responseData['data'] ??
-                responseData['doctors'] ??
-                responseData['result'] ??
-                responseData;
+            Logger.debug(_tag, '🔍 Response is Map');
 
-            if (doctorData is List) {
-              doctors = doctorData
-                  .map((item) => DoctorClinicModel.fromJson(item))
-                  .toList();
-            } else if (doctorData is Map<String, dynamic>) {
-              doctors = [DoctorClinicModel.fromJson(doctorData)];
+            // Check for nested doctor data first
+            if (responseData.containsKey('dokter')) {
+              Logger.debug(_tag, '🔍 Found "dokter" key in response');
+              final doctorData = responseData['dokter'];
+              Logger.debug(
+                  _tag, '🔍 Doctor data type: ${doctorData.runtimeType}');
+
+              if (doctorData is List) {
+                Logger.debug(_tag,
+                    '🔍 Found nested doctor list with ${doctorData.length} items');
+
+                // Log each doctor data before parsing
+                for (var item in doctorData) {
+                  Logger.debug(_tag, '🔍 Processing doctor item:');
+                  Logger.debug(_tag, '  - Raw data: $item');
+                  Logger.debug(_tag, '  - Type: ${item.runtimeType}');
+                  if (item is Map) {
+                    Logger.debug(_tag, '  - Keys: ${item.keys.toList()}');
+                    Logger.debug(_tag, '  - id_dokter: ${item['id_dokter']}');
+                    Logger.debug(
+                        _tag, '  - nama_dokter: ${item['nama_dokter']}');
+                    Logger.debug(_tag, '  - spesialis: ${item['spesialis']}');
+                    Logger.debug(
+                        _tag, '  - nama_spesialis: ${item['nama_spesialis']}');
+                  }
+
+                  try {
+                    final doctor = DoctorClinicModel.fromJson(item);
+                    Logger.debug(_tag, '✅ Successfully parsed doctor:');
+                    Logger.debug(_tag, '  - ID: ${doctor.id}');
+                    Logger.debug(_tag, '  - Nama: ${doctor.nama}');
+                    Logger.debug(_tag, '  - Spesialis: ${doctor.spesialis}');
+                    doctors.add(doctor);
+                  } catch (e, stackTrace) {
+                    Logger.error(_tag, '❌ Error parsing individual doctor: $e');
+                    Logger.error(_tag, '❌ Stack trace: $stackTrace');
+                    Logger.error(_tag, '❌ Doctor data that failed: $item');
+                    continue;
+                  }
+                }
+              } else {
+                Logger.warning(_tag,
+                    '⚠️ Doctor data is not a List: ${doctorData.runtimeType}');
+              }
             }
-          } else if (responseData is List) {
-            doctors = responseData
-                .map((item) => DoctorClinicModel.fromJson(item))
-                .toList();
           }
 
           if (doctors.isNotEmpty) {
@@ -126,10 +163,12 @@ class AddScheduleRemoteDataSourceImpl implements AddScheduleRemoteDataSource {
             return doctors;
           }
 
+          Logger.warning(_tag, '⚠️ No doctors parsed from response');
           throw ServerException(message: 'Tidak ada data dokter yang tersedia');
-        } catch (e) {
+        } catch (e, stackTrace) {
           Logger.error(_tag, '❌ DataSource: Error parsing doctor data: $e');
-          throw ServerException(message: 'Format data dokter tidak valid');
+          Logger.error(_tag, '❌ Stack trace: $stackTrace');
+          throw ServerException(message: 'Format data dokter tidak valid: $e');
         }
       } else if (response.statusCode == 401) {
         throw UnauthorizedException(
@@ -181,8 +220,8 @@ class AddScheduleRemoteDataSourceImpl implements AddScheduleRemoteDataSource {
         '${Constants.baseUrl}/tipe-schedule',
         '${Constants.baseUrl}/schedule-type',
         '${Constants.baseUrl}/schedule-type/get',
-        '${Constants.baseUrl}/api/tipe-schedule',
-        '${Constants.baseUrl}/api/schedule-type',
+        '${Constants.baseUrl}/tipe-schedule/list',
+        '${Constants.baseUrl}/schedule/types',
         '${Constants.baseUrl}/types/schedule',
       ];
 
@@ -479,180 +518,133 @@ class AddScheduleRemoteDataSourceImpl implements AddScheduleRemoteDataSource {
       Logger.info(_tag, '🔄 DataSource: Memulai request ke API dokter');
 
       final token = sharedPreferences.getString(Constants.tokenKey);
-      final userDataString = sharedPreferences.getString(Constants.userDataKey);
-
       if (token == null) {
         throw ServerException(
             message: 'Sesi login telah berakhir. Silakan login kembali.');
       }
 
-      if (userDataString == null) {
-        throw ServerException(
-            message: 'Data pengguna tidak ditemukan. Silakan login kembali.');
-      }
+      // List endpoint yang akan dicoba
+      final endpoints = [
+        '/dokter-dan-klinik/get',
+        '/dokter/get',
+        '/dokter/list',
+        '/dokter-klinik/get',
+      ];
 
-      // Parse user data untuk mendapatkan ID
-      final userData = json.decode(userDataString);
-      final userId = userData['id_user'];
+      Response? successResponse;
+      Map<String, dynamic> errorDetails = {};
 
-      if (userId == null) {
-        throw ServerException(
-            message: 'ID pengguna tidak valid. Silakan login kembali.');
-      }
-
-      Logger.info(
-          _tag, '🔄 DataSource: Mengambil data dokter untuk userId: $userId');
-
-      // Gunakan URL yang sama dengan dokter-dan-klinik yang sudah terbukti berfungsi
-      final String url = '${Constants.baseUrl}/dokter-dan-klinik/get/$userId';
-      Logger.info(
-          _tag, '🔄 DataSource: Mencoba mengambil data dokter dari: $url');
-
-      final options = Options(
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        sendTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 15),
-      );
-
-      final response = await dio.get(url, options: options);
-
-      Logger.info(
-          _tag, '🔄 DataSource: Response status code: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        final responseData = response.data;
-        Logger.info(_tag, '✅ DataSource: Berhasil mendapatkan data dari $url');
-        Logger.info(_tag,
-            '🔄 DataSource: Tipe response data: ${responseData.runtimeType}');
-
-        // Log keseluruhan response untuk debugging
-        Logger.debug(_tag, 'Raw response data: $responseData');
-
+      // Mencoba setiap endpoint sampai berhasil
+      for (final endpoint in endpoints) {
         try {
-          // Pastikan response memiliki format yang diharapkan
-          if (responseData is Map<String, dynamic>) {
-            // Berdasarkan response Postman, data dokter ada di key "dokter"
-            List<dynamic> dokterList = [];
+          Logger.info(_tag, '🔄 DataSource: Mencoba endpoint: $endpoint');
+          final url = '${Constants.baseUrl}$endpoint';
+          Logger.info(_tag, '🔄 DataSource: Full URL: $url');
 
-            if (responseData.containsKey('dokter')) {
-              dokterList = responseData['dokter'];
-              Logger.info(
-                  _tag, '✅ DataSource: Ditemukan data dokter di key "dokter"');
-            } else {
-              Logger.warning(_tag,
-                  '⚠️ DataSource: Key "dokter" tidak ditemukan dalam response');
-              Logger.warning(_tag,
-                  '⚠️ DataSource: Keys dalam response: ${responseData.keys.toList()}');
+          final response = await dio.get(
+            url,
+            options: Options(
+              headers: {
+                'Accept': 'application/json',
+                'Authorization': 'Bearer $token',
+                'Content-Type': 'application/json',
+              },
+              validateStatus: (status) => true, // Accept all status codes
+              sendTimeout: const Duration(seconds: 30),
+              receiveTimeout: const Duration(seconds: 30),
+            ),
+          );
 
-              // Coba berbagai kemungkinan lokasi data dalam response
-              if (responseData.containsKey('data')) {
-                final data = responseData['data'];
-                if (data is List) {
-                  dokterList = data;
-                  Logger.info(
-                      _tag, '✅ DataSource: Menggunakan data dari key "data"');
-                } else if (data is Map && data.containsKey('dokter')) {
-                  dokterList = data['dokter'];
-                  Logger.info(_tag,
-                      '✅ DataSource: Menggunakan data dari key "data.dokter"');
-                }
-              } else if (responseData.containsKey('doctors')) {
-                dokterList = responseData['doctors'];
-                Logger.info(
-                    _tag, '✅ DataSource: Menggunakan data dari key "doctors"');
-              }
-            }
+          Logger.info(_tag, '📝 DataSource: Response dari $endpoint:');
+          Logger.info(_tag, '  - Status Code: ${response.statusCode}');
+          Logger.info(_tag, '  - Headers: ${response.headers}');
+          Logger.info(_tag, '  - Data Type: ${response.data.runtimeType}');
 
-            if (dokterList.isEmpty) {
-              Logger.warning(
-                  _tag, '⚠️ DataSource: Tidak ada data dokter dalam response');
-              // Coba log struktur response untuk debugging
-              Logger.warning(_tag,
-                  '⚠️ DataSource: Keys dalam response: ${responseData.keys.toList()}');
-              Logger.warning(
-                  _tag, '⚠️ DataSource: Response data: $responseData');
-
-              // Buat response kosong sebagai fallback (hindari exception)
-              return DoctorResponse(dokter: [], klinik: []);
-            }
-
-            Logger.info(
-                _tag, '✅ DataSource: Ditemukan ${dokterList.length} dokter');
-
-            final doctors = dokterList
-                .map((item) {
-                  try {
-                    return DoctorModel.fromJson(item);
-                  } catch (e) {
-                    Logger.warning(
-                        _tag, '⚠️ DataSource: Error parsing dokter: $e');
-                    Logger.warning(
-                        _tag, '⚠️ DataSource: Data dokter yang error: $item');
-                    return null;
-                  }
-                })
-                .where((d) => d != null)
-                .cast<DoctorModel>()
-                .toList();
-
-            if (doctors.isNotEmpty) {
-              Logger.info(_tag,
-                  '✅ DataSource: Berhasil parse ${doctors.length} dokter');
-              // Ambil data klinik jika ada (dari response Postman tidak terlihat ada data klinik)
-              return DoctorResponse(dokter: doctors, klinik: []);
-            } else {
-              Logger.warning(
-                  _tag, '⚠️ DataSource: Semua dokter gagal di-parse');
-              // Buat response kosong sebagai fallback
-              return DoctorResponse(dokter: [], klinik: []);
-            }
+          if (response.statusCode == 200) {
+            Logger.success(_tag, '✅ DataSource: Endpoint $endpoint berhasil');
+            successResponse = response;
+            break;
           } else {
-            Logger.error(_tag,
-                '❌ DataSource: Format response tidak sesuai, response: $responseData');
-            throw ServerException(message: 'Format response tidak sesuai');
+            errorDetails[endpoint] = {
+              'statusCode': response.statusCode,
+              'data': response.data,
+              'headers': response.headers.map,
+            };
+            Logger.warning(_tag,
+                '⚠️ DataSource: Endpoint $endpoint gagal dengan status ${response.statusCode}');
           }
         } catch (e) {
-          Logger.error(_tag, '❌ DataSource: Error parsing response: $e');
-          throw ServerException(message: 'Format data dokter tidak valid: $e');
+          errorDetails[endpoint] = {
+            'error': e.toString(),
+            'type': e.runtimeType.toString(),
+          };
+          Logger.error(_tag, '❌ DataSource: Error pada endpoint $endpoint: $e');
+          continue;
         }
-      } else if (response.statusCode == 401) {
-        throw UnauthorizedException(
-            message: 'Sesi login telah berakhir. Silakan login kembali.');
-      } else {
-        throw ServerException(
-            message:
-                'Gagal mengambil data dokter. Status: ${response.statusCode}');
-      }
-    } on DioException catch (e) {
-      Logger.error(
-          _tag, '❌ DataSource: DioError dalam getDoctors: ${e.message}');
-
-      // Log response data jika ada
-      if (e.response != null) {
-        Logger.error(_tag,
-            '❌ DataSource: Error response status: ${e.response?.statusCode}');
-        Logger.error(
-            _tag, '❌ DataSource: Error response data: ${e.response?.data}');
       }
 
-      if (e.response?.statusCode == 401) {
-        throw UnauthorizedException(
-            message: 'Sesi login telah berakhir. Silakan login kembali.');
+      // Jika tidak ada response yang sukses
+      if (successResponse == null) {
+        final errorMessage =
+            StringBuffer('Gagal mengambil data dokter dari semua endpoint:\n');
+        errorDetails.forEach((endpoint, details) {
+          errorMessage.writeln('- $endpoint: ${details.toString()}');
+        });
+        Logger.error(_tag, errorMessage.toString());
+        throw ServerException(message: errorMessage.toString());
       }
 
-      throw ServerException(
-          message:
-              'Terjadi kesalahan saat mengambil data dokter: ${e.message}');
+      final responseData = successResponse.data;
+      Logger.debug(_tag, '🔍 Response data: $responseData');
+
+      try {
+        if (responseData is Map<String, dynamic>) {
+          final dokterList = responseData['dokter'] ?? [];
+
+          if (dokterList is! List) {
+            Logger.error(
+                _tag, '❌ DataSource: Data dokter bukan List: $dokterList');
+            throw ServerException(message: 'Format data dokter tidak valid');
+          }
+
+          final doctors = dokterList
+              .map((item) {
+                try {
+                  return DoctorClinicModel.fromJson(item);
+                } catch (e) {
+                  Logger.warning(
+                      _tag, '⚠️ DataSource: Error parsing dokter: $e');
+                  Logger.warning(
+                      _tag, '⚠️ DataSource: Data dokter yang error: $item');
+                  return null;
+                }
+              })
+              .where((d) => d != null)
+              .cast<DoctorClinicModel>()
+              .toList();
+
+          if (doctors.isNotEmpty) {
+            Logger.success(
+                _tag, '✅ DataSource: Berhasil parse ${doctors.length} dokter');
+            return DoctorResponse(dokter: doctors, klinik: []);
+          } else {
+            Logger.warning(
+                _tag, '⚠️ DataSource: Tidak ada dokter yang berhasil di-parse');
+            return DoctorResponse(dokter: [], klinik: []);
+          }
+        } else {
+          Logger.error(_tag,
+              '❌ DataSource: Format response tidak sesuai: ${responseData.runtimeType}');
+          throw ServerException(message: 'Format response tidak sesuai');
+        }
+      } catch (e) {
+        Logger.error(_tag, '❌ DataSource: Error parsing response: $e');
+        throw ServerException(message: 'Format data dokter tidak valid: $e');
+      }
     } catch (e) {
       Logger.error(
           _tag, '❌ DataSource: Error tidak terduga dalam getDoctors: $e');
-      throw ServerException(
-          message:
-              'Terjadi kesalahan tidak terduga saat mengambil data dokter: $e');
+      rethrow;
     }
   }
 
@@ -719,10 +711,16 @@ class AddScheduleRemoteDataSourceImpl implements AddScheduleRemoteDataSource {
         'product_for_id_spesialis': jsonEncode(spesialisJson),
         'shift': shift,
         'jenis': jenis,
-        'nama_product': productNames.join(', '),
+        'nama_product': jsonEncode(productNames),
         'nama_divisi': divisiNames.join(', '),
         'nama_spesialis': spesialisNames.join(', '),
       });
+
+      // Tambahkan log untuk memeriksa data yang dikirim
+      Logger.debug(_tag, '''
+Data yang akan dikirim dalam FormData:
+${formData.fields.map((field) => '${field.key}: ${field.value}').join('\n')}
+''');
 
       Logger.network(_tag, 'Mengirim request',
           url: '${Constants.baseUrl}/schedule/add',

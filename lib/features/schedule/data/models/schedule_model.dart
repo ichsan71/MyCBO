@@ -92,6 +92,38 @@ class ScheduleModel extends Schedule {
   factory ScheduleModel.fromJson(Map<String, dynamic> json) {
     Logger.info('ScheduleModel', 'Processing schedule with raw data: $json');
 
+    // Helper function to parse integer values that might come as strings
+    int parseIntValue(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is String) {
+        try {
+          return int.parse(value);
+        } catch (e) {
+          Logger.error('ScheduleModel', 'Error parsing int value: $value');
+          return 0;
+        }
+      }
+      return 0;
+    }
+
+    // Helper function to parse nullable integer values
+    int? parseNullableIntValue(dynamic value) {
+      if (value == null) return null;
+      if (value is int) return value;
+      if (value is String) {
+        if (value.toLowerCase() == 'null' || value.isEmpty) return null;
+        try {
+          return int.parse(value);
+        } catch (e) {
+          Logger.error(
+              'ScheduleModel', 'Error parsing nullable int value: $value');
+          return null;
+        }
+      }
+      return null;
+    }
+
     final shiftValue = processShiftValue(json['shift']);
     Logger.info('ScheduleModel', 'Raw shift value: ${json['shift']}');
     Logger.info('ScheduleModel', 'Processed shift value: $shiftValue');
@@ -140,21 +172,6 @@ class ScheduleModel extends Schedule {
         return value.map((e) => e.toString()).toList();
       }
       return [];
-    }
-
-    // Helper function to parse integer values that might come as strings
-    int parseIntValue(dynamic value) {
-      if (value == null) return 0;
-      if (value is int) return value;
-      if (value is String) {
-        try {
-          return int.parse(value);
-        } catch (e) {
-          Logger.error('ScheduleModel', 'Error parsing int value: $value');
-          return 0;
-        }
-      }
-      return 0;
     }
 
     // Helper function to parse dynamic values that might be null
@@ -207,7 +224,7 @@ class ScheduleModel extends Schedule {
       namaDivisi: json['nama_divisi']?.toString(),
       approved: parseIntValue(json['approved']),
       namaApprover: json['nama_approver']?.toString(),
-      realisasiApprove: parseDynamicValue(json['realisasi_approve']),
+      realisasiApprove: parseNullableIntValue(json['realisasi_approve']),
       idUser: parseIntValue(json['id_user']),
       productForIdDivisi: parseStringList(json['product_for_id_divisi']),
       productForIdSpesialis: parseStringList(json['product_for_id_spesialis']),

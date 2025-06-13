@@ -1,8 +1,9 @@
 import 'package:test_cbo/core/utils/logger.dart';
-import 'package:test_cbo/features/schedule/data/models/doctor_model.dart';
+import 'package:test_cbo/features/schedule/data/models/doctor_clinic_model.dart';
+import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic_base.dart';
 
 class DoctorResponse {
-  final List<DoctorModel> dokter;
+  final List<DoctorClinicBase> dokter;
   final List<dynamic> klinik;
 
   DoctorResponse({
@@ -12,100 +13,106 @@ class DoctorResponse {
 
   factory DoctorResponse.fromJson(Map<String, dynamic> json) {
     try {
-      Logger.info('DoctorResponse', 'Memproses respons dokter');
-      Logger.info('DoctorResponse', 'Keys yang tersedia: ${json.keys.toList()}');
+      Logger.info('DoctorResponse', 'Starting to parse doctor response');
+      Logger.info('DoctorResponse', 'Available keys: ${json.keys.toList()}');
+      Logger.debug('DoctorResponse', 'Raw response: $json');
 
-      // Parse dokter
-      List<DoctorModel> dokterList = [];
-      if (json['dokter'] != null && json['dokter'] is List) {
-        Logger.info('DoctorResponse', 'Jumlah dokter: ${(json['dokter'] as List).length}');
+      List<DoctorClinicBase> dokterList = [];
+      List<dynamic> klinikList = [];
 
-        dokterList = (json['dokter'] as List)
+      // First try to get data from the root level
+      var doctorData = json['data'] ?? json['dokter'] ?? json['result'];
+
+      // If no data found at root level, check if it's nested under 'data_dokter'
+      if (doctorData == null && json['data_dokter'] != null) {
+        doctorData = json['data_dokter']['dokter'] ?? json['data_dokter'];
+      }
+
+      // If still no data found, log warning and create empty response
+      if (doctorData == null) {
+        Logger.warning('DoctorResponse', 'No doctor data found in response');
+        Logger.debug(
+            'DoctorResponse', 'Response structure: ${json.keys.toList()}');
+        return DoctorResponse(dokter: [], klinik: []);
+      }
+
+      // Log the structure of found data
+      Logger.info('DoctorResponse',
+          'Found doctor data of type: ${doctorData.runtimeType}');
+
+      // Parse doctor data based on its type
+      if (doctorData is List) {
+        Logger.info('DoctorResponse',
+            'Processing list of ${doctorData.length} doctors');
+
+        dokterList = doctorData
             .map((item) {
               try {
                 if (item is Map<String, dynamic>) {
-                  Logger.info('DoctorResponse', 'Item keys: ${item.keys.toList()}');
-                  return DoctorModel.fromJson(item);
+                  Logger.debug('DoctorResponse',
+                      'Processing doctor item: ${item['nama_dokter'] ?? item['nama']}');
+                  return DoctorClinicModel.fromJson(item);
                 } else {
-                  Logger.error('DoctorResponse', 'Item bukan Map: $item');
+                  Logger.error(
+                      'DoctorResponse', 'Invalid doctor item format: $item');
                   return null;
                 }
               } catch (e) {
-                Logger.error('DoctorResponse', 'Error parsing item: $e');
+                Logger.error('DoctorResponse', 'Error parsing doctor item: $e');
+                Logger.error('DoctorResponse', 'Problematic data: $item');
                 return null;
               }
             })
             .where((item) => item != null)
-            .cast<DoctorModel>()
+            .cast<DoctorClinicBase>()
             .toList();
+      } else if (doctorData is Map<String, dynamic>) {
+        Logger.info('DoctorResponse', 'Processing single doctor object');
+        try {
+          final model = DoctorClinicModel.fromJson(doctorData);
+          dokterList = [model];
+        } catch (e) {
+          Logger.error('DoctorResponse', 'Error parsing single doctor: $e');
+          Logger.error('DoctorResponse', 'Doctor data: $doctorData');
+        }
+      } else {
+        Logger.error('DoctorResponse',
+            'Unexpected doctor data format: ${doctorData.runtimeType}');
       }
 
-      // Parse klinik (untuk saat ini hanya disimpan sebagai List<dynamic>)
-      List<dynamic> klinikList = [];
-      if (json['klinik'] != null && json['klinik'] is List) {
-        klinikList = json['klinik'] as List;
+      // Process clinic data if available
+      if (json['klinik'] != null) {
+        Logger.info('DoctorResponse', 'Found clinic data');
+        if (json['klinik'] is List) {
+          klinikList = json['klinik'];
+          Logger.info(
+              'DoctorResponse', 'Processed ${klinikList.length} clinics');
+        } else {
+          Logger.warning(
+              'DoctorResponse', 'Clinic data is not a list: ${json['klinik']}');
+        }
       }
 
-      Logger.info('DoctorResponse', 'Jumlah dokter setelah parsing: ${dokterList.length}');
-      Logger.info('DoctorResponse', 'Jumlah klinik setelah parsing: ${klinikList.length}');
-
-      // Jika tidak ada data dokter yang berhasil di-parse, tambahkan dummy data
+      // Log final results
       if (dokterList.isEmpty) {
-        Logger.info('DoctorResponse', 'Tidak ada data dokter yang berhasil di-parse, menambahkan dummy data');
-        dokterList = [
-          DoctorModel(
-              id: 5017,
-              kodePelanggan: "MAZ-ITTESTING-6385666",
-              nama: "IT TESTING 1",
-              rayonDokter: ["219"],
-              spesialis: 1,
-              statusDokter: null,
-              createdAt: DateTime.now(),
-              kodeRayon: "IT TESTING"),
-          DoctorModel(
-              id: 5018,
-              kodePelanggan: "MAZ-ITTESTING-8234641",
-              nama: "DR IT TESTING",
-              rayonDokter: ["219"],
-              spesialis: 4,
-              statusDokter: null,
-              createdAt: DateTime.now(),
-              kodeRayon: "IT TESTING"),
-        ];
+        Logger.warning('DoctorResponse', 'No doctors were successfully parsed');
+        Logger.debug('DoctorResponse', 'Original response: $json');
+      } else {
+        Logger.success('DoctorResponse',
+            'Successfully parsed ${dokterList.length} doctors');
+        Logger.debug(
+            'DoctorResponse', 'First doctor: ${dokterList.first.toString()}');
       }
 
       return DoctorResponse(
         dokter: dokterList,
         klinik: klinikList,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
       Logger.error('DoctorResponse', 'Error parsing response: $e');
-      Logger.error('DoctorResponse', 'JSON data: $json');
-
-      // Return a default response with dummy data if parsing fails
-      return DoctorResponse(
-        dokter: [
-          DoctorModel(
-              id: 5017,
-              kodePelanggan: "MAZ-ITTESTING-6385666",
-              nama: "IT TESTING 1",
-              rayonDokter: ["219"],
-              spesialis: 1,
-              statusDokter: null,
-              createdAt: DateTime.now(),
-              kodeRayon: "IT TESTING"),
-          DoctorModel(
-              id: 5018,
-              kodePelanggan: "MAZ-ITTESTING-8234641",
-              nama: "DR IT TESTING",
-              rayonDokter: ["219"],
-              spesialis: 4,
-              statusDokter: null,
-              createdAt: DateTime.now(),
-              kodeRayon: "IT TESTING"),
-        ],
-        klinik: [],
-      );
+      Logger.error('DoctorResponse', 'Stack trace: $stackTrace');
+      Logger.error('DoctorResponse', 'Response data: $json');
+      rethrow;
     }
   }
 

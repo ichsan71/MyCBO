@@ -1,12 +1,12 @@
 import 'package:dartz/dartz.dart';
 import 'package:test_cbo/core/error/failures.dart';
 import 'package:test_cbo/features/schedule/data/models/responses/doctor_response.dart';
-import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic.dart';
+import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic_base.dart';
 import 'package:test_cbo/features/schedule/domain/entities/product.dart';
 import 'package:test_cbo/features/schedule/domain/entities/schedule_type.dart';
 
 abstract class AddScheduleRepository {
-  Future<Either<Failure, List<DoctorClinic>>> getDoctorsAndClinics(int userId);
+  Future<Either<Failure, List<DoctorClinicBase>>> getDoctorsAndClinics(int userId);
   Future<Either<Failure, List<ScheduleType>>> getScheduleTypes();
   Future<Either<Failure, List<Product>>> getProducts(int userId);
   Future<Either<Failure, DoctorResponse>> getDoctors();

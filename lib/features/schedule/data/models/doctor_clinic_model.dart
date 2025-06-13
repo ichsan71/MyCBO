@@ -1,94 +1,25 @@
-import 'package:equatable/equatable.dart';
+import 'dart:convert';
 import 'package:test_cbo/core/utils/logger.dart';
-
-class DoctorClinicBase extends Equatable {
-  final int id;
-  final String nama;
-  final String spesialis;
-  final String? alamat;
-  final String? noTelp;
-  final String? email;
-  final String? tipeDokter;
-  final String? tipeKlinik;
-  final String? kodeRayon;
-
-  const DoctorClinicBase({
-    required this.id,
-    required this.nama,
-    required this.spesialis,
-    this.alamat,
-    this.noTelp,
-    this.email,
-    this.tipeDokter,
-    this.tipeKlinik,
-    this.kodeRayon,
-  });
-
-  factory DoctorClinicBase.fromJson(Map<String, dynamic> json) {
-    return DoctorClinicBase(
-      id: json['id'],
-      nama: json['nama'],
-      spesialis: json['spesialis'] ?? '',
-      alamat: json['alamat'],
-      noTelp: json['no_telp'],
-      email: json['email'],
-      tipeDokter: json['tipe_dokter'],
-      tipeKlinik: json['tipe_klinik'],
-      kodeRayon: json['kode_rayon'],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'nama': nama,
-      'spesialis': spesialis,
-      'alamat': alamat,
-      'no_telp': noTelp,
-      'email': email,
-      'tipe_dokter': tipeDokter,
-      'tipe_klinik': tipeKlinik,
-      'kode_rayon': kodeRayon,
-    };
-  }
-
-  @override
-  List<Object?> get props => [
-        id,
-        nama,
-        spesialis,
-        alamat,
-        noTelp,
-        email,
-        tipeDokter,
-        tipeKlinik,
-        kodeRayon
-      ];
-
-  @override
-  String toString() {
-    return 'DoctorClinicBase(id: $id, nama: $nama, spesialis: $spesialis)';
-  }
-}
+import '../../domain/entities/doctor_clinic_base.dart';
 
 class DoctorClinicModel extends DoctorClinicBase {
   const DoctorClinicModel({
     required int id,
     required String nama,
-    required String alamat,
-    required String noTelp,
-    required String email,
     required String spesialis,
-    required String tipeDokter,
-    required String tipeKlinik,
-    required String kodeRayon,
+    String? alamat,
+    String? noTelp,
+    String? email,
+    String? tipeDokter,
+    String? tipeKlinik,
+    String? kodeRayon,
   }) : super(
           id: id,
           nama: nama,
+          spesialis: spesialis,
           alamat: alamat,
           noTelp: noTelp,
           email: email,
-          spesialis: spesialis,
           tipeDokter: tipeDokter,
           tipeKlinik: tipeKlinik,
           kodeRayon: kodeRayon,
@@ -96,116 +27,198 @@ class DoctorClinicModel extends DoctorClinicBase {
 
   factory DoctorClinicModel.fromJson(Map<String, dynamic> json) {
     try {
-      // Parse id, handling different types
-      int id;
-      if (json['id'] is int) {
-        id = json['id'];
-      } else if (json['id'] is String) {
-        id = int.tryParse(json['id']) ?? 0;
-      } else if (json['id_dokter'] is int) {
-        id = json['id_dokter'];
-      } else if (json['id_dokter'] is String) {
-        id = int.tryParse(json['id_dokter']) ?? 0;
-      } else {
-        id = 0;
+      Logger.debug('DoctorClinicModel', '🔍 Starting to parse doctor data');
+      Logger.debug('DoctorClinicModel', '🔍 Input JSON: $json');
+
+      // Parse ID - try different possible field names and handle string IDs
+      int id = 0;
+      dynamic rawId = json['id_dokter'] ?? json['id'];
+      Logger.debug('DoctorClinicModel',
+          '🔍 Raw ID value: $rawId (type: ${rawId?.runtimeType})');
+
+      if (rawId != null) {
+        if (rawId is int) {
+          id = rawId;
+          Logger.debug('DoctorClinicModel', '✅ ID is already an integer: $id');
+        } else if (rawId is String) {
+          // Try to parse string as int, handle both numeric and non-numeric strings
+          String cleanId = rawId.replaceAll(RegExp(r'[^0-9]'), '');
+          Logger.debug('DoctorClinicModel', '🔍 Cleaned ID string: $cleanId');
+          id = int.tryParse(cleanId) ?? 0;
+          Logger.debug('DoctorClinicModel', '🔍 Parsed ID result: $id');
+        }
       }
 
-      // Parse nama, handling different field names
+      if (id == 0) {
+        Logger.warning('DoctorClinicModel',
+            '⚠️ No valid ID found in data. Raw ID: $rawId');
+        throw FormatException('Invalid doctor data: ID is missing or invalid');
+      }
+
+      // Parse name - try different possible field names
       String nama = '';
-      if (json['nama'] != null) {
-        nama = json['nama'].toString();
-      } else if (json['name'] != null) {
-        nama = json['name'].toString();
-      } else if (json['nama_dokter'] != null) {
-        nama = json['nama_dokter'].toString();
+      Logger.debug('DoctorClinicModel', '🔍 Checking name fields...');
+      Logger.debug(
+          'DoctorClinicModel', '  - nama_dokter: ${json['nama_dokter']}');
+      Logger.debug('DoctorClinicModel', '  - nama: ${json['nama']}');
+
+      if (json['nama_dokter'] != null &&
+          json['nama_dokter'].toString().trim().isNotEmpty) {
+        nama = json['nama_dokter'].toString().trim();
+        Logger.debug('DoctorClinicModel', '✅ Using nama_dokter: $nama');
+      } else if (json['nama'] != null &&
+          json['nama'].toString().trim().isNotEmpty) {
+        nama = json['nama'].toString().trim();
+        Logger.debug('DoctorClinicModel', '✅ Using nama: $nama');
       }
 
-      // Parse alamat
-      String alamat = '';
-      if (json['alamat'] != null) {
-        alamat = json['alamat'].toString();
-      } else if (json['address'] != null) {
-        alamat = json['address'].toString();
+      if (nama.isEmpty) {
+        Logger.warning('DoctorClinicModel', '⚠️ No valid name found in data');
+        throw FormatException('Invalid doctor data: Name is missing or empty');
       }
 
-      // Parse noTelp
-      String noTelp = '';
-      if (json['no_telp'] != null) {
-        noTelp = json['no_telp'].toString();
-      } else if (json['phone'] != null) {
-        noTelp = json['phone'].toString();
-      } else if (json['telepon'] != null) {
-        noTelp = json['telepon'].toString();
-      }
-
-      // Parse email
-      String email = '';
-      if (json['email'] != null) {
-        email = json['email'].toString();
-      }
-
-      // Parse spesialis
+      // Parse specialist information
       String spesialis = '';
-      if (json['spesialis'] != null) {
-        spesialis = json['spesialis'].toString();
-      } else if (json['specialist'] != null) {
-        spesialis = json['specialist'].toString();
-      } else if (json['nama_spesialis'] != null) {
-        spesialis = json['nama_spesialis'].toString();
+      Logger.debug('DoctorClinicModel', '🔍 Checking specialist fields...');
+      Logger.debug(
+          'DoctorClinicModel', '  - nama_spesialis: ${json['nama_spesialis']}');
+      Logger.debug('DoctorClinicModel', '  - spesialis: ${json['spesialis']}');
+
+      if (json['nama_spesialis'] != null &&
+          json['nama_spesialis'].toString().trim().isNotEmpty) {
+        spesialis = json['nama_spesialis'].toString().trim();
+        Logger.debug('DoctorClinicModel', '✅ Using nama_spesialis: $spesialis');
+      } else if (json['spesialis'] != null) {
+        if (json['spesialis'] is int) {
+          final spesialisId = json['spesialis'] as int;
+          spesialis = _getSpesialisName(spesialisId);
+          Logger.debug('DoctorClinicModel',
+              '✅ Using spesialis ID: $spesialisId -> $spesialis');
+        } else if (json['spesialis'] is String &&
+            json['spesialis'].toString().trim().isNotEmpty) {
+          final spesialisId = int.tryParse(json['spesialis'].toString().trim());
+          if (spesialisId != null) {
+            spesialis = _getSpesialisName(spesialisId);
+            Logger.debug('DoctorClinicModel',
+                '✅ Parsed spesialis string to ID: $spesialisId -> $spesialis');
+          } else {
+            spesialis = json['spesialis'].toString().trim();
+            Logger.debug('DoctorClinicModel',
+                '✅ Using spesialis string directly: $spesialis');
+          }
+        }
       }
 
-      // Parse tipeDokter
-      String tipeDokter = '';
-      if (json['tipe_dokter'] != null) {
-        tipeDokter = json['tipe_dokter'].toString();
-      } else if (json['doctor_type'] != null) {
-        tipeDokter = json['doctor_type'].toString();
+      // Parse doctor type/status
+      String? tipeDokter;
+      Logger.debug('DoctorClinicModel', '🔍 Checking doctor type fields...');
+      Logger.debug(
+          'DoctorClinicModel', '  - status_dokter: ${json['status_dokter']}');
+      Logger.debug(
+          'DoctorClinicModel', '  - tipe_dokter: ${json['tipe_dokter']}');
+
+      if (json['status_dokter'] != null &&
+          json['status_dokter'].toString().trim().isNotEmpty) {
+        tipeDokter = json['status_dokter'].toString().trim();
+        Logger.debug('DoctorClinicModel', '✅ Using status_dokter: $tipeDokter');
+      } else if (json['tipe_dokter'] != null &&
+          json['tipe_dokter'].toString().trim().isNotEmpty) {
+        tipeDokter = json['tipe_dokter'].toString().trim();
+        Logger.debug('DoctorClinicModel', '✅ Using tipe_dokter: $tipeDokter');
       }
 
-      // Parse tipeKlinik
-      String tipeKlinik = '';
-      if (json['tipe_klinik'] != null) {
-        tipeKlinik = json['tipe_klinik'].toString();
-      } else if (json['clinic_type'] != null) {
-        tipeKlinik = json['clinic_type'].toString();
+      // Parse rayon code
+      String? kodeRayon;
+      Logger.debug('DoctorClinicModel', '🔍 Checking rayon fields...');
+      Logger.debug(
+          'DoctorClinicModel', '  - kode_rayon: ${json['kode_rayon']}');
+      Logger.debug(
+          'DoctorClinicModel', '  - rayon_dokter: ${json['rayon_dokter']}');
+
+      if (json['kode_rayon'] != null &&
+          json['kode_rayon'].toString().trim().isNotEmpty) {
+        kodeRayon = json['kode_rayon'].toString().trim();
+        Logger.debug('DoctorClinicModel', '✅ Using kode_rayon: $kodeRayon');
+      } else if (json['rayon_dokter'] != null) {
+        try {
+          final rayonData = json['rayon_dokter'];
+          Logger.debug('DoctorClinicModel',
+              '🔍 Processing rayon_dokter: $rayonData (type: ${rayonData.runtimeType})');
+
+          if (rayonData is String && rayonData.trim().isNotEmpty) {
+            if (rayonData.startsWith('[') && rayonData.endsWith(']')) {
+              final List<dynamic> rayonList = jsonDecode(rayonData);
+              if (rayonList.isNotEmpty) {
+                kodeRayon = rayonList.join(', ');
+                Logger.debug('DoctorClinicModel',
+                    '✅ Parsed rayon_dokter string to list: $kodeRayon');
+              }
+            } else {
+              kodeRayon = rayonData.trim();
+              Logger.debug('DoctorClinicModel',
+                  '✅ Using rayon_dokter string directly: $kodeRayon');
+            }
+          } else if (rayonData is List && rayonData.isNotEmpty) {
+            kodeRayon = rayonData.join(', ');
+            Logger.debug(
+                'DoctorClinicModel', '✅ Joined rayon_dokter list: $kodeRayon');
+          }
+        } catch (e) {
+          Logger.warning(
+              'DoctorClinicModel', '⚠️ Error parsing rayon_dokter: $e');
+        }
       }
 
-      // Parse kodeRayon
-      String kodeRayon = '';
-      if (json['kode_rayon'] != null) {
-        kodeRayon = json['kode_rayon'].toString();
-      } else if (json['rayon_code'] != null) {
-        kodeRayon = json['rayon_code'].toString();
-      }
-
-      Logger.info('DoctorClinicModel', 'Parsing data - id: $id, nama: $nama');
+      // Log parsed data
+      Logger.info('DoctorClinicModel', '✅ Successfully parsed doctor data:');
+      Logger.debug('DoctorClinicModel', '  - ID: $id');
+      Logger.debug('DoctorClinicModel', '  - Nama: $nama');
+      Logger.debug('DoctorClinicModel', '  - Spesialis: $spesialis');
+      Logger.debug('DoctorClinicModel', '  - Tipe Dokter: $tipeDokter');
+      Logger.debug('DoctorClinicModel', '  - Kode Rayon: $kodeRayon');
 
       return DoctorClinicModel(
         id: id,
         nama: nama,
-        alamat: alamat,
-        noTelp: noTelp,
-        email: email,
         spesialis: spesialis,
         tipeDokter: tipeDokter,
-        tipeKlinik: tipeKlinik,
         kodeRayon: kodeRayon,
+        alamat: null,
+        noTelp: null,
+        email: null,
+        tipeKlinik: null,
       );
-    } catch (e) {
-      Logger.error('DoctorClinicModel', 'Error parsing DoctorClinicModel: $e');
-      Logger.error('DoctorClinicModel', 'JSON data: $json');
-      // Return a default model if parsing fails
-      return const DoctorClinicModel(
-        id: 0,
-        nama: 'Error',
-        alamat: '',
-        noTelp: '',
-        email: '',
-        spesialis: '',
-        tipeDokter: '',
-        tipeKlinik: '',
-        kodeRayon: '',
-      );
+    } catch (e, stackTrace) {
+      Logger.error('DoctorClinicModel', '❌ Error parsing doctor data: $e');
+      Logger.error('DoctorClinicModel', '❌ Stack trace: $stackTrace');
+      rethrow;
+    }
+  }
+
+  static String _getSpesialisName(int spesialisId) {
+    switch (spesialisId) {
+      case 1:
+        return 'Umum';
+      case 2:
+        return 'Kandungan';
+      case 3:
+        return 'Anak';
+      case 4:
+        return 'Spesialis Kulit';
+      case 5:
+        return 'Penyakit Dalam';
+      case 6:
+        return 'Jantung';
+      case 7:
+        return 'Gigi';
+      case 8:
+        return 'THT';
+      case 9:
+        return 'Bedah';
+      case 10:
+        return 'Mata';
+      default:
+        return 'Lainnya';
     }
   }
 }

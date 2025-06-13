@@ -8,9 +8,10 @@ class DoctorModel {
   final String nama;
   final List<String> rayonDokter;
   final int spesialis;
-  final dynamic statusDokter;
+  final String? statusDokter;
   final DateTime createdAt;
   final String kodeRayon;
+  final String? namaSpesialis;
 
   const DoctorModel({
     required this.id,
@@ -18,22 +19,57 @@ class DoctorModel {
     required this.nama,
     required this.rayonDokter,
     required this.spesialis,
-    required this.statusDokter,
+    this.statusDokter,
     required this.createdAt,
     required this.kodeRayon,
+    this.namaSpesialis,
   });
 
   factory DoctorModel.fromJson(Map<String, dynamic> json) {
-    return DoctorModel(
-      id: json['id_dokter'] as int,
-      kodePelanggan: json['kode_pelanggan'] as String,
-      nama: json['nama_dokter'] as String,
-      rayonDokter: _parseRayonDokter(json['rayon_dokter']),
-      spesialis: json['spesialis'] as int,
-      statusDokter: json['status_dokter'],
-      createdAt: DateTime.parse(json['created_at'] as String),
-      kodeRayon: json['kode_rayon'] as String,
-    );
+    try {
+      Logger.info('DoctorModel',
+          'Parsing doctor data with keys: ${json.keys.toList()}');
+
+      // Parse ID
+      int id;
+      if (json['id_dokter'] is int) {
+        id = json['id_dokter'];
+      } else if (json['id_dokter'] is String) {
+        id = int.tryParse(json['id_dokter']) ?? 0;
+      } else {
+        id = 0;
+        Logger.error('DoctorModel', 'Invalid id_dokter: ${json['id_dokter']}');
+      }
+
+      // Parse spesialis
+      int spesialis;
+      if (json['spesialis'] is int) {
+        spesialis = json['spesialis'];
+      } else if (json['spesialis'] is String) {
+        spesialis = int.tryParse(json['spesialis']) ?? 0;
+      } else {
+        spesialis = 0;
+        Logger.error('DoctorModel', 'Invalid spesialis: ${json['spesialis']}');
+      }
+
+      return DoctorModel(
+        id: id,
+        kodePelanggan: json['kode_pelanggan']?.toString() ?? '',
+        nama: json['nama_dokter']?.toString() ?? '',
+        rayonDokter: _parseRayonDokter(json['rayon_dokter']),
+        spesialis: spesialis,
+        statusDokter: json['status_dokter']?.toString(),
+        createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+            DateTime.now(),
+        kodeRayon: json['kode_rayon']?.toString() ?? '',
+        namaSpesialis: json['nama_spesialis']?.toString(),
+      );
+    } catch (e, stackTrace) {
+      Logger.error('DoctorModel', 'Error parsing doctor data: $e');
+      Logger.error('DoctorModel', 'Stack trace: $stackTrace');
+      Logger.error('DoctorModel', 'JSON data: $json');
+      rethrow;
+    }
   }
 
   static List<String> _parseRayonDokter(dynamic rayonDokter) {
@@ -61,6 +97,7 @@ class DoctorModel {
       'status_dokter': statusDokter,
       'created_at': createdAt.toIso8601String(),
       'kode_rayon': kodeRayon,
+      'nama_spesialis': namaSpesialis,
     };
   }
 }

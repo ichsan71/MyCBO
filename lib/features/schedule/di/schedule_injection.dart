@@ -1,3 +1,6 @@
+import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:test_cbo/core/network/network_info.dart';
 import 'package:test_cbo/core/di/injection_container.dart';
 import 'package:test_cbo/features/schedule/data/datasources/add_schedule_remote_data_source.dart';
 import 'package:test_cbo/features/schedule/data/datasources/local/add_schedule_local_data_source.dart';
@@ -19,6 +22,7 @@ import 'package:test_cbo/features/schedule/domain/usecases/get_edit_schedule_use
 import 'package:test_cbo/features/schedule/domain/usecases/get_schedules_by_range_date_usecase.dart'
     as range_date_usecase;
 import 'package:test_cbo/features/schedule/domain/usecases/update_schedule_usecase.dart';
+import 'package:test_cbo/features/check_in/domain/repositories/check_in_repository.dart';
 
 /// Inisialisasi dependency injection untuk fitur schedule
 ///
@@ -36,6 +40,7 @@ Future<void> initScheduleDependencies() async {
       approvalRepository: sl(),
       getEditScheduleUseCase: sl(),
       updateScheduleUseCase: sl(),
+      checkInRepository: sl(),
     ),
   );
 

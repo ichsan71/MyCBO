@@ -26,6 +26,14 @@ import '../../features/notifications/data/datasources/local_notification_service
 import '../../features/notifications/data/repositories/notification_repository_impl.dart';
 import '../../features/notifications/domain/repositories/notification_repository.dart';
 import '../../features/notifications/presentation/bloc/notification_bloc.dart';
+import '../../features/check_in/data/datasources/check_in_remote_data_source.dart';
+import '../../features/check_in/data/repositories/check_in_repository_impl.dart';
+import '../../features/check_in/domain/repositories/check_in_repository.dart';
+import '../network/dio_config.dart';
+import '../../features/kpi/data/repositories/kpi_repository_impl.dart';
+import '../../features/kpi/domain/repositories/kpi_repository.dart';
+import '../../features/kpi/domain/usecases/get_kpi_data.dart';
+import '../../features/kpi/presentation/bloc/kpi_bloc.dart';
 
 /// Service locator instance
 final sl = GetIt.instance;
@@ -72,6 +80,38 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetEditScheduleData(sl()));
   sl.registerLazySingleton(() => UpdateSchedule(sl()));
   sl.registerLazySingleton(() => GetRejectedSchedules(sl()));
+
+  // Check-in
+  sl.registerLazySingleton<CheckInRemoteDataSource>(
+    () => CheckInRemoteDataSourceImpl(
+      dio: sl(),
+      sharedPreferences: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton<CheckInRepository>(
+    () => CheckInRepositoryImpl(
+      remoteDataSource: sl(),
+      networkInfo: sl(),
+    ),
+  );
+
+  // KPI Feature
+  // Bloc
+  sl.registerFactory(
+    () => KpiBloc(getKpiData: sl()),
+  );
+
+  // Use cases
+  sl.registerLazySingleton(() => GetKpiData(sl()));
+
+  // Repository
+  sl.registerLazySingleton<KpiRepository>(
+    () => KpiRepositoryImpl(
+      client: sl(),
+      sharedPreferences: sl(),
+    ),
+  );
 }
 
 /// Inisialisasi dependencies untuk fitur Tipe Schedule
@@ -140,7 +180,7 @@ Future<void> _initExternalDependencies() async {
 
   // HTTP Clients untuk komunikasi dengan API
   sl.registerLazySingleton(() => http.Client());
-  sl.registerLazySingleton(() => Dio());
+  sl.registerLazySingleton(() => DioConfig.createDio());
   sl.registerLazySingleton(() => InternetConnectionChecker());
 }
 

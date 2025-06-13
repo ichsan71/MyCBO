@@ -72,8 +72,9 @@ class AppButton extends StatelessWidget {
         // Menggunakan warna yang lebih terang untuk mode normal
         bgColor = backgroundColor ??
             (brightness == Brightness.light
-                ? const Color(0xFF4CAF50) // Hijau yang lebih terang
-                : AppTheme.successColor);
+                ? const Color(0xFF81C784) // Hijau yang lebih terang
+                : const Color(
+                    0xFF81C784)); // Hijau yang lebih terang untuk dark mode
         fgColor = textColor ?? Colors.white;
         break;
       case AppButtonType.warning:

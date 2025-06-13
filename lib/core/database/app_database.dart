@@ -51,7 +51,13 @@ class AppDatabase {
         CREATE TABLE doctors (
           id INTEGER PRIMARY KEY,
           name TEXT NOT NULL,
+          address TEXT,
+          phone TEXT,
+          email TEXT,
           specialization TEXT,
+          doctor_type TEXT,
+          clinic_type TEXT,
+          rayon_code TEXT,
           last_updated INTEGER
         )
       ''');
@@ -282,25 +288,25 @@ class AppDatabase {
       if (kDebugMode) {
         print('Mulai membersihkan semua tabel database...');
       }
-      
+
       final db = await database;
       final batch = db.batch();
-      
+
       // Hapus semua data dari tabel-tabel
       batch.delete('doctors');
       batch.delete('products');
       batch.delete('schedule_types');
-      
+
       // Tambahkan tabel lain jika ada
-      
+
       await batch.commit();
-      
+
       // Verifikasi pembersihan
       if (kDebugMode) {
         final doctorsCount = (await getDoctors()).length;
         final productsCount = (await getProducts()).length;
         final scheduleTypesCount = (await getScheduleTypes()).length;
-        
+
         print('Database berhasil dibersihkan:');
         print('- Dokter: $doctorsCount item');
         print('- Produk: $productsCount item');
@@ -324,6 +330,29 @@ class AppDatabase {
     } catch (e) {
       if (kDebugMode) {
         print('Error saat menutup database: $e');
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> deleteDatabase() async {
+    try {
+      if (kDebugMode) {
+        print('Menghapus database...');
+      }
+
+      final dbPath = await getDatabasesPath();
+      final path = join(dbPath, 'app.db');
+
+      await databaseFactory.deleteDatabase(path);
+      _database = null;
+
+      if (kDebugMode) {
+        print('Database berhasil dihapus');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error saat menghapus database: $e');
       }
       rethrow;
     }

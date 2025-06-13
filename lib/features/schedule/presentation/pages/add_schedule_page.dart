@@ -25,6 +25,9 @@ import 'package:test_cbo/features/schedule/data/models/responses/doctor_response
 import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic_base.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_bloc.dart';
 import 'package:test_cbo/core/presentation/theme/app_theme.dart';
+import 'package:test_cbo/core/presentation/widgets/custom_snackbar.dart';
+import 'package:test_cbo/core/presentation/widgets/success_message.dart';
+import 'dart:convert';
 
 class AddSchedulePage extends StatefulWidget {
   const AddSchedulePage({super.key});
@@ -48,7 +51,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
 
   // Selected values
   ScheduleType? _selectedScheduleType;
-  DoctorClinic? _selectedDoctor;
+  DoctorClinicBase? _selectedDoctor;
   String _selectedShift = 'pagi';
   final String _selectedJenis = 'suddenly';
   final List<Product> _selectedProducts = [];
@@ -102,11 +105,83 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
         _selectedProducts.remove(product);
         _selectedProductNames.removeAt(index);
 
-        // Tidak perlu menghapus divisi dan spesialis karena sudah diisi default
+        // Hapus divisi dan spesialis terkait
+        if (product.idDivisiSales != null) {
+          try {
+            final List<dynamic> divisiIds = jsonDecode(product.idDivisiSales!);
+            for (final divisiId in divisiIds) {
+              final intDivisiId = int.parse(divisiId.toString());
+              if (_selectedProductDivisiIds.contains(intDivisiId)) {
+                _selectedProductDivisiIds.remove(intDivisiId);
+                // Hapus nama divisi
+                final divisiName = _getDivisionName(intDivisiId);
+                _selectedDivisiNames.remove(divisiName);
+              }
+            }
+          } catch (e) {
+            Logger.error(_tag, 'Error parsing division IDs: $e');
+          }
+        }
+
+        if (product.idSpesialis != null) {
+          try {
+            final List<dynamic> spesialisIds = jsonDecode(product.idSpesialis!);
+            for (final spesialisId in spesialisIds) {
+              final intSpesialisId = int.parse(spesialisId.toString());
+              if (_selectedProductSpesialisIds.contains(intSpesialisId)) {
+                _selectedProductSpesialisIds.remove(intSpesialisId);
+                // Hapus nama spesialis
+                final spesialisName = _getSpesialisName(intSpesialisId);
+                _selectedSpesialisNames.remove(spesialisName);
+              }
+            }
+          } catch (e) {
+            Logger.error(_tag, 'Error parsing specialist IDs: $e');
+          }
+        }
       } else {
         // Tambah produk dan data terkait
         _selectedProducts.add(product);
         _selectedProductNames.add(product.nama);
+
+        // Tambah divisi dan spesialis terkait
+        if (product.idDivisiSales != null) {
+          try {
+            final List<dynamic> divisiIds = jsonDecode(product.idDivisiSales!);
+            for (final divisiId in divisiIds) {
+              final intDivisiId = int.parse(divisiId.toString());
+              if (!_selectedProductDivisiIds.contains(intDivisiId)) {
+                _selectedProductDivisiIds.add(intDivisiId);
+                // Tambah nama divisi
+                final divisiName = _getDivisionName(intDivisiId);
+                if (!_selectedDivisiNames.contains(divisiName)) {
+                  _selectedDivisiNames.add(divisiName);
+                }
+              }
+            }
+          } catch (e) {
+            Logger.error(_tag, 'Error parsing division IDs: $e');
+          }
+        }
+
+        if (product.idSpesialis != null) {
+          try {
+            final List<dynamic> spesialisIds = jsonDecode(product.idSpesialis!);
+            for (final spesialisId in spesialisIds) {
+              final intSpesialisId = int.parse(spesialisId.toString());
+              if (!_selectedProductSpesialisIds.contains(intSpesialisId)) {
+                _selectedProductSpesialisIds.add(intSpesialisId);
+                // Tambah nama spesialis
+                final spesialisName = _getSpesialisName(intSpesialisId);
+                if (!_selectedSpesialisNames.contains(spesialisName)) {
+                  _selectedSpesialisNames.add(spesialisName);
+                }
+              }
+            }
+          } catch (e) {
+            Logger.error(_tag, 'Error parsing specialist IDs: $e');
+          }
+        }
       }
 
       // Debug log
@@ -119,6 +194,19 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
           _tag, 'Selected Spesialis IDs: $_selectedProductSpesialisIds');
       Logger.debug(_tag, 'Selected Spesialis Names: $_selectedSpesialisNames');
     });
+  }
+
+  // Mapping ID divisi ke nama divisi
+  String _getDivisionName(int divisionId) {
+    final Map<int, String> divisionNames = {
+      1: 'Divisi 1',
+      2: 'Divisi 2',
+      3: 'Divisi 3',
+      4: 'Divisi 4',
+      5: 'Divisi 5',
+      // Tambahkan mapping sesuai kebutuhan
+    };
+    return divisionNames[divisionId] ?? 'Divisi $divisionId';
   }
 
   @override
@@ -166,11 +254,10 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
         setState(() {
           _noteError = 'Catatan wajib diisi';
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Silakan isi catatan terlebih dahulu'),
-            backgroundColor: Colors.red,
-          ),
+        CustomSnackBar.show(
+          context: context,
+          message: 'Silakan isi catatan terlebih dahulu',
+          isError: true,
         );
         return;
       }
@@ -179,11 +266,10 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
         setState(() {
           _noteError = 'Catatan minimal $_minimumNoteCharacters karakter';
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Catatan terlalu pendek'),
-            backgroundColor: Colors.red,
-          ),
+        CustomSnackBar.show(
+          context: context,
+          message: 'Catatan terlalu pendek',
+          isError: true,
         );
         return;
       }
@@ -192,44 +278,40 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
         setState(() {
           _noteError = 'Catatan maksimal $_maximumNoteCharacters karakter';
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Catatan terlalu panjang'),
-            backgroundColor: Colors.red,
-          ),
+        CustomSnackBar.show(
+          context: context,
+          message: 'Catatan terlalu panjang',
+          isError: true,
         );
         return;
       }
 
       if (_selectedDoctor == null) {
         // Tampilkan pesan error jika dokter belum dipilih
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Silakan pilih dokter terlebih dahulu'),
-            backgroundColor: Colors.red,
-          ),
+        CustomSnackBar.show(
+          context: context,
+          message: 'Silakan pilih dokter terlebih dahulu',
+          isError: true,
         );
         return;
       }
 
       if (_selectedScheduleType == null) {
         // Tampilkan pesan error jika tipe jadwal belum dipilih
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Silakan pilih tipe jadwal terlebih dahulu'),
-            backgroundColor: Colors.red,
-          ),
+        CustomSnackBar.show(
+          context: context,
+          message: 'Silakan pilih tipe jadwal terlebih dahulu',
+          isError: true,
         );
         return;
       }
 
       if (_tanggalController.text.isEmpty) {
         // Tampilkan pesan error jika tanggal belum dipilih
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Silakan pilih tanggal kunjungan'),
-            backgroundColor: Colors.red,
-          ),
+        CustomSnackBar.show(
+          context: context,
+          message: 'Silakan pilih tanggal kunjungan',
+          isError: true,
         );
         return;
       }
@@ -253,18 +335,21 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
 
       context.read<AddScheduleBloc>().add(
             SubmitScheduleEvent(
-              typeSchedule: _selectedScheduleType!.id,
+              typeSchedule: _selectedScheduleType!.id.toString(),
               tujuan: _selectedDestinationType,
               tglVisit: _tanggalController.text,
-              product: _selectedProducts.map((p) => p.id).toList(),
+              product: _selectedProducts.map((p) => p.id.toString()).toList(),
               note: _noteController.text.trim(),
-              idUser: userId,
-              dokter: _selectedDoctor!.id!,
+              idUser: userId.toString(),
+              dokter: _selectedDoctor!.id!.toString(),
               klinik: _selectedDestinationType == 'klinik'
                   ? _selectedDoctor!.nama
                   : '',
-              productForIdDivisi: _selectedProductDivisiIds,
-              productForIdSpesialis: _selectedProductSpesialisIds,
+              productForIdDivisi:
+                  _selectedProductDivisiIds.map((id) => id.toString()).toList(),
+              productForIdSpesialis: _selectedProductSpesialisIds
+                  .map((id) => id.toString())
+                  .toList(),
               shift: _selectedShift,
               jenis: _selectedJenis,
               productNames: _selectedProductNames,
@@ -293,13 +378,18 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
             return BlocConsumer<AddScheduleBloc, AddScheduleState>(
               listener: (context, state) {
                 if (state is AddScheduleSuccess) {
-                  Navigator.pop(context, true);
+                  SuccessMessage.show(
+                    context: context,
+                    message: 'Jadwal berhasil ditambahkan',
+                    onDismissed: () {
+                      Navigator.pop(context, true);
+                    },
+                  );
                 } else if (state is AddScheduleError) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(state.message),
-                      backgroundColor: Colors.red,
-                    ),
+                  CustomSnackBar.show(
+                    context: context,
+                    message: state.message,
+                    isError: true,
                   );
                 }
               },
@@ -307,18 +397,16 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                 if (state is AddScheduleInitial) {
                   context.read<AddScheduleBloc>().add(
                         GetDoctorsAndClinicsEvent(
-                          userId: authState.user.idUser,
+                          userId: authState.user.idUser.toString(),
                         ),
                       );
                   context.read<AddScheduleBloc>().add(GetScheduleTypesEvent());
                   context.read<AddScheduleBloc>().add(
                         GetProductsEvent(
-                          userId: authState.user.idUser,
+                          userId: authState.user.idUser.toString(),
                         ),
                       );
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
+                  return const ShimmerScheduleLoading();
                 } else if (state is AddScheduleLoading) {
                   return const ShimmerScheduleLoading();
                 } else if (state is AddScheduleFormLoaded) {
@@ -602,22 +690,19 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                             onPressed: () {
                               if (_formKey.currentState!.validate()) {
                                 if (_selectedDoctor == null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Pilih dokter atau klinik'),
-                                      backgroundColor: Colors.red,
-                                    ),
+                                  CustomSnackBar.show(
+                                    context: context,
+                                    message: 'Pilih dokter atau klinik',
+                                    isError: true,
                                   );
                                   return;
                                 }
 
                                 if (_selectedProducts.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content:
-                                          Text('Pilih minimal satu produk'),
-                                      backgroundColor: Colors.red,
-                                    ),
+                                  CustomSnackBar.show(
+                                    context: context,
+                                    message: 'Pilih minimal satu produk',
+                                    isError: true,
                                   );
                                   return;
                                 }
@@ -641,23 +726,29 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
 
                                 context.read<AddScheduleBloc>().add(
                                       SubmitScheduleEvent(
-                                        typeSchedule: _selectedScheduleType!.id,
+                                        typeSchedule: _selectedScheduleType!.id
+                                            .toString(),
                                         tujuan: _selectedDestinationType,
                                         tglVisit: _tanggalController.text,
                                         product: _selectedProducts
-                                            .map((p) => p.id)
+                                            .map((p) => p.id.toString())
                                             .toList(),
                                         note: note,
-                                        idUser: authState.user.idUser,
-                                        dokter: _selectedDoctor!.id,
+                                        idUser:
+                                            authState.user.idUser.toString(),
+                                        dokter: _selectedDoctor!.id!.toString(),
                                         klinik:
                                             _selectedDestinationType == 'klinik'
                                                 ? _selectedDoctor!.nama
                                                 : '',
                                         productForIdDivisi:
-                                            _selectedProductDivisiIds,
+                                            _selectedProductDivisiIds
+                                                .map((id) => id.toString())
+                                                .toList(),
                                         productForIdSpesialis:
-                                            _selectedProductSpesialisIds,
+                                            _selectedProductSpesialisIds
+                                                .map((id) => id.toString())
+                                                .toList(),
                                         shift: _selectedShift,
                                         jenis: _selectedJenis,
                                         productNames: _selectedProductNames,
@@ -691,13 +782,89 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
     );
   }
 
-  Widget _buildDoctorList(List<DoctorClinic> doctors) {
+  Widget _buildDoctorList(List<DoctorClinicBase> doctors) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Log the incoming data
+    Logger.debug(_tag, 'Building doctor list with ${doctors.length} doctors');
+    if (doctors.isEmpty) {
+      Logger.warning(_tag, 'No doctors available to display');
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                size: 48,
+                color: isDark ? Colors.white70 : Colors.grey[600],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Tidak ada data dokter tersedia',
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : Colors.grey[600],
+                  fontSize: 16,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Silakan coba refresh halaman atau periksa koneksi internet Anda',
+                style: TextStyle(
+                  color: isDark ? Colors.white60 : Colors.grey[500],
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final filteredDoctors = doctors.where((doctor) {
       final searchQuery = _doctorSearchQuery.toLowerCase();
-      return doctor.nama.toLowerCase().contains(searchQuery) ||
+      final matches = doctor.nama.toLowerCase().contains(searchQuery) ||
           (doctor.alamat ?? '').toLowerCase().contains(searchQuery);
+
+      // Log search results
+      Logger.debug(
+          _tag, 'Filtering doctor: ${doctor.nama} - matches: $matches');
+
+      return matches;
     }).toList();
+
+    // Log filtered results
+    Logger.debug(_tag, 'Filtered doctors count: ${filteredDoctors.length}');
+
+    if (filteredDoctors.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.search_off,
+                size: 48,
+                color: isDark ? Colors.white70 : Colors.grey[600],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Tidak ada dokter yang sesuai dengan pencarian',
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : Colors.grey[600],
+                  fontSize: 16,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return ConstrainedBox(
       constraints: const BoxConstraints(maxHeight: 300),
@@ -708,6 +875,10 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
         itemBuilder: (context, index) {
           final doctor = filteredDoctors[index];
           final isSelected = _selectedDoctor?.id == doctor.id;
+
+          // Log item build
+          Logger.debug(_tag,
+              'Building doctor item: ${doctor.nama} (selected: $isSelected)');
 
           return Container(
             margin: const EdgeInsets.only(bottom: 8),
@@ -735,6 +906,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                 onTap: () {
                   setState(() {
                     _selectedDoctor = doctor;
+                    Logger.info(_tag,
+                        'Selected doctor: ${doctor.nama} (ID: ${doctor.id})');
                   });
                 },
                 borderRadius: BorderRadius.circular(12),
@@ -771,7 +944,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                                 color: isDark ? Colors.white : Colors.black87,
                               ),
                             ),
-                            if (doctor.alamat != null) ...[
+                            if (doctor.alamat != null &&
+                                doctor.alamat!.isNotEmpty) ...[
                               const SizedBox(height: 4),
                               Text(
                                 doctor.alamat!,
@@ -782,6 +956,18 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                            if (doctor.spesialis.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                doctor.spesialis,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color:
+                                      isDark ? Colors.white60 : Colors.black45,
+                                  fontStyle: FontStyle.italic,
+                                ),
                               ),
                             ],
                           ],
@@ -805,7 +991,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
     );
   }
 
-  Widget _buildClinicList(List<DoctorClinic> clinics) {
+  Widget _buildClinicList(List<DoctorClinicBase> clinics) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final filteredClinics = clinics.where((clinic) {
       final searchQuery = _doctorSearchQuery.toLowerCase();
@@ -885,7 +1071,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                                 color: isDark ? Colors.white : Colors.black87,
                               ),
                             ),
-                            if (clinic.alamat != null) ...[
+                            if (clinic.alamat != null &&
+                                clinic.alamat!.isNotEmpty) ...[
                               const SizedBox(height: 4),
                               Text(
                                 clinic.alamat!,

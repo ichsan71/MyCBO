@@ -1,11 +1,12 @@
 import 'package:test_cbo/features/schedule/data/models/doctor_clinic_model.dart';
 import 'package:test_cbo/features/schedule/data/models/product_model.dart';
 import 'package:test_cbo/features/schedule/data/models/schedule_type_model.dart';
+import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic_base.dart';
 
 abstract class AddScheduleLocalDataSource {
   /// Mendapatkan daftar dokter dan klinik dari cache lokal
   /// Throws [CacheException] jika tidak ada data
-  Future<List<DoctorClinicModel>> getDoctorsAndClinics();
+  Future<List<DoctorClinicBase>> getDoctorsAndClinics();
 
   /// Mendapatkan daftar tipe jadwal dari cache lokal
   /// Throws [CacheException] jika tidak ada data
@@ -16,7 +17,7 @@ abstract class AddScheduleLocalDataSource {
   Future<List<ProductModel>> getProducts();
 
   /// Menyimpan data dokter ke cache lokal
-  Future<void> cacheDoctors(List<DoctorClinicModel> doctors);
+  Future<void> cacheDoctors(List<DoctorClinicBase> doctors);
 
   /// Menyimpan data tipe jadwal ke cache lokal
   Future<void> cacheScheduleTypes(List<ScheduleTypeModel> scheduleTypes);

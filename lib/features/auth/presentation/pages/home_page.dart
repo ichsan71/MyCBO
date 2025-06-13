@@ -11,10 +11,12 @@ import 'package:test_cbo/core/presentation/widgets/shimmer_home_loading.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_bloc.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_event.dart';
 import '../widgets/menu_card.dart';
-import 'package:test_cbo/core/presentation/widgets/kpi_chart.dart';
+import 'package:test_cbo/features/kpi/presentation/widgets/kpi_chart_new.dart';
 import 'package:test_cbo/core/presentation/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:test_cbo/core/presentation/theme/theme_provider.dart';
+import 'package:test_cbo/features/kpi/presentation/bloc/kpi_bloc.dart';
+import 'package:test_cbo/features/kpi/presentation/widgets/kpi_chart_shimmer.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -35,15 +37,27 @@ class HomePage extends StatelessWidget {
   }
 }
 
-class _HomeContent extends StatelessWidget {
+class _HomeContent extends StatefulWidget {
   final AuthAuthenticated user;
 
   const _HomeContent({required this.user});
 
   @override
+  State<_HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<_HomeContent> {
+  @override
+  void initState() {
+    super.initState();
+    // Load KPI data when the page is opened
+    context.read<KpiBloc>().add(GetKpiDataEvent(widget.user.user.idUser.toString()));
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final role = user.user.role.toUpperCase();
+    final role = widget.user.user.role.toUpperCase();
     final hasApprovalAccess = role == 'ADMIN' ||
         role == 'BCO' ||
         role == 'RSM' ||
@@ -82,11 +96,28 @@ class _HomeContent extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      user.user.name,
+                      widget.user.user.name,
                       style: GoogleFonts.poppins(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        role,
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Theme.of(context).primaryColor,
+                        ),
                       ),
                     ),
                   ],
@@ -94,116 +125,208 @@ class _HomeContent extends StatelessWidget {
               ),
             ),
           ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  Text(
-                    'Performance Overview',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).primaryColor,
-                    ),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(isDark ? 0.2 : 0.1),
+                        spreadRadius: 0,
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              l10n.performanceOverview,
+                              style: GoogleFonts.poppins(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                            ),
+                            BlocBuilder<KpiBloc, KpiState>(
+                              builder: (context, state) {
+                                if (state is KpiLoaded) {
+                                  return IconButton(
+                                    onPressed: () {
+                                      context.read<KpiBloc>().add(
+                                        GetKpiDataEvent(widget.user.user.idUser.toString()),
+                                      );
+                                    },
+                                    icon: Icon(
+                                      Icons.refresh_rounded,
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      BlocBuilder<KpiBloc, KpiState>(
+                        builder: (context, state) {
+                          if (state is KpiLoading) {
+                            return const KpiChartShimmer();
+                          } else if (state is KpiLoaded && state.kpiData.data.isNotEmpty) {
+                            return KpiChartNew(
+                              kpiData: state.kpiData.data.first.grafik,
+                              onRefresh: () {
+                                context.read<KpiBloc>().add(
+                                  GetKpiDataEvent(widget.user.user.idUser.toString()),
+                                );
+                              },
+                            );
+                          } else if (state is KpiError) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    state.message,
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.red,
+                                      fontSize: 14,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      context.read<KpiBloc>().add(
+                                        GetKpiDataEvent(widget.user.user.idUser.toString()),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.refresh),
+                                    label: Text(
+                                      'Coba Lagi',
+                                      style: GoogleFonts.poppins(),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Container(
+                    width: double.infinity,
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.grey.withOpacity(isDark ? 0.3 : 0.1),
-                          spreadRadius: 1,
-                          blurRadius: 10,
-                          offset: const Offset(0, 1),
+                          color: Colors.grey.withOpacity(isDark ? 0.2 : 0.1),
+                          spreadRadius: 0,
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: const Center(
-                      child: KPIChart(
-                        achievement: 70,
-                        weight: 80,
-                        result: 80,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.quickActions,
+                            style: GoogleFonts.poppins(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          GridView.count(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: 1.1,
+                            children: [
+                              _buildMenuCard(
+                                context: context,
+                                title: l10n.report,
+                                icon: Icons.bar_chart,
+                                color: Colors.blue[600]!,
+                                onTap: () {},
+                              ),
+                              _buildMenuCard(
+                                context: context,
+                                title: l10n.addSchedule,
+                                icon: Icons.add_circle,
+                                color: Colors.green[600]!,
+                                onTap: () =>
+                                    Navigator.pushNamed(context, '/add_schedule'),
+                              ),
+                              if (hasApprovalAccess)
+                                _buildMenuCard(
+                                  context: context,
+                                  title: l10n.approval,
+                                  icon: Icons.approval,
+                                  color: Colors.orange[600]!,
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const ApprovalListPage(),
+                                    ),
+                                  ),
+                                ),
+                              if (hasRealisasiVisitAccess)
+                                _buildMenuCard(
+                                  context: context,
+                                  title: l10n.realisasiVisit,
+                                  icon: Icons.assignment_turned_in,
+                                  color: Colors.purple[600]!,
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const RealisasiVisitListPage(),
+                                    ),
+                                  ),
+                                ),
+                              _buildMenuCard(
+                                context: context,
+                                title: l10n.settings,
+                                icon: Icons.settings,
+                                color: Colors.grey[700]!,
+                                onTap: () => Navigator.pushNamed(
+                                    context, '/notification_settings'),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  Text(
-                    'Quick Actions',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 1.1,
-                    children: [
-                      _buildMenuCard(
-                        context: context,
-                        title: 'Laporan',
-                        icon: Icons.bar_chart,
-                        color: Colors.blue[600]!,
-                        onTap: () {},
-                      ),
-                      _buildMenuCard(
-                        context: context,
-                        title: 'Tambah Jadwal',
-                        icon: Icons.add_circle,
-                        color: Colors.green[600]!,
-                        onTap: () =>
-                            Navigator.pushNamed(context, '/add_schedule'),
-                      ),
-                      if (hasApprovalAccess)
-                        _buildMenuCard(
-                          context: context,
-                          title: 'Persetujuan',
-                          icon: Icons.approval,
-                          color: Colors.orange[600]!,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ApprovalListPage(),
-                            ),
-                          ),
-                        ),
-                      if (hasRealisasiVisitAccess)
-                        _buildMenuCard(
-                          context: context,
-                          title: 'Realisasi Visit',
-                          icon: Icons.assignment_turned_in,
-                          color: Colors.purple[600]!,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const RealisasiVisitListPage(),
-                            ),
-                          ),
-                        ),
-                      _buildMenuCard(
-                        context: context,
-                        title: 'Pengaturan',
-                        icon: Icons.settings,
-                        color: Colors.grey[700]!,
-                        onTap: () => Navigator.pushNamed(
-                            context, '/notification_settings'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ]),
             ),
           ),
         ],
@@ -226,10 +349,10 @@ class _HomeContent extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(isDark ? 0.3 : 0.1),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: const Offset(0, 1),
+            color: Colors.grey.withOpacity(isDark ? 0.2 : 0.1),
+            spreadRadius: 0,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),

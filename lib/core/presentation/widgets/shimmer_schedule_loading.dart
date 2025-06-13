@@ -7,214 +7,84 @@ class ShimmerScheduleLoading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ShimmerLoading(
-      child: SingleChildScrollView(
+      child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Form Header - Informasi Jadwal
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  const Row(
-                    children: [
-                      ShimmerBox(width: 24, height: 24, borderRadius: 4),
-                      SizedBox(width: 12),
-                      ShimmerBox(width: 160, height: 24, borderRadius: 4),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    height: 1,
-                    color: Colors.white,
-                    width: double.infinity,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Form Fields
-                  _buildFormField(),
-                  const SizedBox(height: 20),
-                  _buildFormField(),
-                  const SizedBox(height: 20),
-                  _buildFormField(),
-                  const SizedBox(height: 20),
-                  _buildFormField(),
-                ],
-              ),
+            // Header shimmer
+            const ShimmerContainer(
+              height: 24,
+              width: 200,
             ),
-            
-            const SizedBox(height: 20),
-            
-            // Dokter Section
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  const Row(
-                    children: [
-                      ShimmerBox(width: 24, height: 24, borderRadius: 4),
-                      SizedBox(width: 12),
-                      ShimmerBox(width: 100, height: 24, borderRadius: 4),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    height: 1,
-                    color: Colors.white,
-                    width: double.infinity,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Search Field
-                  const ShimmerBox(
-                    width: double.infinity,
-                    height: 48,
-                    borderRadius: 12,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Doctor List
-                  for (int i = 0; i < 5; i++) ...[
-                    const ShimmerListTile(
-                      height: 70,
-                      hasTrailing: true,
-                      subtitleLines: 1,
+            const SizedBox(height: 24),
+
+            // Schedule items shimmer
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: 5,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    if (i < 4) const SizedBox(height: 8),
-                  ],
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Products Section
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  const Row(
-                    children: [
-                      ShimmerBox(width: 24, height: 24, borderRadius: 4),
-                      SizedBox(width: 12),
-                      ShimmerBox(width: 120, height: 24, borderRadius: 4),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    height: 1,
-                    color: Colors.white,
-                    width: double.infinity,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Search Field
-                  const ShimmerBox(
-                    width: double.infinity,
-                    height: 48, 
-                    borderRadius: 12,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Product List
-                  for (int i = 0; i < 5; i++) ...[
-                    const ShimmerListTile(
-                      hasTrailing: true,
-                      subtitleLines: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const ShimmerContainer(
+                              width: 40,
+                              height: 40,
+                              borderRadius: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: const [
+                                  ShimmerContainer(
+                                    width: 150,
+                                    height: 16,
+                                  ),
+                                  SizedBox(height: 8),
+                                  ShimmerContainer(
+                                    width: 100,
+                                    height: 14,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const ShimmerContainer(
+                              width: 60,
+                              height: 24,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        const ShimmerContainer(
+                          height: 14,
+                          width: double.infinity,
+                        ),
+                        const SizedBox(height: 8),
+                        const ShimmerContainer(
+                          height: 14,
+                          width: 200,
+                        ),
+                      ],
                     ),
-                    if (i < 4) const SizedBox(height: 8),
-                  ],
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Notes Section
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  const Row(
-                    children: [
-                      ShimmerBox(width: 24, height: 24, borderRadius: 4),
-                      SizedBox(width: 12),
-                      ShimmerBox(width: 80, height: 24, borderRadius: 4),
-                    ],
                   ),
-                  const SizedBox(height: 16),
-                  Container(
-                    height: 1,
-                    color: Colors.white,
-                    width: double.infinity,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Note Field
-                  const ShimmerBox(
-                    width: double.infinity,
-                    height: 100,
-                    borderRadius: 12,
-                  ),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 32),
-            
-            // Submit Button
-            const ShimmerBox(
-              width: double.infinity,
-              height: 56,
-              borderRadius: 12,
+                );
+              },
             ),
           ],
         ),
       ),
     );
   }
-  
-  Widget _buildFormField() {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ShimmerBox(width: 100, height: 16, borderRadius: 4),
-        SizedBox(height: 8),
-        ShimmerBox(
-          width: double.infinity,
-          height: 48,
-          borderRadius: 8,
-        ),
-      ],
-    );
-  }
-} 
+}

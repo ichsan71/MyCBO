@@ -1,8 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:test_cbo/core/usecases/usecase.dart';
 import 'package:test_cbo/core/utils/logger.dart';
-import 'package:test_cbo/features/schedule/data/models/responses/doctor_response.dart';
-import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic.dart';
+import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic_base.dart';
 import 'package:test_cbo/features/schedule/domain/entities/product.dart';
 import 'package:test_cbo/features/schedule/domain/entities/schedule_type.dart';
 import 'package:test_cbo/features/schedule/domain/usecases/add_schedule.dart';
@@ -12,8 +12,6 @@ import 'package:test_cbo/features/schedule/domain/usecases/get_products.dart';
 import 'package:test_cbo/features/schedule/domain/usecases/get_schedule_types.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_event.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_state.dart';
-import 'package:test_cbo/core/error/failures.dart';
-import 'package:test_cbo/core/error/exceptions.dart';
 
 class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
   final GetDoctorsAndClinics getDoctorsAndClinics;
@@ -24,10 +22,9 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
 
   static const String _tag = 'AddScheduleBloc';
 
-  List<DoctorClinic> _doctorsAndClinics = [];
+  List<DoctorClinicBase> _doctorsAndClinics = [];
   List<ScheduleType> _scheduleTypes = [];
   List<Product> _products = [];
-  DoctorResponse? _doctorResponse;
 
   AddScheduleBloc({
     required this.getDoctorsAndClinics,
@@ -35,11 +32,10 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
     required this.getProducts,
     required this.getDoctors,
     required this.addSchedule,
-  }) : super(AddScheduleInitial()) {
+  }) : super(const AddScheduleInitial()) {
     on<GetDoctorsAndClinicsEvent>(_onGetDoctorsAndClinics);
     on<GetScheduleTypesEvent>(_onGetScheduleTypes);
     on<GetProductsEvent>(_onGetProducts);
-    on<GetDoctorsEvent>(_onGetDoctors);
     on<SubmitScheduleEvent>(_onSubmitSchedule);
   }
 
@@ -47,47 +43,29 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
     GetDoctorsAndClinicsEvent event,
     Emitter<AddScheduleState> emit,
   ) async {
-    Logger.info(_tag,
-        'Memulai GetDoctorsAndClinicsEvent dengan userId: ${event.userId}');
-    emit(AddScheduleLoading());
-
     try {
-      final result = await getDoctorsAndClinics(Params(userId: event.userId));
-      result.fold(
-        (failure) {
-          Logger.error(_tag,
-              'Gagal mendapatkan dokter dan klinik: ${failure.toString()}');
-          if (failure is ServerFailure) {
-            emit(AddScheduleError(message: 'Server error: ${failure.message}'));
-          } else if (failure is NetworkFailure) {
-            emit(const AddScheduleError(
-                message:
-                    'Tidak ada koneksi internet. Silakan coba lagi saat koneksi tersedia.'));
-          } else if (failure is CacheFailure) {
-            // Pesan error yang lebih spesifik untuk CacheFailure
-            emit(const AddScheduleError(
-                message:
-                    'Data dokter dan klinik belum tersedia secara offline. Sambungkan ke internet untuk mengunduh data.'));
-            Logger.warning(_tag,
-                'Tidak ada data dokter & klinik di cache: ${failure.message}');
-          } else {
-            emit(const AddScheduleError(
-                message:
-                    'Terjadi kesalahan saat mengambil data dokter dan klinik'));
-          }
+      final result = await getDoctorsAndClinics(
+        Params(userId: int.parse(event.userId)),
+      );
+
+      await result.fold(
+        (failure) async {
+          Logger.error(_tag, 'Gagal mendapatkan dokter: ${failure.message}');
+          emit(AddScheduleError(message: failure.message));
         },
-        (doctorsAndClinics) {
-          Logger.success(_tag,
-              'Berhasil mendapatkan ${doctorsAndClinics.length} dokter dan klinik');
+        (doctorsAndClinics) async {
+          Logger.success(
+              _tag, 'Berhasil mendapatkan ${doctorsAndClinics.length} dokter');
           _doctorsAndClinics = doctorsAndClinics;
           emit(DoctorsAndClinicsLoaded(doctorsAndClinics: doctorsAndClinics));
           _checkFormDataLoaded(emit);
         },
       );
     } catch (e) {
-      Logger.error(
-          _tag, 'Error tidak tertangani di _onGetDoctorsAndClinics', e);
-      emit(AddScheduleError(message: 'Terjadi kesalahan tidak terduga: $e'));
+      Logger.error(_tag, 'Error tidak tertangani: $e');
+      emit(AddScheduleError(
+          message: 'Terjadi kesalahan saat mengambil data dokter'));
+      _checkFormDataLoaded(emit);
     }
   }
 
@@ -95,34 +73,16 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
     GetScheduleTypesEvent event,
     Emitter<AddScheduleState> emit,
   ) async {
-    Logger.info(_tag, 'Memulai GetScheduleTypesEvent');
-    emit(AddScheduleLoading());
-
     try {
       final result = await getScheduleTypes(NoParams());
-      result.fold(
-        (failure) {
+
+      await result.fold(
+        (failure) async {
           Logger.error(
-              _tag, 'Gagal mendapatkan tipe jadwal: ${failure.toString()}');
-          if (failure is ServerFailure) {
-            emit(AddScheduleError(message: 'Server error: ${failure.message}'));
-          } else if (failure is NetworkFailure) {
-            emit(const AddScheduleError(
-                message:
-                    'Tidak ada koneksi internet. Silakan coba lagi saat koneksi tersedia.'));
-          } else if (failure is CacheFailure) {
-            // Pesan error yang lebih spesifik untuk CacheFailure
-            emit(const AddScheduleError(
-                message:
-                    'Data tipe jadwal belum tersedia secara offline. Sambungkan ke internet untuk mengunduh data.'));
-            Logger.warning(_tag,
-                'Tidak ada data tipe jadwal di cache: ${failure.message}');
-          } else {
-            emit(const AddScheduleError(
-                message: 'Terjadi kesalahan saat mengambil data tipe jadwal'));
-          }
+              _tag, 'Gagal mendapatkan tipe jadwal: ${failure.message}');
+          emit(AddScheduleError(message: failure.message));
         },
-        (scheduleTypes) {
+        (scheduleTypes) async {
           Logger.success(
               _tag, 'Berhasil mendapatkan ${scheduleTypes.length} tipe jadwal');
           _scheduleTypes = scheduleTypes;
@@ -131,8 +91,10 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
         },
       );
     } catch (e) {
-      Logger.error(_tag, 'Error tidak tertangani di _onGetScheduleTypes', e);
-      emit(AddScheduleError(message: 'Terjadi kesalahan tidak terduga: $e'));
+      Logger.error(_tag, 'Error tidak tertangani: $e');
+      emit(AddScheduleError(
+          message: 'Terjadi kesalahan saat mengambil tipe jadwal'));
+      _checkFormDataLoaded(emit);
     }
   }
 
@@ -141,112 +103,27 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
     Emitter<AddScheduleState> emit,
   ) async {
     try {
-      Logger.info(_tag, 'Memulai GetProductsEvent');
-      emit(AddScheduleLoading());
-
-      final result = await getProducts(ProductParams(userId: event.userId));
-
-      result.fold(
-        (failure) {
-          Logger.error(_tag, 'Gagal memuat produk - $failure');
-
-          if (failure is ServerFailure) {
-            emit(AddScheduleError(message: 'Server error: ${failure.message}'));
-          } else if (failure is NetworkFailure) {
-            emit(const AddScheduleError(
-                message:
-                    'Tidak ada koneksi internet. Silakan coba lagi saat koneksi tersedia.'));
-          } else if (failure is CacheFailure) {
-            // Pesan error yang lebih spesifik untuk CacheFailure
-            emit(const AddScheduleError(
-                message:
-                    'Data produk belum tersedia secara offline. Sambungkan ke internet untuk mengunduh data.'));
-            Logger.warning(
-                _tag, 'Tidak ada data produk di cache: ${failure.message}');
-          } else {
-            emit(AddScheduleError(message: failure.toString()));
-          }
-
-          // Jika gagal mendapatkan produk, tetap gunakan produk sebelumnya jika ada
-          if (_products.isNotEmpty) {
-            Logger.warning(_tag,
-                'Menggunakan ${_products.length} produk dari memori (_products)');
-            emit(ProductsLoaded(products: _products));
-            _checkFormDataLoaded(emit);
-          }
-        },
-        (products) {
-          if (products.isNotEmpty) {
-            Logger.success(_tag, 'Berhasil memuat ${products.length} produk');
-
-            // Simpan produk di variabel _products
-            _products = products;
-
-            // Emit state dengan produk baru
-            emit(ProductsLoaded(products: products));
-
-            // Check jika semua form data sudah dimuat
-            _checkFormDataLoaded(emit);
-          } else {
-            Logger.warning(_tag, 'Tidak ada produk ditemukan');
-            emit(const AddScheduleError(message: 'Tidak ada produk tersedia'));
-          }
-        },
+      final result = await getProducts(
+        ProductParams(userId: int.parse(event.userId)),
       );
-    } catch (e) {
-      Logger.error(_tag, 'Error dalam GetProductsEvent', e);
-      emit(AddScheduleError(message: e.toString()));
-    }
-  }
 
-  Future<void> _onGetDoctors(
-    GetDoctorsEvent event,
-    Emitter<AddScheduleState> emit,
-  ) async {
-    Logger.info(_tag, 'Memulai GetDoctorsEvent');
-    emit(AddScheduleLoading());
-
-    try {
-      final result = await getDoctors(NoParams());
-      result.fold(
-        (failure) {
-          Logger.error(_tag, 'Gagal mendapatkan dokter: ${failure.toString()}');
-          if (failure is ServerFailure) {
-            emit(AddScheduleError(message: 'Server error: ${failure.message}'));
-          } else if (failure is NetworkFailure) {
-            emit(const AddScheduleError(
-                message:
-                    'Tidak ada koneksi internet. Silakan coba lagi saat koneksi tersedia.'));
-          } else if (failure is CacheFailure) {
-            // Pesan error yang lebih spesifik untuk CacheFailure
-            emit(const AddScheduleError(
-                message:
-                    'Data dokter belum tersedia secara offline. Sambungkan ke internet untuk mengunduh data.'));
-            Logger.warning(
-                _tag, 'Tidak ada data dokter di cache: ${failure.message}');
-          } else {
-            emit(const AddScheduleError(
-                message: 'Terjadi kesalahan saat mengambil data dokter'));
-          }
-
-          // Tetap panggil _checkFormDataLoaded untuk membuat UI dapat ditampilkan
-          _checkFormDataLoaded(emit);
+      await result.fold(
+        (failure) async {
+          Logger.error(_tag, 'Gagal mendapatkan produk: ${failure.message}');
+          emit(AddScheduleError(message: failure.message));
         },
-        (doctorResponse) {
-          Logger.success(_tag,
-              'Berhasil mendapatkan ${doctorResponse.dokter.length} dokter');
-          _doctorResponse = doctorResponse;
-          emit(DoctorsLoaded(doctorResponse: doctorResponse));
-
-          // Panggil _checkFormDataLoaded untuk update UI
+        (products) async {
+          Logger.success(
+              _tag, 'Berhasil mendapatkan ${products.length} produk');
+          _products = products;
+          emit(ProductsLoaded(products: products));
           _checkFormDataLoaded(emit);
         },
       );
     } catch (e) {
-      Logger.error(_tag, 'Error tidak tertangani di _onGetDoctors', e);
-      emit(AddScheduleError(message: 'Terjadi kesalahan tidak terduga: $e'));
-
-      // Tetap panggil _checkFormDataLoaded meskipun terjadi error
+      Logger.error(_tag, 'Error tidak tertangani: $e');
+      emit(AddScheduleError(
+          message: 'Terjadi kesalahan saat mengambil data produk'));
       _checkFormDataLoaded(emit);
     }
   }
@@ -254,36 +131,19 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
   void _checkFormDataLoaded(Emitter<AddScheduleState> emit) {
     Logger.debug(_tag, 'Memeriksa apakah semua data form sudah dimuat');
     Logger.debug(_tag,
-        'Dokter & Klinik: ${_doctorsAndClinics.length}, Tipe Jadwal: ${_scheduleTypes.length}, Produk: ${_products.length}, Dokter API: ${_doctorResponse?.dokter.length ?? 0}');
-
-    // Emit state dengan data yang tersedia, meskipun tidak semua data berhasil dimuat
-    // Ini memungkinkan UI untuk menampilkan data yang berhasil dimuat
-    emit(AddScheduleFormLoaded(
-      doctorsAndClinics: _doctorsAndClinics,
-      scheduleTypes: _scheduleTypes,
-      products: _products,
-      doctorResponse: _doctorResponse,
-    ));
-
-    if (_doctorsAndClinics.isEmpty) {
-      Logger.warning(_tag, 'Data dokter dan klinik kosong');
-    }
-
-    if (_scheduleTypes.isEmpty) {
-      Logger.warning(_tag, 'Data tipe jadwal kosong');
-    }
-
-    if (_doctorResponse == null || _doctorResponse!.dokter.isEmpty) {
-      Logger.warning(_tag, 'Data dokter API kosong');
-    }
+        'Dokter & Klinik: ${_doctorsAndClinics.length}, Tipe Jadwal: ${_scheduleTypes.length}, Produk: ${_products.length}');
 
     if (_doctorsAndClinics.isNotEmpty &&
         _scheduleTypes.isNotEmpty &&
         _products.isNotEmpty) {
-      Logger.success(_tag, 'Semua data form berhasil dimuat');
+      Logger.info(_tag, 'Semua data form telah dimuat');
+      emit(AddScheduleFormLoaded(
+        doctorsAndClinics: _doctorsAndClinics,
+        scheduleTypes: _scheduleTypes,
+        products: _products,
+      ));
     } else {
-      Logger.warning(_tag,
-          'Beberapa data form belum dimuat, tetapi UI akan menampilkan data yang tersedia');
+      Logger.warning(_tag, 'Beberapa data form masih belum dimuat');
     }
   }
 
@@ -292,55 +152,52 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
     Emitter<AddScheduleState> emit,
   ) async {
     try {
-      Logger.info(_tag, 'Memulai pengiriman data jadwal');
-      Logger.divider();
-      Logger.debug(_tag, 'Type Schedule: ${event.typeSchedule}');
-      Logger.debug(_tag, 'Tujuan: ${event.tujuan}');
-      Logger.debug(_tag, 'Tanggal Visit: ${event.tglVisit}');
-      Logger.debug(_tag, 'Products: ${event.product}');
-      Logger.debug(_tag, 'Product Names: ${event.productNames}');
-      Logger.debug(_tag, 'Divisi IDs: ${event.productForIdDivisi}');
-      Logger.debug(_tag, 'Divisi Names: ${event.divisiNames}');
-      Logger.debug(_tag, 'Spesialis IDs: ${event.productForIdSpesialis}');
-      Logger.debug(_tag, 'Spesialis Names: ${event.spesialisNames}');
-      Logger.debug(_tag, 'Note: ${event.note}');
-      Logger.debug(_tag, 'User ID: ${event.idUser}');
-      Logger.debug(_tag, 'Dokter: ${event.dokter}');
-      Logger.debug(_tag, 'Klinik: ${event.klinik}');
-      Logger.debug(_tag, 'Shift: ${event.shift}');
-      Logger.debug(_tag, 'Jenis: ${event.jenis}');
-      Logger.divider();
-
-      // Validasi data sebelum dikirim
-      if (event.product.isEmpty) {
-        throw ServerException(message: 'Produk harus dipilih');
+      // Validate required fields
+      if (event.typeSchedule.isEmpty ||
+          event.tujuan.isEmpty ||
+          event.tglVisit.isEmpty ||
+          event.product.isEmpty ||
+          event.idUser.isEmpty ||
+          event.dokter.isEmpty) {
+        throw FormatException('Semua field wajib harus diisi');
       }
 
-      if (event.productNames.isEmpty) {
-        throw ServerException(message: 'Nama produk tidak boleh kosong');
-      }
+      // Parse and format the date
+      final inputFormat = DateFormat('dd/MM/yyyy');
+      final outputFormat = DateFormat('yyyy-MM-dd');
+      final date = inputFormat.parse(event.tglVisit);
+      final formattedDate = outputFormat.format(date);
 
-      if (event.productForIdDivisi.isEmpty || event.divisiNames.isEmpty) {
-        throw ServerException(message: 'Data divisi tidak lengkap');
-      }
-
-      if (event.productForIdSpesialis.isEmpty || event.spesialisNames.isEmpty) {
-        throw ServerException(message: 'Data spesialis tidak lengkap');
-      }
-
-      emit(AddScheduleLoading());
+      // Log the request data
+      Logger.debug(_tag, '''
+Data yang akan dikirim:
+- Type Schedule: ${event.typeSchedule}
+- Tujuan: ${event.tujuan}
+- Tanggal Visit: $formattedDate (original: ${event.tglVisit})
+- Product: ${event.product}
+- Note: ${event.note}
+- ID User: ${event.idUser}
+- Dokter: ${event.dokter}
+- Klinik: ${event.klinik}
+- Product For ID Divisi: ${event.productForIdDivisi}
+- Product For ID Spesialis: ${event.productForIdSpesialis}
+- Shift: ${event.shift}
+- Jenis: ${event.jenis}
+''');
 
       final result = await addSchedule(AddScheduleParams(
-        typeSchedule: event.typeSchedule,
+        typeSchedule: int.parse(event.typeSchedule),
         tujuan: event.tujuan,
-        tglVisit: event.tglVisit,
-        product: event.product,
+        tglVisit: formattedDate,
+        product: event.product.map((p) => int.parse(p)).toList(),
         note: event.note,
-        idUser: event.idUser,
-        dokter: event.dokter,
+        idUser: int.parse(event.idUser),
+        dokter: int.parse(event.dokter),
         klinik: event.klinik,
-        productForIdDivisi: event.productForIdDivisi,
-        productForIdSpesialis: event.productForIdSpesialis,
+        productForIdDivisi:
+            event.productForIdDivisi.map((id) => int.parse(id)).toList(),
+        productForIdSpesialis:
+            event.productForIdSpesialis.map((id) => int.parse(id)).toList(),
         shift: event.shift,
         jenis: event.jenis,
         productNames: event.productNames,
@@ -348,19 +205,27 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
         spesialisNames: event.spesialisNames,
       ));
 
-      result.fold(
-        (failure) {
-          Logger.error(_tag, 'Submit Schedule Error: ${failure.toString()}');
-          emit(AddScheduleError(message: failure.toString()));
+      await result.fold(
+        (failure) async {
+          Logger.error(_tag, 'Gagal menambahkan jadwal: ${failure.message}');
+          emit(AddScheduleError(message: failure.message));
         },
-        (success) {
-          Logger.success(_tag, 'Jadwal berhasil ditambahkan');
-          emit(AddScheduleSuccess());
+        (success) async {
+          Logger.success(_tag, 'Berhasil menambahkan jadwal');
+          emit(const AddScheduleSuccess());
         },
       );
     } catch (e) {
-      Logger.error(_tag, 'Unexpected error in submit schedule', e);
-      emit(AddScheduleError(message: e.toString()));
+      Logger.error(_tag, 'Error tidak tertangani: $e');
+      if (e is FormatException) {
+        emit(AddScheduleError(
+            message: e.message == 'Semua field wajib harus diisi'
+                ? e.message
+                : 'Format tanggal tidak valid. Gunakan format DD/MM/YYYY'));
+      } else {
+        emit(AddScheduleError(
+            message: 'Terjadi kesalahan saat menambahkan jadwal'));
+      }
     }
   }
 }

@@ -5,56 +5,58 @@ class AppTheme {
   AppTheme._();
 
   // Light Theme Colors
-  static final lightColors = _ThemeColors(
-      primary: const Color(0xFF0277BD),
-      secondary: const Color(0xFF00897B),
-      tertiary: const Color(0xFF7B1FA2),
-      success: const Color(0xFF2E7D32),
-      warning: const Color(0xFFFFA000),
-      error: const Color(0xFFD32F2F),
-      background: const Color(0xFFF5F5F5),
-      surface: Colors.white,
-      cardBackground: Colors.white,
-      primaryText: const Color(0xFF212121),
-      secondaryText: const Color(0xFF757575),
-      disabled: const Color(0xFFBDBDBD),
-      scheduleText: const Color(0xFF333333),
-      scheduleIcon: const Color(0xFF1565C0),
-      scheduleHeader: const Color(0xFF1976D2),
-      scheduleSubtext: const Color(0xFF616161),
-      scheduleBackground: const Color(0xFFFAFAFA),
-      scheduleCard: Colors.white,
-      scheduleSelectedItem: const Color(0xFFE3F2FD),
-      scheduleHighlight: const Color(0xFF2196F3),
-      divider: const Color(0xFFEEEEEE),
-      border: const Color(0xFFE0E0E0));
+  static final ThemeColors lightColors = ThemeColors(
+    primary: const Color(0xFF0277BD),
+    secondary: const Color(0xFF00897B),
+    tertiary: const Color(0xFF7B1FA2),
+    success: const Color(0xFF81C784),
+    warning: const Color(0xFFFFA000),
+    error: const Color(0xFFD32F2F),
+    surface: const Color(0xFFF5F5F5),
+    cardSurface: Colors.white,
+    cardBackground: Colors.white,
+    primaryText: const Color(0xFF212121),
+    secondaryText: const Color(0xFF757575),
+    disabled: const Color(0xFFBDBDBD),
+    scheduleText: const Color(0xFF333333),
+    scheduleIcon: const Color(0xFF1565C0),
+    scheduleHeader: const Color(0xFF1976D2),
+    scheduleSubtext: const Color(0xFF616161),
+    scheduleBackground: const Color(0xFFFAFAFA),
+    scheduleCard: Colors.white,
+    scheduleSelectedItem: const Color(0xFFE3F2FD),
+    scheduleHighlight: const Color(0xFF2196F3),
+    divider: const Color(0xFFEEEEEE),
+    border: const Color(0xFFE0E0E0),
+  );
 
   // Dark Theme Colors
-  static final darkColors = _ThemeColors(
-      primary: const Color(0xFF90CAF9),
-      secondary: const Color(0xFF80CBC4),
-      tertiary: const Color(0xFFCE93D8),
-      success: const Color(0xFF66BB6A),
-      warning: const Color(0xFFFFB74D),
-      error: const Color(0xFFEF5350),
-      background: const Color(0xFF121212),
-      surface: const Color(0xFF1F1F1F),
-      cardBackground: const Color(0xFF2C2C2C),
-      primaryText: Colors.white,
-      secondaryText: Colors.white70,
-      disabled: Colors.white38,
-      scheduleText: Colors.white,
-      scheduleIcon: const Color(0xFF90CAF9),
-      scheduleHeader: const Color(0xFF42A5F5),
-      scheduleSubtext: Colors.white70,
-      scheduleBackground: const Color(0xFF121212),
-      scheduleCard: const Color(0xFF2C2C2C),
-      scheduleSelectedItem: const Color(0xFF1565C0),
-      scheduleHighlight: const Color(0xFF90CAF9),
-      divider: const Color(0xFF424242),
-      border: const Color(0xFF424242));
+  static final ThemeColors darkColors = ThemeColors(
+    primary: const Color(0xFF90CAF9),
+    secondary: const Color(0xFF80CBC4),
+    tertiary: const Color(0xFFCE93D8),
+    success: const Color(0xFFA5D6A7),
+    warning: const Color(0xFFFFB74D),
+    error: const Color(0xFFEF5350),
+    surface: const Color(0xFF121212),
+    cardSurface: const Color(0xFF1F1F1F),
+    cardBackground: const Color(0xFF2C2C2C),
+    primaryText: Colors.white,
+    secondaryText: Colors.white70,
+    disabled: Colors.white38,
+    scheduleText: Colors.white,
+    scheduleIcon: const Color(0xFF90CAF9),
+    scheduleHeader: const Color(0xFF42A5F5),
+    scheduleSubtext: Colors.white70,
+    scheduleBackground: const Color(0xFF121212),
+    scheduleCard: const Color(0xFF2C2C2C),
+    scheduleSelectedItem: const Color(0xFF1565C0),
+    scheduleHighlight: const Color(0xFF90CAF9),
+    divider: const Color(0xFF424242),
+    border: const Color(0xFF424242),
+  );
 
-  static _ThemeColors get colors {
+  static ThemeColors get colors {
     if (currentContext == null) {
       return lightColors;
     }
@@ -66,7 +68,7 @@ class AppTheme {
   // Shadow
   static final List<BoxShadow> defaultShadow = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.05),
+      color: Colors.black.withAlpha(13),
       blurRadius: 10,
       offset: const Offset(0, 2),
     ),
@@ -108,7 +110,7 @@ class AppTheme {
       tertiary: colors.tertiary,
       tertiaryContainer: colors.tertiary.withOpacity(0.2),
       surface: colors.surface,
-      background: colors.background,
+      background: colors.surface,
       error: colors.error,
       onPrimary: Colors.white,
       onSecondary: Colors.white,
@@ -133,26 +135,26 @@ class AppTheme {
       tertiary: colors.tertiary,
       tertiaryContainer: colors.tertiary.withOpacity(0.2),
       surface: colors.surface,
-      background: colors.background,
+      background: colors.surface,
       error: colors.error,
-      onPrimary: colors.background,
-      onSecondary: colors.background,
-      onTertiary: colors.background,
+      onPrimary: colors.surface,
+      onSecondary: colors.surface,
+      onTertiary: colors.surface,
       onSurface: colors.primaryText,
       onBackground: colors.primaryText,
-      onError: colors.background,
+      onError: colors.surface,
       brightness: Brightness.dark,
     );
 
     return _baseTheme(colorScheme, colors);
   }
 
-  static ThemeData _baseTheme(ColorScheme colorScheme, _ThemeColors colors) {
+  static ThemeData _baseTheme(ColorScheme colorScheme, ThemeColors colors) {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
       primaryColor: colorScheme.primary,
-      scaffoldBackgroundColor: colors.background,
+      scaffoldBackgroundColor: colors.surface,
       cardColor: colors.cardBackground,
       dividerColor: colors.divider,
       appBarTheme: AppBarTheme(
@@ -351,16 +353,16 @@ class AppTheme {
         ),
       ),
       radioTheme: RadioThemeData(
-        fillColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.disabled)) {
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) {
             return colors.disabled;
           }
           return colorScheme.primary;
         }),
       ),
       checkboxTheme: CheckboxThemeData(
-        fillColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.disabled)) {
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) {
             return colors.disabled;
           }
           return colorScheme.primary;
@@ -400,7 +402,7 @@ class AppTheme {
         backgroundColor: colors.surface,
         contentTextStyle: TextStyle(
           color: colors.primaryText,
-        ),
+          ),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: borderRadiusMedium,
@@ -421,7 +423,7 @@ class AppTheme {
   static Color get successColor => colors.success;
   static Color get warningColor => colors.warning;
   static Color get errorColor => colors.error;
-  static Color get backgroundColor => colors.background;
+  static Color get backgroundColor => colors.surface;
   static Color get surfaceColor => colors.surface;
   static Color get cardBackgroundColor => colors.cardBackground;
   static Color get primaryTextColor => colors.primaryText;
@@ -441,15 +443,15 @@ class AppTheme {
   static Color get borderColor => colors.border;
 }
 
-class _ThemeColors {
+class ThemeColors {
   final Color primary;
   final Color secondary;
   final Color tertiary;
   final Color success;
   final Color warning;
   final Color error;
-  final Color background;
   final Color surface;
+  final Color cardSurface;
   final Color cardBackground;
   final Color primaryText;
   final Color secondaryText;
@@ -465,15 +467,15 @@ class _ThemeColors {
   final Color divider;
   final Color border;
 
-  const _ThemeColors({
+  const ThemeColors({
     required this.primary,
     required this.secondary,
     required this.tertiary,
     required this.success,
     required this.warning,
     required this.error,
-    required this.background,
     required this.surface,
+    required this.cardSurface,
     required this.cardBackground,
     required this.primaryText,
     required this.secondaryText,

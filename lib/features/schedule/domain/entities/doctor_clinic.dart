@@ -1,38 +1,26 @@
 import 'package:equatable/equatable.dart';
+import 'doctor_clinic_base.dart';
 
-class DoctorClinic extends Equatable {
-  final int id;
-  final String nama;
-  final String alamat;
-  final String noTelp;
-  final String email;
-  final String spesialis;
-  final String tipeDokter;
-  final String tipeKlinik;
-  final String kodeRayon;
-
+class DoctorClinic extends DoctorClinicBase {
   const DoctorClinic({
-    required this.id,
-    required this.nama,
-    required this.alamat,
-    required this.noTelp,
-    required this.email,
-    required this.spesialis,
-    required this.tipeDokter,
-    required this.tipeKlinik,
-    required this.kodeRayon,
-  });
-
-  @override
-  List<Object?> get props => [
-        id,
-        nama,
-        alamat,
-        noTelp,
-        email,
-        spesialis,
-        tipeDokter,
-        tipeKlinik,
-        kodeRayon,
-      ];
+    required int id,
+    required String nama,
+    required String spesialis,
+    String? alamat,
+    String? noTelp,
+    String? email,
+    String? tipeDokter,
+    String? tipeKlinik,
+    String? kodeRayon,
+  }) : super(
+          id: id,
+          nama: nama,
+          spesialis: spesialis,
+          alamat: alamat,
+          noTelp: noTelp,
+          email: email,
+          tipeDokter: tipeDokter,
+          tipeKlinik: tipeKlinik,
+          kodeRayon: kodeRayon,
+        );
 }

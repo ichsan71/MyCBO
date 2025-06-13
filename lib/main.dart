@@ -21,9 +21,17 @@ import 'package:test_cbo/features/notifications/presentation/pages/notification_
 import 'package:test_cbo/features/notifications/presentation/bloc/notification_bloc.dart';
 import 'package:test_cbo/features/notifications/data/datasources/local_notification_service.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_bloc.dart';
+import 'package:test_cbo/core/database/app_database.dart';
+import 'package:flutter/foundation.dart';
+import 'package:test_cbo/features/kpi/presentation/bloc/kpi_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Delete database on app start (development only)
+  if (kDebugMode) {
+    await AppDatabase.instance.deleteDatabase();
+  }
 
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
@@ -76,6 +84,9 @@ class MyApp extends StatelessWidget {
               BlocProvider(
                 create: (context) => di.sl<NotificationBloc>(),
               ),
+              BlocProvider(
+                create: (context) => di.sl<KpiBloc>(),
+              ),
             ],
             child: MaterialApp(
               title: 'CBO App',
@@ -91,6 +102,7 @@ class MyApp extends StatelessWidget {
                 Locale('id'),
                 Locale('en'),
               ],
+              locale: const Locale('id'),
               home: const SplashScreen(),
               routes: {
                 '/login': (context) => const LoginPage(),

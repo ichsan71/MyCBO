@@ -5,11 +5,10 @@ import 'package:test_cbo/core/network/network_info.dart';
 import 'package:test_cbo/core/utils/logger.dart';
 import 'package:test_cbo/features/schedule/data/datasources/add_schedule_remote_data_source.dart';
 import 'package:test_cbo/features/schedule/data/datasources/local/add_schedule_local_data_source.dart';
-import 'package:test_cbo/features/schedule/data/models/doctor_clinic_model.dart'
-    as model;
+import 'package:test_cbo/features/schedule/data/models/doctor_clinic_model.dart';
 import 'package:test_cbo/features/schedule/data/models/doctor_model.dart';
 import 'package:test_cbo/features/schedule/data/models/responses/doctor_response.dart';
-import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic.dart';
+import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic_base.dart';
 import 'package:test_cbo/features/schedule/domain/entities/product.dart';
 import 'package:test_cbo/features/schedule/domain/entities/schedule_type.dart';
 import 'package:test_cbo/features/schedule/domain/repositories/add_schedule_repository.dart';
@@ -28,44 +27,18 @@ class AddScheduleRepositoryImpl implements AddScheduleRepository {
   });
 
   @override
-  Future<Either<Failure, List<DoctorClinic>>> getDoctorsAndClinics(
+  Future<Either<Failure, List<DoctorClinicBase>>> getDoctorsAndClinics(
       int userId) async {
     if (await networkInfo.isConnected) {
       try {
         final doctorClinicModels =
             await remoteDataSource.getDoctorsAndClinics(userId);
         await localDataSource.cacheDoctors(doctorClinicModels);
-        final doctors = doctorClinicModels
-            .map((model) => DoctorClinic(
-                  id: model.id,
-                  nama: model.nama,
-                  alamat: model.alamat ?? '',
-                  noTelp: model.noTelp ?? '',
-                  email: model.email ?? '',
-                  spesialis: model.spesialis,
-                  tipeDokter: model.tipeDokter ?? '',
-                  tipeKlinik: model.tipeKlinik ?? '',
-                  kodeRayon: model.kodeRayon ?? '',
-                ))
-            .toList();
-        return Right(doctors);
+        return Right(doctorClinicModels);
       } on ServerException catch (e) {
         try {
           final cachedDoctors = await localDataSource.getDoctorsAndClinics();
-          final doctors = cachedDoctors
-              .map((model) => DoctorClinic(
-                    id: model.id,
-                    nama: model.nama,
-                    alamat: model.alamat ?? '',
-                    noTelp: model.noTelp ?? '',
-                    email: model.email ?? '',
-                    spesialis: model.spesialis,
-                    tipeDokter: model.tipeDokter ?? '',
-                    tipeKlinik: model.tipeKlinik ?? '',
-                    kodeRayon: model.kodeRayon ?? '',
-                  ))
-              .toList();
-          return Right(doctors);
+          return Right(cachedDoctors);
         } on CacheException {
           return Left(ServerFailure(message: e.message));
         }
@@ -74,20 +47,7 @@ class AddScheduleRepositoryImpl implements AddScheduleRepository {
       } catch (e) {
         try {
           final cachedDoctors = await localDataSource.getDoctorsAndClinics();
-          final doctors = cachedDoctors
-              .map((model) => DoctorClinic(
-                    id: model.id,
-                    nama: model.nama,
-                    alamat: model.alamat ?? '',
-                    noTelp: model.noTelp ?? '',
-                    email: model.email ?? '',
-                    spesialis: model.spesialis,
-                    tipeDokter: model.tipeDokter ?? '',
-                    tipeKlinik: model.tipeKlinik ?? '',
-                    kodeRayon: model.kodeRayon ?? '',
-                  ))
-              .toList();
-          return Right(doctors);
+          return Right(cachedDoctors);
         } on CacheException {
           return Left(CacheFailure(message: 'Failed to get doctors: $e'));
         }
@@ -95,20 +55,7 @@ class AddScheduleRepositoryImpl implements AddScheduleRepository {
     } else {
       try {
         final cachedDoctors = await localDataSource.getDoctorsAndClinics();
-        final doctors = cachedDoctors
-            .map((model) => DoctorClinic(
-                  id: model.id,
-                  nama: model.nama,
-                  alamat: model.alamat ?? '',
-                  noTelp: model.noTelp ?? '',
-                  email: model.email ?? '',
-                  spesialis: model.spesialis,
-                  tipeDokter: model.tipeDokter ?? '',
-                  tipeKlinik: model.tipeKlinik ?? '',
-                  kodeRayon: model.kodeRayon ?? '',
-                ))
-            .toList();
-        return Right(doctors);
+        return Right(cachedDoctors);
       } on CacheException {
         return const Left(CacheFailure(
           message:
