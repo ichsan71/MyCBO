@@ -25,31 +25,26 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
   int _selectedIndex = 0;
   DateTime? _lastBackPressTime;
   bool _isExiting = false;
-  bool _canPop = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initializeData();
-    
-    // Capture hardware back button
-    SystemChannels.platform.setMethodCallHandler((call) async {
-      if (call.method == 'SystemNavigator.pop') {
-        final shouldPop = await _onWillPop();
-        if (!shouldPop) {
-          return false;
-        }
-      }
-      return null;
-    });
   }
 
   @override
   void dispose() {
-    SystemChannels.platform.setMethodCallHandler(null);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
+    if (state == AppLifecycleState.resumed) {
+      // Reset exit flag when app is resumed
+      _isExiting = false;
+    }
   }
 
   void _initializeData() {
@@ -72,7 +67,6 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
     });
   }
 
-  // Method untuk refresh data jadwal saat masuk tab jadwal
   void _refreshScheduleIfNeeded() {
     if (_selectedIndex == 1) {
       final authState = context.read<AuthBloc>().state;
@@ -84,13 +78,127 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
     }
   }
 
+  void _showExitSnackbar() {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(
+              Icons.info_outline,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Tekan sekali lagi untuk keluar',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Theme.of(context).primaryColor.withOpacity(0.9),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.only(
+          bottom: MediaQuery.of(context).size.height * 0.1,
+          left: 16,
+          right: 16,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        elevation: 4,
+      ),
+    );
+  }
+
+  Future<void> _showExitDialog() async {
+    if (!mounted) return;
+
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Keluar Aplikasi',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Text(
+          'Apakah Anda yakin ingin keluar dari aplikasi?',
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Batal',
+              style: GoogleFonts.poppins(
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              'Keluar',
+              style: GoogleFonts.poppins(
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldExit == true) {
+      _performExit();
+    }
+  }
+
+  Future<void> _performExit() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isExiting = true;
+    });
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => WillPopScope(
+        onWillPop: () async => false, // Prevent dismissing during exit
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      ),
+    );
+
+    // Add delay for smooth exit
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (!mounted) return;
+    
+    // Exit app
+    SystemNavigator.pop();
+  }
+
   Future<bool> _onWillPop() async {
     if (_isExiting) {
-      return true; // Allow exit if already in exit process
+      return true;
     }
 
     if (_selectedIndex != 0) {
-      // If not on home page, go to home page
       setState(() {
         _selectedIndex = 0;
       });
@@ -100,72 +208,12 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
     final now = DateTime.now();
     if (_lastBackPressTime == null || 
         now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
-      // First tap or more than 2 seconds since last tap
       _lastBackPressTime = now;
-      
-      if (!mounted) return false;
-
-      // Show snackbar with custom styling
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(
-                Icons.info_outline,
-                color: Colors.white,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Tekan sekali lagi untuk keluar',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.9),
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.only(
-            bottom: MediaQuery.of(context).size.height * 0.1,
-            left: 16,
-            right: 16,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          elevation: 4,
-        ),
-      );
+      _showExitSnackbar();
       return false;
     }
 
-    // Set exiting flag to true
-    setState(() {
-      _isExiting = true;
-    });
-
-    // Add slight delay before actual exit to show visual feedback
-    await Future.delayed(const Duration(milliseconds: 200));
-    
-    if (!mounted) return false;
-    
-    // Show loading indicator before exit
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-
-    // Add delay to show loading
-    await Future.delayed(const Duration(milliseconds: 300));
-    
+    await _performExit();
     return true;
   }
 
@@ -173,8 +221,15 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return PopScope( // Using PopScope instead of WillPopScope for better gesture support
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+        final shouldPop = await _onWillPop();
+        if (shouldPop && mounted) {
+          SystemNavigator.pop();
+        }
+      },
       child: Scaffold(
         body: IndexedStack(
           index: _selectedIndex,
