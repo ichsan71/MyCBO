@@ -12,11 +12,12 @@ import '../models/schedule_response_model.dart';
 import '../models/edit_schedule_data_model.dart';
 import '../models/edit/edit_schedule_response_model.dart';
 import '../models/update_schedule_request_model.dart';
+import 'package:intl/intl.dart';
 
 abstract class ScheduleRemoteDataSource {
   Future<List<ScheduleModel>> getSchedules(int userId);
   Future<List<ScheduleModel>> getSchedulesByRangeDate(
-      int userId, String rangeDate);
+      int userId, String rangeDate, int page);
   Future<EditScheduleDataModel> getEditScheduleData(int scheduleId);
   Future<void> updateSchedule(UpdateScheduleRequestModel requestModel);
   Future<List<ScheduleModel>> getRejectedSchedules(int userId);
@@ -184,176 +185,185 @@ class ScheduleRemoteDataSourceImpl implements ScheduleRemoteDataSource {
 
   List<ScheduleModel> _handleResponse(Response response) {
     try {
-      Logger.info('ScheduleRemoteDataSource', 'Handling response...');
-      Logger.info(
-          'ScheduleRemoteDataSource', '- Status: ${response.statusCode}');
-      Logger.info(
-          'ScheduleRemoteDataSource', '- Type: ${response.data.runtimeType}');
+      Logger.info('ScheduleRemoteDataSource', '''
+====== Response Details ======
+Status Code: ${response.statusCode}
+Response Type: ${response.data.runtimeType}
+Raw Response: ${response.data}
+''');
 
       if (response.data == null) {
         throw ServerException(message: 'Response data is null');
       }
 
-      if (response.data is String &&
-          response.data.toString().contains('Redirecting to')) {
-        throw UnauthorizedException(
-            message: 'Sesi login telah berakhir. Silakan login kembali.');
+      if (response.data is String && response.data.toString().contains('Redirecting to')) {
+        throw UnauthorizedException(message: 'Sesi login telah berakhir. Silakan login kembali.');
       }
 
-      // Handle the paginated response structure
+      // Handle the response structure
       if (response.data is Map<String, dynamic>) {
         final Map<String, dynamic> responseData = response.data;
+        List<dynamic> scheduleData;
 
-        // Check if the response has the expected structure
-        if (responseData.containsKey('status') &&
-            responseData.containsKey('data') &&
-            responseData['data'] is Map<String, dynamic> &&
-            responseData['data'].containsKey('data')) {
-          // Extract the actual schedule data array
-          final List<dynamic> scheduleData = responseData['data']['data'];
+        // Log the response structure
+        Logger.info('ScheduleRemoteDataSource', '''
+====== Response Structure ======
+Keys: ${responseData.keys.join(', ')}
+Has status: ${responseData.containsKey('status')}
+Has data: ${responseData.containsKey('data')}
+Data type: ${responseData['data']?.runtimeType}
+''');
 
-          Logger.info('ScheduleRemoteDataSource',
-              'Successfully processed ${scheduleData.length} schedules');
-
-          return scheduleData
-              .map((item) => ScheduleModel.fromJson(item))
-              .toList();
+        // Case 1: Response format {"status": true, "data": [...]}
+        if (responseData.containsKey('status') && 
+            responseData.containsKey('data') && 
+            responseData['data'] is List) {
+          scheduleData = responseData['data'];
         }
+        // Case 2: Response format {"status": true, "data": {"data": [...], "current_page": X, ...}}
+        else if (responseData.containsKey('status') && 
+                responseData.containsKey('data') && 
+                responseData['data'] is Map<String, dynamic> &&
+                responseData['data'].containsKey('data')) {
+          scheduleData = responseData['data']['data'];
+        }
+        // Case 3: Response format {"data": [...]}
+        else if (responseData.containsKey('data') && responseData['data'] is List) {
+          scheduleData = responseData['data'];
+        }
+        else {
+          Logger.error('ScheduleRemoteDataSource', 'Unexpected response structure: $responseData');
+          throw ServerException(message: 'Format response tidak sesuai');
+        }
+
+        Logger.info('ScheduleRemoteDataSource', 
+          'Successfully processed ${scheduleData.length} schedules');
+
+        return scheduleData.map((item) => ScheduleModel.fromJson(item)).toList();
       }
 
-      throw ServerException(message: 'Unexpected response format');
+      Logger.error('ScheduleRemoteDataSource', 'Response is not a Map: ${response.data}');
+      throw ServerException(message: 'Format response tidak sesuai');
     } catch (e) {
-      Logger.error(
-          'ScheduleRemoteDataSource', '❌ Error in _handleResponse: $e');
+      Logger.error('ScheduleRemoteDataSource', '❌ Error in _handleResponse: $e');
       rethrow;
     }
   }
 
   @override
   Future<List<ScheduleModel>> getSchedulesByRangeDate(
-      int userId, String rangeDate) async {
+      int userId, String rangeDate, int page) async {
     try {
-      Logger.info('ScheduleRemoteDataSource', '====== START REQUEST ======');
-      Logger.info('ScheduleRemoteDataSource', 'Endpoint: /filter-schedule');
-      Logger.info('ScheduleRemoteDataSource', 'User ID: $userId');
-      Logger.info('ScheduleRemoteDataSource', 'Range Date: $rangeDate');
-
       final token = sharedPreferences.getString(Constants.tokenKey);
-      Logger.info(
-          'ScheduleRemoteDataSource', 'Token available: ${token != null}');
-      if (token != null) {
-        Logger.info('ScheduleRemoteDataSource',
-            'Token prefix: ${token.substring(0, min(10, token.length))}...');
-      }
-
       if (token == null) {
-        Logger.error(
-            'ScheduleRemoteDataSource', 'Token not found in SharedPreferences');
         throw UnauthorizedException(
             message: 'Sesi login telah berakhir. Silakan login kembali.');
       }
 
+      // Parse dan validasi range date
+      final dates = rangeDate.split(' - ');
+      if (dates.length != 2) {
+        throw ServerException(
+            message: 'Format tanggal tidak valid: $rangeDate');
+      }
+
+      // Parse tanggal untuk validasi
+      DateFormat dateFormat = DateFormat('MM/dd/yyyy');
+      final startDate = dateFormat.parse(dates[0].trim());
+      final endDate = dateFormat.parse(dates[1].trim());
+
+      Logger.info('ScheduleRemoteDataSource', '''
+====== Date Range Validation ======
+Input Range: $rangeDate
+Parsed Start: ${startDate.toIso8601String()}
+Parsed End: ${endDate.toIso8601String()}
+''');
+
+      if (endDate.isBefore(startDate)) {
+        throw ServerException(
+            message: 'Tanggal akhir tidak boleh sebelum tanggal awal');
+      }
+
+      const timeoutDuration = Duration(minutes: 2);
       final options = Options(
-        validateStatus: (status) {
-          return status != null;
-        },
+        validateStatus: (status) => status != null,
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'multipart/form-data',
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
         },
+        receiveTimeout: timeoutDuration,
+        sendTimeout: timeoutDuration,
       );
 
-      Logger.info('ScheduleRemoteDataSource', 'Request headers:');
-      options.headers?.forEach((key, value) {
-        if (key == 'Authorization') {
-          Logger.info('ScheduleRemoteDataSource',
-              '  $key: Bearer ${value.toString().substring(7, min(17, value.toString().length))}...');
-        } else {
-          Logger.info('ScheduleRemoteDataSource', '  $key: $value');
-        }
-      });
-
-      // Format range date
-      String formattedRangeDate = rangeDate;
-      if (rangeDate.contains('-')) {
-        final dates = rangeDate.split('-').map((d) => d.trim()).toList();
-        if (dates.length == 2) {
-          formattedRangeDate = '${dates[0]} - ${dates[1]}';
-          Logger.info('ScheduleRemoteDataSource',
-              'Formatted range date: $formattedRangeDate');
-        }
-      }
-
-      // Prepare request data
-      final requestData = {
+      final formData = FormData.fromMap({
         'id_user': userId.toString(),
-        'range_date': formattedRangeDate,
-        'per_page': '10',
-        'page': '1',
-      };
-
-      Logger.info('ScheduleRemoteDataSource', 'Request data:');
-      requestData.forEach((key, value) {
-        Logger.info('ScheduleRemoteDataSource', '  $key: $value');
+        'range_date': rangeDate,
+        'per_page': '5',
+        'page': page.toString(),
       });
 
-      // Create FormData
-      final formData = FormData.fromMap(requestData);
-      Logger.info('ScheduleRemoteDataSource', 'FormData fields:');
-      formData.fields.forEach((field) {
-        Logger.info(
-            'ScheduleRemoteDataSource', '  ${field.key}: ${field.value}');
-      });
+      Logger.info('ScheduleRemoteDataSource', '''
+====== Request Details ======
+URL: ${Constants.baseUrl}/filter-schedule
+Method: POST
+FormData:
+- id_user: $userId
+- range_date: $rangeDate
+- per_page: 5
+- page: $page
+''');
 
-      final url = '${Constants.baseUrl}/filter-schedule';
-      Logger.info('ScheduleRemoteDataSource', 'Request URL: $url');
-
-      Logger.info('ScheduleRemoteDataSource', 'Sending request...');
-      final response = await dio
-          .post(
-        url,
+      final response = await dio.post(
+        '${Constants.baseUrl}/filter-schedule',
         data: formData,
         options: options,
-      )
-          .timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          Logger.error(
-              'ScheduleRemoteDataSource', 'Request timeout after 30 seconds');
-          throw ServerException(
-              message:
-                  'Waktu permintaan habis. Silakan periksa koneksi Anda dan coba lagi.');
-        },
-      );
+      ).timeout(timeoutDuration);
 
-      Logger.info('ScheduleRemoteDataSource', '====== RESPONSE ======');
-      Logger.info(
-          'ScheduleRemoteDataSource', 'Status code: ${response.statusCode}');
-      Logger.info('ScheduleRemoteDataSource',
-          'Response type: ${response.data.runtimeType}');
-      Logger.info('ScheduleRemoteDataSource', 'Response headers:');
-      response.headers.forEach((name, values) {
-        Logger.info('ScheduleRemoteDataSource', '  $name: $values');
-      });
+      if (response.data != null && response.data is Map) {
+        Logger.info('ScheduleRemoteDataSource', '''
+====== Response Data ======
+Status Code: ${response.statusCode}
+Data Type: ${response.data.runtimeType}
+Has Data Key: ${response.data.containsKey('data')}
+''');
 
-      if (response.data != null) {
-        if (response.data is Map) {
-          Logger.info('ScheduleRemoteDataSource',
-              'Response data keys: ${(response.data as Map).keys.join(', ')}');
+        if (response.data['data'] is List) {
+          final schedules = response.data['data'] as List;
+          Logger.info('ScheduleRemoteDataSource', '''
+====== Schedule Data ======
+Total Items: ${schedules.length}
+Date Range Requested: $rangeDate
+Sample Dates: ${schedules.take(3).map((s) => s['tgl_visit']).join(', ')}
+''');
+
+          // Validasi tanggal yang diterima
+          int invalidDates = 0;
+          for (var schedule in schedules) {
+            if (schedule['tgl_visit'] != null) {
+              try {
+                final visitDate = DateTime.parse(schedule['tgl_visit'].toString());
+                if (visitDate.isAfter(endDate) || visitDate.isBefore(startDate)) {
+                  invalidDates++;
+                  Logger.warning('ScheduleRemoteDataSource', '''
+WARNING: Schedule date outside requested range
+Visit Date: ${schedule['tgl_visit']}
+Requested Range: $rangeDate (${startDate.toIso8601String()} - ${endDate.toIso8601String()})
+Schedule ID: ${schedule['id']}
+''');
+                }
+              } catch (e) {
+                Logger.error('ScheduleRemoteDataSource', 
+                  'Error parsing visit date: ${schedule['tgl_visit']} - $e');
+              }
+            }
+          }
+
+          if (invalidDates > 0) {
+            Logger.warning('ScheduleRemoteDataSource', 
+              'Found $invalidDates schedules outside the requested date range');
+          }
         }
-        Logger.info(
-            'ScheduleRemoteDataSource', 'Response data: ${response.data}');
-      }
-
-      // Handle different response status codes
-      if (response.statusCode == 500) {
-        Logger.error('ScheduleRemoteDataSource', 'Server returned 500 error');
-        Logger.error(
-            'ScheduleRemoteDataSource', 'Response data: ${response.data}');
-        throw ServerException(
-            message:
-                'Terjadi kesalahan pada server. Silakan coba beberapa saat lagi.');
       }
 
       if (response.statusCode == 401) {
@@ -363,43 +373,18 @@ class ScheduleRemoteDataSourceImpl implements ScheduleRemoteDataSource {
 
       if (response.statusCode != 200) {
         throw ServerException(
-            message:
-                'Terjadi kesalahan saat mengambil data jadwal. Status: ${response.statusCode}');
+            message: 'Terjadi kesalahan saat mengambil data jadwal. Status: ${response.statusCode}');
       }
 
-      // Check for HTML redirect response
-      if (response.data is String &&
-          response.data.toString().contains('Redirecting to')) {
-        throw UnauthorizedException(
-            message: 'Sesi login telah berakhir. Silakan login kembali.');
-      }
-
-      // Parse response data
-      if (response.data == null) {
-        return [];
-      }
-
-      try {
-        final responseModel = ScheduleResponseModel.fromJson(response.data);
-        return responseModel.data.data;
-      } catch (e) {
-        Logger.error('ScheduleRemoteDataSource',
-            'Error parsing response data: $e\nResponse data: ${response.data}');
-        throw ServerException(
-            message: 'Terjadi kesalahan saat memproses data dari server.');
-      }
+      return _handleResponse(response);
     } catch (e) {
-      Logger.error(
-          'ScheduleRemoteDataSource', 'Error in getSchedulesByRangeDate: $e');
-      if (e is DioException) {
-        if (e.type == DioExceptionType.connectionTimeout ||
-            e.type == DioExceptionType.sendTimeout ||
-            e.type == DioExceptionType.receiveTimeout) {
-          throw ServerException(
-              message:
-                  'Waktu permintaan habis. Silakan periksa koneksi Anda dan coba lagi.');
-        }
-      }
+      Logger.error('ScheduleRemoteDataSource', '''
+====== Error in getSchedulesByRangeDate ======
+Error: $e
+Range Date: $rangeDate
+User ID: $userId
+Page: $page
+''');
       rethrow;
     }
   }
@@ -525,12 +510,12 @@ class ScheduleRemoteDataSourceImpl implements ScheduleRemoteDataSource {
             message: 'Sesi login telah berakhir. Silakan login kembali.');
       }
 
-      // Convert date format from DD/MM/YYYY to YYYY-MM-DD
+      // Convert date format from MM/DD/YYYY to YYYY-MM-DD
       String formattedDate = requestModel.tglVisit;
       try {
         final parts = requestModel.tglVisit.split('/');
         if (parts.length == 3) {
-          formattedDate = '${parts[2]}-${parts[1]}-${parts[0]}';
+          formattedDate = '${parts[2]}-${parts[0]}-${parts[1]}';
         }
       } catch (e) {
         Logger.error('ScheduleRemoteDataSource', 'Error formatting date: $e');

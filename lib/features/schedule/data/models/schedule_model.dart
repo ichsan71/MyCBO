@@ -33,6 +33,9 @@ class ScheduleModel extends Schedule {
     super.rejectedBy,
     super.realisasiVisitApproved,
     super.createdAt,
+    super.currentPage,
+    super.lastPage,
+    super.total,
   });
 
   // Helper function to process shift value
@@ -86,42 +89,73 @@ class ScheduleModel extends Schedule {
       rejectedBy: null,
       realisasiVisitApproved: null,
       createdAt: null,
+      currentPage: null,
+      lastPage: null,
+      total: null,
     );
   }
 
   factory ScheduleModel.fromJson(Map<String, dynamic> json) {
     Logger.info('ScheduleModel', 'Processing schedule with raw data: $json');
 
-    // Helper function to parse integer values that might come as strings
-    int parseIntValue(dynamic value) {
-      if (value == null) return 0;
-      if (value is int) return value;
-      if (value is String) {
-        try {
-          return int.parse(value);
-        } catch (e) {
-          Logger.error('ScheduleModel', 'Error parsing int value: $value');
-          return 0;
+    // Helper function to parse and format date
+    String formatDate(dynamic value) {
+      if (value == null || value.toString().trim().isEmpty) return '';
+      
+      try {
+        // If the date is in YYYY-MM-DD format, convert it to MM/dd/yyyy
+        if (value.toString().contains('-')) {
+          final parts = value.toString().split('-');
+          if (parts.length == 3) {
+            return '${parts[1]}/${parts[2]}/${parts[0]}';
+          }
         }
+        // If the date is already in MM/dd/yyyy format, return as is
+        else if (value.toString().contains('/')) {
+          final parts = value.toString().split('/');
+          if (parts.length == 3) {
+            // Validate that it's already in correct format
+            if (parts[0].length <= 2 && parts[1].length <= 2 && parts[2].length == 4) {
+              return value.toString();
+            }
+          }
+        }
+      } catch (e) {
+        Logger.error('ScheduleModel', 'Error formatting date: $e');
       }
-      return 0;
+      
+      return value.toString();
     }
 
-    // Helper function to parse nullable integer values
+    // Helper function untuk parse nullable int
     int? parseNullableIntValue(dynamic value) {
       if (value == null) return null;
       if (value is int) return value;
       if (value is String) {
-        if (value.toLowerCase() == 'null' || value.isEmpty) return null;
-        try {
-          return int.parse(value);
-        } catch (e) {
-          Logger.error(
-              'ScheduleModel', 'Error parsing nullable int value: $value');
-          return null;
+        // Cek apakah string hanya berisi angka
+        if (RegExp(r'^\d+$').hasMatch(value)) {
+          return int.tryParse(value);
         }
+        Logger.info('ScheduleModel', 'Non-numeric string received for int field: $value');
+        return null;
       }
+      Logger.info('ScheduleModel', 'Unexpected type for int field: ${value.runtimeType}');
       return null;
+    }
+
+    // Helper function untuk parse required int
+    int parseIntValue(dynamic value, {int defaultValue = 0}) {
+      if (value is int) return value;
+      if (value is String) {
+        // Cek apakah string hanya berisi angka
+        if (RegExp(r'^\d+$').hasMatch(value)) {
+          return int.parse(value);
+        }
+        Logger.info('ScheduleModel', 'Non-numeric string received for required int field: $value');
+        return defaultValue;
+      }
+      Logger.info('ScheduleModel', 'Unexpected type for required int field: ${value.runtimeType}');
+      return defaultValue;
     }
 
     final shiftValue = processShiftValue(json['shift']);
@@ -205,35 +239,37 @@ class ScheduleModel extends Schedule {
 
     return ScheduleModel(
       id: parseIntValue(json['id']),
-      namaUser: json['nama_user']?.toString() ?? '',
+      namaUser: json['nama_user'] ?? '',
       tipeSchedule: tipeScheduleValue,
       namaTipeSchedule: namaTipeScheduleValue,
-      tujuan: json['tujuan']?.toString() ?? '',
+      tujuan: json['tujuan'] ?? '',
       idTujuan: parseIntValue(json['id_tujuan']),
-      tglVisit: json['tgl_visit']?.toString() ?? '',
-      statusCheckin: json['status_checkin']?.toString() ?? '',
+      tglVisit: formatDate(json['tgl_visit']),
+      statusCheckin: json['status_checkin'] ?? '',
       shift: shiftValue,
-      note: json['note']?.toString() ?? '',
+      note: json['note'] ?? '',
       product: parseProduct(json['product']),
-      draft: json['draft']?.toString() ?? '',
-      statusDraft: json['status_draft']?.toString(),
-      alasanReject: json['alasan_reject']?.toString(),
-      namaTujuan: json['nama_tujuan']?.toString() ?? '',
-      namaSpesialis: json['nama_spesialis']?.toString(),
-      namaProduct: json['nama_product']?.toString(),
-      namaDivisi: json['nama_divisi']?.toString(),
+      draft: json['draft'] ?? '',
+      statusDraft: json['status_draft'],
+      alasanReject: json['alasan_reject'],
+      namaTujuan: json['nama_tujuan'] ?? '',
+      namaSpesialis: json['nama_spesialis'],
+      namaProduct: json['nama_product'],
+      namaDivisi: json['nama_divisi'],
       approved: parseIntValue(json['approved']),
-      namaApprover: json['nama_approver']?.toString(),
+      namaApprover: json['nama_approver'],
       realisasiApprove: parseNullableIntValue(json['realisasi_approve']),
       idUser: parseIntValue(json['id_user']),
-      productForIdDivisi: parseStringList(json['product_for_id_divisi']),
-      productForIdSpesialis: parseStringList(json['product_for_id_spesialis']),
-      jenis: json['jenis']?.toString() ?? '',
-      approvedBy: parseDynamicValue(json['approved_by']),
-      rejectedBy: parseDynamicValue(json['rejected_by']),
-      realisasiVisitApproved:
-          parseDynamicValue(json['realisasi_visit_approved']),
-      createdAt: json['created_at']?.toString(),
+      productForIdDivisi: List<String>.from(json['product_for_id_divisi'] ?? []),
+      productForIdSpesialis: List<String>.from(json['product_for_id_spesialis'] ?? []),
+      jenis: json['jenis'] ?? '',
+      approvedBy: json['approved_by'],
+      rejectedBy: json['rejected_by'],
+      realisasiVisitApproved: json['realisasi_visit_approved'],
+      createdAt: json['created_at'],
+      currentPage: parseNullableIntValue(json['current_page']),
+      lastPage: parseNullableIntValue(json['last_page']),
+      total: parseNullableIntValue(json['total']),
     );
   }
 
@@ -268,6 +304,9 @@ class ScheduleModel extends Schedule {
       'rejected_by': rejectedBy,
       'realisasi_visit_approved': realisasiVisitApproved,
       'created_at': createdAt,
+      'current_page': currentPage,
+      'last_page': lastPage,
+      'total': total,
     };
   }
 
@@ -302,5 +341,8 @@ class ScheduleModel extends Schedule {
         rejectedBy,
         realisasiVisitApproved,
         createdAt,
+        currentPage,
+        lastPage,
+        total,
       ];
 }

@@ -12,7 +12,7 @@ class GetSchedulesByRangeDateUseCase {
   Future<Either<Failure, List<Schedule>>> call(
       ScheduleByRangeDateParams params) async {
     return await repository.getSchedulesByRangeDate(
-        params.userId, params.rangeDate);
+        params.userId, params.rangeDate, params.page);
   }
 }
 

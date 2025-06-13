@@ -704,6 +704,7 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
+                          color: Theme.of(context).primaryColor,
                         ),
                       ),
                       const Spacer(),

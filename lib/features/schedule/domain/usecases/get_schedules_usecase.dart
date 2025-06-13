@@ -33,15 +33,19 @@ class GetSchedulesByRangeDateUseCase
   Future<Either<Failure, List<Schedule>>> call(
       ScheduleByRangeDateParams params) async {
     return await repository.getSchedulesByRangeDate(
-        params.userId, params.rangeDate);
+        params.userId, params.rangeDate, params.page);
   }
 }
 
 class ScheduleByRangeDateParams extends Equatable {
   final int userId;
   final String rangeDate;
-  const ScheduleByRangeDateParams(
-      {required this.userId, required this.rangeDate});
+  final int page;
+  const ScheduleByRangeDateParams({
+    required this.userId,
+    required this.rangeDate,
+    this.page = 1,
+  });
   @override
-  List<Object?> get props => [userId, rangeDate];
+  List<Object?> get props => [userId, rangeDate, page];
 }

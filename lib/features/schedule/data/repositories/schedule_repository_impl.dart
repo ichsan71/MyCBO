@@ -51,13 +51,13 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
 
   @override
   Future<Either<Failure, List<Schedule>>> getSchedulesByRangeDate(
-      int userId, String rangeDate) async {
+      int userId, String rangeDate, int page) async {
     Logger.info('ScheduleRepositoryImpl',
         'Memeriksa koneksi jaringan untuk filter by range date...');
     if (await networkInfo.isConnected) {
       try {
         final schedules =
-            await remoteDataSource.getSchedulesByRangeDate(userId, rangeDate);
+            await remoteDataSource.getSchedulesByRangeDate(userId, rangeDate, page);
         Logger.info('ScheduleRepositoryImpl',
             'Data jadwal by range date berhasil diambil dari API, jumlah: ${schedules.length}');
         return Right(schedules);

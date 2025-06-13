@@ -22,212 +22,227 @@ class SchedulePage extends StatefulWidget {
 }
 
 class _SchedulePageState extends State<SchedulePage> {
-  final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  TextEditingController _searchController = TextEditingController();
   String _selectedFilter = '';
-  List<Schedule> _filteredSchedules = [];
   DateTimeRange? _selectedDateRange;
   bool _isInitialized = false;
+  
+  // List untuk mode default
   List<Schedule> _allSchedules = [];
+  List<Schedule> _filteredSchedules = [];
   bool _isLoadingMore = false;
   int _currentPage = 1;
-  ScheduleState? _currentState;
-  ScrollController _scrollController = ScrollController();
+  
+  // List untuk mode filter rentang tanggal
+  List<Schedule> _filteredRangeSchedules = [];
+  List<Schedule> _originalRangeSchedules = [];
+  bool _isLoadingMoreFilter = false;
+  int _currentFilterPage = 1;
+  bool _hasMoreFilterData = true;
 
   @override
   void initState() {
     super.initState();
-    _selectedFilter = '';
     _scrollController.addListener(_onScroll);
+    _searchController.addListener(_onSearchChanged);
 
-    // Schedule the initial load after the widget is built
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadInitialData();
-    });
-  }
-
-  void _loadInitialData() {
-    if (!_isInitialized) {
-      _selectedFilter = AppLocalizations.of(context)!.filterAll;
-      _isInitialized = true;
-
-      final authState = context.read<AuthBloc>().state;
-      if (authState is AuthAuthenticated) {
-        // Hanya panggil GetSchedulesEvent untuk load awal
-        context.read<ScheduleBloc>().add(
-              GetSchedulesEvent(userId: authState.user.idUser),
-            );
-      }
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthAuthenticated) {
+      context.read<ScheduleBloc>().add(
+        GetSchedulesEvent(userId: authState.user.idUser),
+      );
     }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _loadInitialData();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _scrollController.dispose();
-    super.dispose();
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels ==
-        _scrollController.position.maxScrollExtent) {
-      _loadMoreData();
-    }
-  }
-
-  void _loadMoreData() {
-    if (!_isLoadingMore &&
-        _currentState is ScheduleLoaded &&
-        (_currentState as ScheduleLoaded).hasMoreData) {
-      setState(() {
-        _isLoadingMore = true;
-      });
-
-      final authState = context.read<AuthBloc>().state;
-      if (authState is AuthAuthenticated) {
-        // Untuk sementara, kita tidak menggunakan pagination
-        // dan hanya merefresh data normal
-        context.read<ScheduleBloc>().add(
-              GetSchedulesEvent(userId: authState.user.idUser),
+    // Pastikan scroll controller attached dan memiliki posisi
+    if (!_scrollController.hasClients) return;
+    
+    // Cek kondisi untuk load more data
+    if (_selectedDateRange != null && 
+        !_isLoadingMoreFilter && 
+        _hasMoreFilterData &&
+        _filteredRangeSchedules.isNotEmpty) {
+      
+      final threshold = 0.8;
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final currentScroll = _scrollController.position.pixels;
+      
+      if (currentScroll >= maxScroll * threshold) {
+        final authState = context.read<AuthBloc>().state;
+        if (authState is AuthAuthenticated) {
+          // Prevent multiple calls
+          if (!_isLoadingMoreFilter) {
+            setState(() {
+              _isLoadingMoreFilter = true;
+            });
+            
+            // Increment page and fetch data
+            _currentFilterPage++;
+            context.read<ScheduleBloc>().add(
+              GetSchedulesByRangeDateEvent(
+                userId: authState.user.idUser,
+                rangeDate: _formatRangeDate(_selectedDateRange!),
+                page: _currentFilterPage,
+              ),
             );
-      }
-    }
-  }
-
-  List<Schedule> _getFilteredSchedules(List<Schedule> schedules, String query) {
-    final l10n = AppLocalizations.of(context)!;
-    final searchQuery = query.toLowerCase();
-
-    Logger.info('SchedulePage', '===== START FILTERING SCHEDULES =====');
-    Logger.info(
-        'SchedulePage', 'Total schedules to filter: ${schedules.length}');
-    Logger.info('SchedulePage', 'Search query: "$searchQuery"');
-    Logger.info('SchedulePage', 'Selected filter: "$_selectedFilter"');
-    Logger.info(
-        'SchedulePage', 'Has date range: ${_selectedDateRange != null}');
-
-    if (_selectedDateRange != null) {
-      Logger.info('SchedulePage', 'Date range:');
-      Logger.info('SchedulePage', '  Start: ${_selectedDateRange!.start}');
-      Logger.info('SchedulePage', '  End: ${_selectedDateRange!.end}');
-    }
-
-    if (schedules.isEmpty) {
-      Logger.info('SchedulePage', 'No schedules to filter');
-      return [];
-    }
-
-    // Log sample data
-    Logger.info('SchedulePage', 'Sample schedule before filtering:');
-    final sampleSchedule = schedules[0];
-    Logger.info('SchedulePage', '  ID: ${sampleSchedule.id}');
-    Logger.info('SchedulePage', '  Created At: ${sampleSchedule.createdAt}');
-    Logger.info('SchedulePage', '  Visit date: ${sampleSchedule.tglVisit}');
-    Logger.info('SchedulePage', '  Status: ${sampleSchedule.statusCheckin}');
-    Logger.info('SchedulePage', '  Draft: ${sampleSchedule.draft}');
-    Logger.info('SchedulePage', '  Approved: ${sampleSchedule.approved}');
-
-    var filteredList = schedules.where((schedule) {
-      // Filter berdasarkan rentang tanggal jika ada
-      if (_selectedDateRange != null && schedule.tglVisit.isNotEmpty) {
-        try {
-          final scheduleDate =
-              DateFormat('yyyy-MM-dd').parse(schedule.tglVisit);
-          final startDate = _selectedDateRange!.start;
-          final endDate = _selectedDateRange!.end
-              .add(const Duration(days: 1))
-              .subtract(const Duration(seconds: 1));
-
-          if (scheduleDate.isBefore(startDate) ||
-              scheduleDate.isAfter(endDate)) {
-            return false;
           }
-        } catch (e) {
-          Logger.error('SchedulePage',
-              'Error parsing date for schedule ${schedule.id}: $e');
-          return false;
         }
       }
+    }
+  }
 
-      // Search matching
-      final matchesSearch = query.isEmpty ||
+  void _applyFilters() {
+    if (!mounted) return;
+
+    setState(() {
+      if (_originalRangeSchedules.isEmpty) {
+        _filteredRangeSchedules = [];
+        return;
+      }
+
+      var filtered = List<Schedule>.from(_originalRangeSchedules);
+
+      // Apply search filter
+      if (_searchController.text.isNotEmpty) {
+        final searchQuery = _searchController.text.toLowerCase();
+        filtered = filtered.where((schedule) =>
           schedule.namaTujuan.toLowerCase().contains(searchQuery) ||
-          (schedule.namaTipeSchedule ?? schedule.tipeSchedule)
-              .toLowerCase()
-              .contains(searchQuery) ||
+          (schedule.namaTipeSchedule ?? schedule.tipeSchedule).toLowerCase().contains(searchQuery) ||
           schedule.tglVisit.toLowerCase().contains(searchQuery) ||
-          schedule.shift.toLowerCase().contains(searchQuery);
-
-      if (!matchesSearch) {
-        return false;
+          schedule.shift.toLowerCase().contains(searchQuery)
+        ).toList();
       }
 
-      // Filter matching
-      final lowerStatus = schedule.statusCheckin.toLowerCase().trim();
-      final lowerDraft = schedule.draft.toLowerCase().trim();
+      // Apply status filter
+      final l10n = AppLocalizations.of(context)!;
+      if (_selectedFilter.isNotEmpty && _selectedFilter != l10n.filterAll) {
+        filtered = filtered.where((schedule) {
+          final lowerStatus = schedule.statusCheckin.toLowerCase().trim();
+          final lowerDraft = schedule.draft.toLowerCase().trim();
 
-      if (_selectedFilter == l10n.filterAll) {
-        return true;
-      }
-
-      bool matches = false;
-      switch (_selectedFilter) {
-        case 'Menunggu Persetujuan':
-          matches =
-              (schedule.approved == 0 && !lowerDraft.contains('rejected')) ||
+          switch (_selectedFilter) {
+            case 'Pending':
+              return (schedule.approved == 0 && !lowerDraft.contains('rejected')) ||
                   ((lowerStatus == 'check-out' ||
-                          lowerStatus == 'selesai' ||
-                          lowerStatus == 'detail') &&
+                      lowerStatus == 'selesai' ||
+                      lowerStatus == 'detail') &&
                       (schedule.realisasiApprove == null ||
                           schedule.realisasiApprove == 0));
-          break;
-        case 'Check-in':
-          matches = schedule.approved == 1 &&
-              !lowerDraft.contains('rejected') &&
-              lowerStatus == 'belum checkin';
-          break;
-        case 'Check-out':
-          matches = schedule.approved == 1 &&
-              !lowerDraft.contains('rejected') &&
-              (lowerStatus == 'check-in' || lowerStatus == 'belum checkout');
-          break;
-        case 'Selesai':
-          matches = (lowerStatus == 'check-out' ||
+            case 'Check-in':
+              return schedule.approved == 1 &&
+                  !lowerDraft.contains('rejected') &&
+                  lowerStatus == 'belum checkin';
+            case 'Check-out':
+              return schedule.approved == 1 &&
+                  !lowerDraft.contains('rejected') &&
+                  (lowerStatus == 'check-in' || lowerStatus == 'belum checkout');
+            case 'Selesai':
+              return (lowerStatus == 'check-out' ||
                   lowerStatus == 'selesai' ||
                   lowerStatus == 'detail') &&
-              schedule.realisasiApprove == 1;
-          break;
-        case 'Ditolak':
-          matches = lowerDraft.contains('rejected');
-          break;
+                  schedule.realisasiApprove == 1;
+            case 'Ditolak':
+              return lowerDraft.contains('rejected');
+            default:
+              return true;
+          }
+        }).toList();
       }
 
-      return matches;
-    }).toList()
-      ..sort((a, b) {
+      // Sort by date
+      filtered.sort((a, b) {
         if (a.tglVisit.isEmpty && b.tglVisit.isEmpty) return 0;
         if (a.tglVisit.isEmpty) return 1;
         if (b.tglVisit.isEmpty) return -1;
         return b.tglVisit.compareTo(a.tglVisit);
       });
 
-    Logger.info('SchedulePage', '===== FILTER RESULTS =====');
-    Logger.info('SchedulePage',
-        'Total schedules after filtering: ${filteredList.length}');
+      _filteredRangeSchedules = filtered;
+    });
+  }
 
-    return filteredList;
+  void _onFilterSelected(String filter) {
+    if (!mounted) return;
+    setState(() {
+      _selectedFilter = filter;
+      _applyFilters();
+    });
+  }
+
+  void _onSearchChanged() {
+    if (!mounted) return;
+    _applyFilters();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  String _formatRangeDate(DateTimeRange range) {
+    // Log tanggal yang dipilih untuk debugging
+    Logger.info('SchedulePage', '''
+====== Selected Date Range ======
+Start Date: ${range.start}
+End Date: ${range.end}
+''');
+
+    // Format tanggal sesuai format API (MM/dd/YYYY)
+    final formattedStart = DateFormat('MM/dd/yyyy').format(range.start);
+    final formattedEnd = DateFormat('MM/dd/yyyy').format(range.end);
+    final formattedRange = '$formattedStart - $formattedEnd';
+
+    Logger.info('SchedulePage', '''
+====== Formatted Date Range ======
+Formatted Range: $formattedRange
+''');
+
+    return formattedRange;
+  }
+
+  void _loadInitialData() {
+    if (!_isInitialized) {
+      _selectedFilter = AppLocalizations.of(context)!.filterAll;
+      _isInitialized = true;
+      final authState = context.read<AuthBloc>().state;
+      if (authState is AuthAuthenticated) {
+        // Reset pagination variables when loading initial data
+        setState(() {
+          _currentFilterPage = 1;
+          _hasMoreFilterData = true;
+          _isLoadingMoreFilter = false;
+          _filteredRangeSchedules = [];
+        });
+        
+        context.read<ScheduleBloc>().add(
+          GetSchedulesEvent(userId: authState.user.idUser),
+        );
+      }
+    }
   }
 
   void _pickDateRange() async {
+    final now = DateTime.now();
+    final firstDate = DateTime(now.year - 1);
+    final lastDate = DateTime(now.year + 1);
+
+    Logger.info('SchedulePage', '''
+====== Date Picker Configuration ======
+First Date: $firstDate
+Last Date: $lastDate
+Current Selected Range: ${_selectedDateRange?.start} - ${_selectedDateRange?.end}
+''');
+
     final picked = await showDateRangePicker(
       context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+      firstDate: firstDate,
+      lastDate: lastDate,
       initialDateRange: _selectedDateRange,
       builder: (context, child) {
         return Theme(
@@ -243,327 +258,308 @@ class _SchedulePageState extends State<SchedulePage> {
         );
       },
     );
-
+    
     if (picked != null) {
-      Logger.info('SchedulePage', '===== DATE RANGE PICKED =====');
-      Logger.info('SchedulePage', 'Start: ${picked.start.toIso8601String()}');
-      Logger.info('SchedulePage', 'End: ${picked.end.toIso8601String()}');
+      Logger.info('SchedulePage', '''
+====== New Date Range Selected ======
+Start: ${picked.start}
+End: ${picked.end}
+Formatted: ${_formatRangeDate(picked)}
+''');
 
       setState(() {
         _selectedDateRange = picked;
+        _filteredRangeSchedules = [];
+        _originalRangeSchedules = [];
+        _currentFilterPage = 1;
+        _hasMoreFilterData = true;
+        _isLoadingMoreFilter = false;
+        _searchController.clear();
+        _selectedFilter = AppLocalizations.of(context)!.filterAll;
       });
-
+      
       final authState = context.read<AuthBloc>().state;
       if (authState is AuthAuthenticated) {
-        // Refresh data normal dan filter secara lokal
+        final formattedRange = _formatRangeDate(picked);
+        Logger.info('SchedulePage', '''
+====== Sending Request to API ======
+User ID: ${authState.user.idUser}
+Date Range: $formattedRange
+Page: 1
+''');
+
         context.read<ScheduleBloc>().add(
-              GetSchedulesEvent(userId: authState.user.idUser),
-            );
+          GetSchedulesByRangeDateEvent(
+            userId: authState.user.idUser,
+            rangeDate: formattedRange,
+            page: 1,
+          ),
+        );
       }
+    } else {
+      Logger.info('SchedulePage', 'Date range selection cancelled');
     }
   }
 
   void _clearDateRange() {
     setState(() {
       _selectedDateRange = null;
+      _filteredRangeSchedules = [];
+      _originalRangeSchedules = [];
+      _currentFilterPage = 1;
+      _hasMoreFilterData = true;
+      _isLoadingMoreFilter = false;
+      _searchController.clear();
+      _selectedFilter = AppLocalizations.of(context)!.filterAll;
     });
-
+    
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
-      Logger.info('SchedulePage', 'Clearing date range and refreshing data');
       context.read<ScheduleBloc>().add(
-            GetSchedulesEvent(userId: authState.user.idUser),
-          );
+        GetSchedulesEvent(userId: authState.user.idUser),
+      );
     }
-  }
-
-  Widget _buildDateRangeFilter() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        OutlinedButton.icon(
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            side: BorderSide(color: Theme.of(context).primaryColor),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          onPressed: _pickDateRange,
-          icon: Icon(
-            Icons.date_range,
-            size: 20,
-            color: Theme.of(context).primaryColor,
-          ),
-          label: Text(
-            _selectedDateRange != null
-                ? "${DateFormat('dd/MM/yyyy').format(_selectedDateRange!.start)} - ${DateFormat('dd/MM/yyyy').format(_selectedDateRange!.end)}"
-                : 'Pilih Rentang Tanggal',
-            style: TextStyle(
-              color: Theme.of(context).primaryColor,
-              fontSize: 14,
-            ),
-          ),
-        ),
-        if (_selectedDateRange != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 16,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Menampilkan jadwal:',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.clear, size: 16),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: _clearDateRange,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 24),
-                  child: Text(
-                    "${DateFormat('dd/MM/yyyy').format(_selectedDateRange!.start)} - ${DateFormat('dd/MM/yyyy').format(_selectedDateRange!.end)}",
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-
-    Logger.info('SchedulePage', '===== BUILD METHOD =====');
-    Logger.info('SchedulePage', 'Selected date range: $_selectedDateRange');
-    Logger.info('SchedulePage', 'Selected filter: $_selectedFilter');
-    Logger.info('SchedulePage', 'Search query: ${_searchController.text}');
-
-    return Scaffold(
-      appBar: null,
-      floatingActionButton: BlocBuilder<AuthBloc, AuthState>(
-        builder: (context, state) {
-          if (state is AuthAuthenticated) {
-            return FloatingActionButton(
-              onPressed: () => _navigateToAddSchedule(),
-              backgroundColor: Theme.of(context).primaryColor,
-              child: const Icon(Icons.add),
+    return BlocListener<ScheduleBloc, ScheduleState>(
+      listener: (context, state) {
+        if (state is ScheduleLoaded) {
+          if (_selectedDateRange != null) {
+            setState(() {
+              if (_currentFilterPage == 1) {
+                // Reset data untuk rentang tanggal baru
+                _originalRangeSchedules = List<Schedule>.from(state.schedules);
+                _filteredRangeSchedules = List<Schedule>.from(state.schedules);
+              } else {
+                // Tambahkan data baru ke list yang ada
+                final newSchedules = List<Schedule>.from(state.schedules);
+                _originalRangeSchedules.addAll(newSchedules);
+                
+                // Terapkan filter yang ada ke data baru
+                _applyFilters();
+              }
+              
+              _isLoadingMoreFilter = false;
+              _hasMoreFilterData = state.hasMoreData;
+            });
+          } else {
+            // Mode default tanpa rentang tanggal
+            setState(() {
+              _allSchedules = List<Schedule>.from(state.schedules);
+              _filteredSchedules = List<Schedule>.from(state.schedules);
+              _isLoadingMore = false;
+            });
+          }
+        } else if (state is ScheduleError) {
+          setState(() {
+            _isLoadingMoreFilter = false;
+            if (_currentFilterPage > 1) _currentFilterPage--;
+          });
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+              ),
             );
           }
-          return const SizedBox.shrink();
-        },
-      ),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16.0, 40.0, 16.0, 0.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.scheduleTitle,
-                    style: GoogleFonts.poppins(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildDateRangeFilter(),
-                  const SizedBox(height: 12),
-                  // Search Bar
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[300]!),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 8,
-                          spreadRadius: 1,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      style: GoogleFonts.poppins(fontSize: 14),
-                      decoration: InputDecoration(
-                        hintText: l10n.searchHint,
-                        hintStyle: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: Colors.grey[400],
-                        ),
-                        prefixIcon: Icon(
-                          Icons.search,
-                          color: Colors.grey[400],
-                          size: 20,
-                        ),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? Container(
-                                margin: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200],
-                                  shape: BoxShape.circle,
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(Icons.clear, size: 16),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                  onPressed: () {
-                                    setState(() {
-                                      _searchController.clear();
-                                    });
-                                  },
-                                  color: Colors.grey[600],
-                                ),
-                              )
-                            : null,
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 14, horizontal: 8),
-                        fillColor: Colors.white,
-                        filled: true,
+        }
+      },
+      child: Scaffold(
+        appBar: null,
+        floatingActionButton: BlocBuilder<AuthBloc, AuthState>(
+          builder: (context, state) {
+            if (state is AuthAuthenticated) {
+              return FloatingActionButton(
+                onPressed: () => _navigateToAddSchedule(),
+                backgroundColor: Theme.of(context).primaryColor,
+                child: const Icon(Icons.add),
+              );
+            }
+            return const SizedBox.shrink();
+          },
+        ),
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16.0, 40.0, 16.0, 0.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.scheduleTitle,
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
                       ),
-                      onChanged: (value) {
-                        setState(() {});
-                      },
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  // Filter Categories
-                  Container(
-                    height: 40,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _buildFilterChip(l10n.filterAll),
-                          _buildFilterChip('Menunggu Persetujuan'),
-                          _buildFilterChip('Check-in'),
-                          _buildFilterChip('Check-out'),
-                          _buildFilterChip('Selesai'),
-                          _buildFilterChip('Ditolak'),
+                    const SizedBox(height: 16),
+                    _buildDateRangeFilter(),
+                    const SizedBox(height: 12),
+                    // Search Bar
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[300]!),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                            offset: const Offset(0, 2),
+                          ),
                         ],
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: BlocBuilder<AuthBloc, AuthState>(
-                  builder: (context, authState) {
-                    Logger.info('SchedulePage', '===== AUTH STATE =====');
-                    Logger.info(
-                        'SchedulePage', 'Auth state: ${authState.runtimeType}');
-
-                    if (authState is AuthAuthenticated) {
-                      return BlocConsumer<ScheduleBloc, ScheduleState>(
-                        listener: (context, state) {
-                          _currentState = state;
-                          if (state is ScheduleLoaded) {
-                            setState(() {
-                              _currentPage = state.currentPage;
-                              _isLoadingMore = false;
-                            });
-                          }
+                      child: TextField(
+                        controller: _searchController,
+                        style: GoogleFonts.poppins(fontSize: 14),
+                        decoration: InputDecoration(
+                          hintText: l10n.searchHint,
+                          hintStyle: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: Colors.grey[400],
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: Colors.grey[400],
+                            size: 20,
+                          ),
+                          suffixIcon: _searchController.text.isNotEmpty
+                              ? Container(
+                                  margin: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: IconButton(
+                                    icon: const Icon(Icons.clear, size: 16),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    onPressed: () {
+                                      setState(() {
+                                        _searchController.clear();
+                                      });
+                                    },
+                                    color: Colors.grey[600],
+                                  ),
+                                )
+                              : null,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 14, horizontal: 8),
+                          fillColor: Colors.white,
+                          filled: true,
+                        ),
+                        onChanged: (value) {
+                          setState(() {});
                         },
-                        builder: (context, state) {
-                          Logger.info(
-                              'SchedulePage', '===== SCHEDULE STATE =====');
-                          Logger.info('SchedulePage', 'Schedule state: $state');
-
-                          if (state is ScheduleLoading && _currentPage == 1) {
-                            return const ShimmerScheduleListLoading();
-                          } else if (state is ScheduleLoaded) {
-                            final filteredSchedules = _getFilteredSchedules(
-                              state.schedules,
-                              _searchController.text,
-                            );
-                            Logger.info('SchedulePage',
-                                'Filtered schedules count: ${filteredSchedules.length}');
-
-                            if (filteredSchedules.isEmpty) {
-                              return _buildEmptyState();
-                            }
-
-                            return RefreshIndicator(
-                              onRefresh: () async {
-                                _searchController.clear();
-                                setState(() {
-                                  _selectedFilter = l10n.filterAll;
-                                  _currentPage = 1;
-                                });
-                                context.read<ScheduleBloc>().add(
-                                      GetSchedulesEvent(
-                                          userId: authState.user.idUser),
-                                    );
-                              },
-                              child: ListView.builder(
-                                controller: _scrollController,
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                itemCount: filteredSchedules.length +
-                                    (_isLoadingMore ? 1 : 0),
-                                itemBuilder: (context, index) {
-                                  if (index < filteredSchedules.length) {
-                                    return _buildScheduleCard(
-                                        context, filteredSchedules[index]);
-                                  } else {
-                                    return const Center(
-                                      child: Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Filter Categories
+                    Container(
+                      height: 40,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _buildFilterChip(l10n.filterAll),
+                            _buildFilterChip('Pending'),
+                            _buildFilterChip('Check-in'),
+                            _buildFilterChip('Check-out'),
+                            _buildFilterChip('Selesai'),
+                            _buildFilterChip('Ditolak'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, authState) {
+                      if (authState is AuthAuthenticated) {
+                        return BlocBuilder<ScheduleBloc, ScheduleState>(
+                          builder: (context, state) {
+                            if (_selectedDateRange != null) {
+                              // Mode filter range date
+                              if (state is ScheduleLoading && _currentFilterPage == 1) {
+                                return const ShimmerScheduleListLoading();
+                              }
+                              
+                              if (_filteredRangeSchedules.isEmpty) {
+                                return _buildEmptyState();
+                              }
+                              
+                              return RefreshIndicator(
+                                onRefresh: () async {
+                                  // Reset pagination state
+                                  setState(() {
+                                    _filteredRangeSchedules = [];
+                                    _currentFilterPage = 1;
+                                    _hasMoreFilterData = true;
+                                    _isLoadingMoreFilter = false;
+                                  });
+                                  
+                                  // Request data baru
+                                  if (mounted) {
+                                    context.read<ScheduleBloc>().add(
+                                      GetSchedulesByRangeDateEvent(
+                                        userId: authState.user.idUser,
+                                        rangeDate: _formatRangeDate(_selectedDateRange!),
+                                        page: 1,
                                       ),
                                     );
                                   }
                                 },
-                              ),
-                            );
-                          } else if (state is ScheduleError) {
-                            return _buildErrorState(
-                                context, authState, state.message);
-                          }
-                          return const SizedBox();
-                        },
-                      );
-                    }
-                    return const SizedBox();
-                  },
+                                child: ListView.builder(
+                                  controller: _scrollController,
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  itemCount: _filteredRangeSchedules.length + (_hasMoreFilterData ? 1 : 0),
+                                  itemBuilder: (context, index) {
+                                    if (index < _filteredRangeSchedules.length) {
+                                      return _buildScheduleCard(
+                                        context, 
+                                        _filteredRangeSchedules[index],
+                                      );
+                                    } else if (_isLoadingMoreFilter) {
+                                      return const Center(
+                                        child: Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                      );
+                                    } else {
+                                      return const SizedBox.shrink();
+                                    }
+                                  },
+                                ),
+                              );
+                            } else {
+                              // Mode default
+                              return _buildDefaultScheduleList(state, authState);
+                            }
+                          },
+                        );
+                      }
+                      return const SizedBox();
+                    },
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -737,7 +733,7 @@ class _SchedulePageState extends State<SchedulePage> {
 
     // Cek status menunggu persetujuan
     if (approved == 0) {
-      return l10n.pendingApproval;
+      return 'Pending';
     }
 
     // Untuk jadwal yang sudah disetujui
@@ -745,7 +741,7 @@ class _SchedulePageState extends State<SchedulePage> {
       // Jika status check-in adalah detail dan realisasi belum disetujui
       if (lowerStatus == 'detail' &&
           (realisasiApprove == null || realisasiApprove == 0)) {
-        return l10n.pendingApproval;
+        return 'Pending';
       }
 
       // Jika sudah check-out atau selesai, cek realisasi
@@ -753,7 +749,7 @@ class _SchedulePageState extends State<SchedulePage> {
         if (realisasiApprove == 1) {
           return l10n.completed;
         }
-        return l10n.pendingApproval; // Menunggu persetujuan realisasi
+        return 'Pending'; // Menunggu persetujuan realisasi
       }
 
       // Status check-in dan check-out
@@ -1178,7 +1174,7 @@ class _SchedulePageState extends State<SchedulePage> {
 
     Color getFilterColor() {
       switch (label) {
-        case 'Menunggu Persetujuan':
+        case 'Pending':
           return Colors.orange.shade700;
         case 'Check-in':
           return Colors.blue.shade700;
@@ -1199,9 +1195,7 @@ class _SchedulePageState extends State<SchedulePage> {
         selected: isSelected,
         label: Text(label),
         onSelected: (selected) {
-          setState(() {
-            _selectedFilter = selected ? label : l10n.filterAll;
-          });
+          _onFilterSelected(selected ? label : l10n.filterAll);
         },
         backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
         selectedColor: getFilterColor().withOpacity(0.2),
@@ -1223,5 +1217,194 @@ class _SchedulePageState extends State<SchedulePage> {
         ),
       ),
     );
+  }
+
+  Widget _buildDateRangeFilter() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        OutlinedButton.icon(
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            side: BorderSide(color: Theme.of(context).primaryColor),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          onPressed: _pickDateRange,
+          icon: Icon(
+            Icons.date_range,
+            size: 20,
+            color: Theme.of(context).primaryColor,
+          ),
+          label: Text(
+            _selectedDateRange != null
+                ? _formatRangeDate(_selectedDateRange!)
+                : 'Pilih Rentang Tanggal',
+            style: TextStyle(
+              color: Theme.of(context).primaryColor,
+              fontSize: 14,
+            ),
+          ),
+        ),
+        if (_selectedDateRange != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Menampilkan jadwal:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.clear, size: 16),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: _clearDateRange,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 24),
+                  child: Text(
+                    _formatRangeDate(_selectedDateRange!),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildDefaultScheduleList(ScheduleState state, AuthAuthenticated authState) {
+    if (state is ScheduleLoading && _currentPage == 1) {
+      return const ShimmerScheduleListLoading();
+    } else if (state is ScheduleLoaded) {
+      final filteredSchedules = _getFilteredSchedulesForDefault(
+        state.schedules,
+        _searchController.text,
+      );
+      if (filteredSchedules.isEmpty) {
+        return _buildEmptyState();
+      }
+      return RefreshIndicator(
+        onRefresh: () async {
+          _searchController.clear();
+          setState(() {
+            _selectedFilter = AppLocalizations.of(context)!.filterAll;
+            _currentPage = 1;
+          });
+          if (mounted) {
+            context.read<ScheduleBloc>().add(
+              GetSchedulesEvent(userId: authState.user.idUser),
+            );
+          }
+        },
+        child: ListView.builder(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          itemCount: filteredSchedules.length + (_isLoadingMore ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index < filteredSchedules.length) {
+              return _buildScheduleCard(context, filteredSchedules[index]);
+            } else {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+          },
+        ),
+      );
+    } else if (state is ScheduleError) {
+      return _buildErrorState(context, authState, state.message);
+    }
+    return const SizedBox();
+  }
+
+  List<Schedule> _getFilteredSchedulesForDefault(List<Schedule> schedules, String query) {
+    final l10n = AppLocalizations.of(context)!;
+    if (schedules.isEmpty) return [];
+
+    var filtered = List<Schedule>.from(schedules);
+
+    // Apply search filter
+    if (query.isNotEmpty) {
+      final searchQuery = query.toLowerCase();
+      filtered = filtered.where((schedule) =>
+        schedule.namaTujuan.toLowerCase().contains(searchQuery) ||
+        (schedule.namaTipeSchedule ?? schedule.tipeSchedule).toLowerCase().contains(searchQuery) ||
+        schedule.tglVisit.toLowerCase().contains(searchQuery) ||
+        schedule.shift.toLowerCase().contains(searchQuery)
+      ).toList();
+    }
+
+    // Apply status filter
+    if (_selectedFilter.isNotEmpty && _selectedFilter != l10n.filterAll) {
+      filtered = filtered.where((schedule) {
+        final lowerStatus = schedule.statusCheckin.toLowerCase().trim();
+        final lowerDraft = schedule.draft.toLowerCase().trim();
+
+        switch (_selectedFilter) {
+          case 'Pending':
+            return (schedule.approved == 0 && !lowerDraft.contains('rejected')) ||
+                ((lowerStatus == 'check-out' ||
+                    lowerStatus == 'selesai' ||
+                    lowerStatus == 'detail') &&
+                    (schedule.realisasiApprove == null ||
+                        schedule.realisasiApprove == 0));
+          case 'Check-in':
+            return schedule.approved == 1 &&
+                !lowerDraft.contains('rejected') &&
+                lowerStatus == 'belum checkin';
+          case 'Check-out':
+            return schedule.approved == 1 &&
+                !lowerDraft.contains('rejected') &&
+                (lowerStatus == 'check-in' || lowerStatus == 'belum checkout');
+          case 'Selesai':
+            return (lowerStatus == 'check-out' ||
+                lowerStatus == 'selesai' ||
+                lowerStatus == 'detail') &&
+                schedule.realisasiApprove == 1;
+          case 'Ditolak':
+            return lowerDraft.contains('rejected');
+          default:
+            return true;
+        }
+      }).toList();
+    }
+
+    // Sort by date
+    filtered.sort((a, b) {
+      if (a.tglVisit.isEmpty && b.tglVisit.isEmpty) return 0;
+      if (a.tglVisit.isEmpty) return 1;
+      if (b.tglVisit.isEmpty) return -1;
+      return b.tglVisit.compareTo(a.tglVisit);
+    });
+
+    return filtered;
   }
 }

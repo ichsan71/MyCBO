@@ -8,7 +8,7 @@ import '../../data/models/update_schedule_request_model.dart';
 abstract class ScheduleRepository {
   Future<Either<Failure, List<Schedule>>> getSchedules(int userId);
   Future<Either<Failure, List<Schedule>>> getSchedulesByRangeDate(
-      int userId, String rangeDate);
+      int userId, String rangeDate, int page);
   Future<Either<Failure, List<Schedule>>> getRejectedSchedules(int userId);
   Future<Either<Failure, EditScheduleDataModel>> getEditScheduleData(
       int scheduleId);
