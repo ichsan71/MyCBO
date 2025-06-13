@@ -5,7 +5,6 @@ import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/logout_usecase.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {

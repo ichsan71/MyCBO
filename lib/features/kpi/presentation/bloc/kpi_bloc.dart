@@ -18,6 +18,15 @@ class GetKpiDataEvent extends KpiEvent {
   List<Object> get props => [userId];
 }
 
+class ResetAndRefreshKpiDataEvent extends KpiEvent {
+  final String userId;
+
+  ResetAndRefreshKpiDataEvent(this.userId);
+
+  @override
+  List<Object> get props => [userId];
+}
+
 // States
 abstract class KpiState extends Equatable {
   @override
@@ -49,6 +58,8 @@ class KpiError extends KpiState {
 // BLoC
 class KpiBloc extends Bloc<KpiEvent, KpiState> {
   final GetKpiData getKpiData;
+  String? _lastUserId;
+  KpiResponse? _lastResponse;
 
   KpiBloc({required this.getKpiData}) : super(KpiInitial()) {
     on<GetKpiDataEvent>((event, emit) async {
@@ -58,8 +69,64 @@ class KpiBloc extends Bloc<KpiEvent, KpiState> {
       
       result.fold(
         (failure) => emit(KpiError('Failed to load KPI data')),
-        (data) => emit(KpiLoaded(data)),
+        (data) {
+          _lastUserId = event.userId;
+          _lastResponse = data;
+          emit(KpiLoaded(data));
+        },
       );
     });
+
+    on<ResetAndRefreshKpiDataEvent>((event, emit) async {
+      try {
+        // Reset state and cache
+        _lastResponse = null;
+        _lastUserId = null;
+        emit(KpiInitial());
+        
+        // Force a small delay to ensure UI updates
+        await Future.delayed(const Duration(milliseconds: 100));
+        emit(KpiLoading());
+        
+        // Get fresh data
+        final result = await getKpiData(Params(userId: event.userId));
+        
+        if (isClosed) return;
+        
+        result.fold(
+          (failure) => emit(KpiError('Failed to load KPI data')),
+          (data) {
+            // Only update if user ID matches current request
+            if (event.userId == _lastUserId) {
+              emit(KpiError('Data might be stale, retrying...'));
+              add(ResetAndRefreshKpiDataEvent(event.userId));
+              return;
+            }
+            
+            // Store new data
+            _lastUserId = event.userId;
+            _lastResponse = data;
+            
+            // Emit fresh state with new data
+            emit(KpiLoaded(data.copyWith(
+              data: data.data.map((item) => item.copyWith(
+                grafik: item.grafik.map((g) => g.copyWith()).toList(),
+              )).toList(),
+            )));
+          },
+        );
+      } catch (e) {
+        if (!isClosed) {
+          emit(KpiError('An unexpected error occurred'));
+        }
+      }
+    });
+  }
+
+  @override
+  Future<void> close() {
+    _lastResponse = null;
+    _lastUserId = null;
+    return super.close();
   }
 } 

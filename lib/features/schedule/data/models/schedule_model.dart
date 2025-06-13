@@ -58,6 +58,48 @@ class ScheduleModel extends Schedule {
     }
   }
 
+  // Helper function to format date consistently
+  static String formatDate(dynamic value) {
+    if (value == null) return '';
+    
+    try {
+      // If the date is already in MM/dd/yyyy format, return it as is
+      if (value is String && RegExp(r'^\d{2}/\d{2}/\d{4}$').hasMatch(value)) {
+        return value;
+      }
+
+      // Try to parse the date if it's in a different format
+      DateTime date;
+      if (value is String) {
+        // Try different date formats
+        try {
+          // Try yyyy-MM-dd format first
+          date = DateTime.parse(value);
+        } catch (e) {
+          // If that fails, try dd/MM/yyyy format
+          final parts = value.split('/');
+          if (parts.length == 3) {
+            date = DateTime(
+              int.parse(parts[2]), // year
+              int.parse(parts[1]), // month
+              int.parse(parts[0]), // day
+            );
+          } else {
+            throw FormatException('Invalid date format: $value');
+          }
+        }
+      } else {
+        throw FormatException('Invalid date value type: ${value.runtimeType}');
+      }
+
+      // Format the date as MM/dd/yyyy
+      return '${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}/${date.year}';
+    } catch (e) {
+      Logger.error('ScheduleModel', 'Error formatting date: $value - $e');
+      return value.toString(); // Return original value if parsing fails
+    }
+  }
+
   factory ScheduleModel.empty() {
     return const ScheduleModel(
       id: 0,
@@ -98,35 +140,6 @@ class ScheduleModel extends Schedule {
   factory ScheduleModel.fromJson(Map<String, dynamic> json) {
     Logger.info('ScheduleModel', 'Processing schedule with raw data: $json');
 
-    // Helper function to parse and format date
-    String formatDate(dynamic value) {
-      if (value == null || value.toString().trim().isEmpty) return '';
-      
-      try {
-        // If the date is in YYYY-MM-DD format, convert it to MM/dd/yyyy
-        if (value.toString().contains('-')) {
-          final parts = value.toString().split('-');
-          if (parts.length == 3) {
-            return '${parts[1]}/${parts[2]}/${parts[0]}';
-          }
-        }
-        // If the date is already in MM/dd/yyyy format, return as is
-        else if (value.toString().contains('/')) {
-          final parts = value.toString().split('/');
-          if (parts.length == 3) {
-            // Validate that it's already in correct format
-            if (parts[0].length <= 2 && parts[1].length <= 2 && parts[2].length == 4) {
-              return value.toString();
-            }
-          }
-        }
-      } catch (e) {
-        Logger.error('ScheduleModel', 'Error formatting date: $e');
-      }
-      
-      return value.toString();
-    }
-
     // Helper function untuk parse nullable int
     int? parseNullableIntValue(dynamic value) {
       if (value == null) return null;
@@ -158,9 +171,34 @@ class ScheduleModel extends Schedule {
       return defaultValue;
     }
 
-    final shiftValue = processShiftValue(json['shift']);
-    Logger.info('ScheduleModel', 'Raw shift value: ${json['shift']}');
-    Logger.info('ScheduleModel', 'Processed shift value: $shiftValue');
+    // Helper function to parse and format date
+    String formatDate(dynamic value) {
+      if (value == null || value.toString().trim().isEmpty) return '';
+      
+      try {
+        // If the date is in YYYY-MM-DD format, convert it to MM/dd/yyyy
+        if (value.toString().contains('-')) {
+          final parts = value.toString().split('-');
+          if (parts.length == 3) {
+            return '${parts[1]}/${parts[2]}/${parts[0]}';
+          }
+        }
+        // If the date is already in MM/dd/yyyy format, return as is
+        else if (value.toString().contains('/')) {
+          final parts = value.toString().split('/');
+          if (parts.length == 3) {
+            // Validate that it's already in correct format
+            if (parts[0].length <= 2 && parts[1].length <= 2 && parts[2].length == 4) {
+              return value.toString();
+            }
+          }
+        }
+      } catch (e) {
+        Logger.error('ScheduleModel', 'Error formatting date: $e');
+      }
+      
+      return value.toString();
+    }
 
     // Helper function to parse product data
     String? parseProduct(dynamic value) {
@@ -222,18 +260,19 @@ class ScheduleModel extends Schedule {
     Logger.info('ScheduleModel', 'Raw approved: ${json['approved']}');
     Logger.info('ScheduleModel', 'Raw id_user: ${json['id_user']}');
 
-    final String tipeScheduleValue = json['type_schedule']?.toString() ??
-        json['tipe_schedule']?.toString() ??
-        '';
+    final shiftValue = processShiftValue(json['shift']);
+    Logger.info('ScheduleModel', 'Raw shift value: ${json['shift']}');
+    Logger.info('ScheduleModel', 'Processed shift value: $shiftValue');
 
-    Logger.info(
-        'ScheduleModel', 'Final tipeSchedule value: $tipeScheduleValue');
-
-    final String? namaTipeScheduleValue =
-        json['nama_type_schedule']?.toString() ??
-            json['nama_tipe_schedule']?.toString() ??
-            tipeScheduleValue;
-
+    // Process type_schedule value
+    final tipeScheduleValue = json['type_schedule']?.toString() ?? '';
+    
+    // Process nama_type_schedule value with fallback
+    String? namaTipeScheduleValue = json['nama_type_schedule']?.toString();
+    if (namaTipeScheduleValue == null || namaTipeScheduleValue.isEmpty) {
+      namaTipeScheduleValue = json['nama_tipe_schedule']?.toString();
+    }
+    
     Logger.info('ScheduleModel',
         'Final namaTipeSchedule value: $namaTipeScheduleValue');
 

@@ -622,15 +622,39 @@ Page: 1
       if (result == true) {
         if (!mounted) return;
 
-        // Merefresh jadwal secara langsung
-        context.read<ScheduleBloc>().add(
-              GetSchedulesEvent(userId: authState.user.idUser),
-            );
-
-        // Reset filter schedules
+        // Reset semua state
         setState(() {
+          _selectedFilter = AppLocalizations.of(context)!.filterAll;
+          _searchController.clear();
           _filteredSchedules = [];
+          _allSchedules = [];
+          _currentPage = 1;
+          _isLoadingMore = false;
+          
+          // Reset state untuk mode filter tanggal
+          if (_selectedDateRange != null) {
+            _filteredRangeSchedules = [];
+            _originalRangeSchedules = [];
+            _currentFilterPage = 1;
+            _isLoadingMoreFilter = false;
+            _hasMoreFilterData = true;
+          }
         });
+
+        // Refresh data sesuai mode yang aktif
+        if (_selectedDateRange != null) {
+          context.read<ScheduleBloc>().add(
+            GetSchedulesByRangeDateEvent(
+              userId: authState.user.idUser,
+              rangeDate: _formatRangeDate(_selectedDateRange!),
+              page: 1,
+            ),
+          );
+        } else {
+          context.read<ScheduleBloc>().add(
+            GetSchedulesEvent(userId: authState.user.idUser),
+          );
+        }
       }
     }
   }
@@ -1406,5 +1430,45 @@ Page: 1
     });
 
     return filtered;
+  }
+
+  bool _isSameDay(String dateStr1, String dateStr2) {
+    try {
+      // Parse tanggal dengan format MM/dd/yyyy
+      final parts1 = dateStr1.split('/');
+      final parts2 = dateStr2.split('/');
+      
+      if (parts1.length != 3 || parts2.length != 3) return false;
+      
+      final date1 = DateTime(
+        int.parse(parts1[2]), // year
+        int.parse(parts1[0]), // month
+        int.parse(parts1[1]), // day
+      );
+      
+      final date2 = DateTime(
+        int.parse(parts2[2]), // year
+        int.parse(parts2[0]), // month
+        int.parse(parts2[1]), // day
+      );
+      
+      return date1.year == date2.year &&
+             date1.month == date2.month &&
+             date1.day == date2.day;
+    } catch (e) {
+      print('Error parsing dates: $e');
+      return false;
+    }
+  }
+
+  bool _isToday(String dateStr) {
+    try {
+      final now = DateTime.now();
+      final today = DateFormat('MM/dd/yyyy').format(now);
+      return _isSameDay(dateStr, today);
+    } catch (e) {
+      print('Error checking if date is today: $e');
+      return false;
+    }
   }
 }

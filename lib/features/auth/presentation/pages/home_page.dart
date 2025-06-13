@@ -47,15 +47,66 @@ class _HomeContent extends StatefulWidget {
 }
 
 class _HomeContentState extends State<_HomeContent> {
+  String? _currentUserId;
+  bool _isFirstLoad = true;
+
   @override
   void initState() {
     super.initState();
-    // Load KPI data when the page is opened
-    context.read<KpiBloc>().add(GetKpiDataEvent(widget.user.user.idUser.toString()));
+    _currentUserId = widget.user.user.idUser.toString();
+    // Delay the first load slightly to ensure proper initialization
+    Future.microtask(() {
+      if (mounted) {
+        _refreshKpiData(isForceRefresh: true);
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _HomeContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final newUserId = widget.user.user.idUser.toString();
+    
+    // Always refresh on user change
+    if (_currentUserId != newUserId) {
+      _currentUserId = newUserId;
+      _isFirstLoad = true; // Reset first load flag for new user
+      
+      // Ensure widget is mounted and use force refresh
+      if (mounted) {
+        _refreshKpiData(isForceRefresh: true);
+      }
+    }
+  }
+
+  void _refreshKpiData({bool isForceRefresh = false}) {
+    if (!mounted) return;
+    
+    final bloc = context.read<KpiBloc>();
+    
+    // Always use ResetAndRefreshKpiDataEvent for force refresh or first load
+    if (isForceRefresh || _isFirstLoad) {
+      _isFirstLoad = false; // Reset first load flag
+      bloc.add(ResetAndRefreshKpiDataEvent(_currentUserId ?? ''));
+    } else {
+      // Use regular GetKpiDataEvent for normal refresh
+      bloc.add(GetKpiDataEvent(_currentUserId ?? ''));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Update current user ID if needed
+    final newUserId = widget.user.user.idUser.toString();
+    if (_currentUserId != newUserId) {
+      _currentUserId = newUserId;
+      // Schedule a refresh for next frame if user changed
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _refreshKpiData(isForceRefresh: true);
+        }
+      });
+    }
     final l10n = AppLocalizations.of(context)!;
     final role = widget.user.user.role.toUpperCase();
     final hasApprovalAccess = role == 'ADMIN' ||
@@ -164,11 +215,7 @@ class _HomeContentState extends State<_HomeContent> {
                               builder: (context, state) {
                                 if (state is KpiLoaded) {
                                   return IconButton(
-                                    onPressed: () {
-                                      context.read<KpiBloc>().add(
-                                        GetKpiDataEvent(widget.user.user.idUser.toString()),
-                                      );
-                                    },
+                                    onPressed: () => _refreshKpiData(isForceRefresh: true),
                                     icon: Icon(
                                       Icons.refresh_rounded,
                                       color: Theme.of(context).primaryColor,
@@ -188,11 +235,7 @@ class _HomeContentState extends State<_HomeContent> {
                           } else if (state is KpiLoaded && state.kpiData.data.isNotEmpty) {
                             return KpiChartNew(
                               kpiData: state.kpiData.data.first.grafik,
-                              onRefresh: () {
-                                context.read<KpiBloc>().add(
-                                  GetKpiDataEvent(widget.user.user.idUser.toString()),
-                                );
-                              },
+                              onRefresh: () => _refreshKpiData(isForceRefresh: true),
                             );
                           } else if (state is KpiError) {
                             return Center(
@@ -209,11 +252,7 @@ class _HomeContentState extends State<_HomeContent> {
                                   ),
                                   const SizedBox(height: 16),
                                   ElevatedButton.icon(
-                                    onPressed: () {
-                                      context.read<KpiBloc>().add(
-                                        GetKpiDataEvent(widget.user.user.idUser.toString()),
-                                      );
-                                    },
+                                    onPressed: () => _refreshKpiData(isForceRefresh: true),
                                     icon: const Icon(Icons.refresh),
                                     label: Text(
                                       'Coba Lagi',

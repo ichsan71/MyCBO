@@ -36,6 +36,41 @@ class ScheduleDetailPage extends StatefulWidget {
 }
 
 class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
+  DateTime? _parseDate(String dateStr) {
+    try {
+      // Format yang diharapkan: MM/dd/yyyy
+      final parts = dateStr.split('/');
+      if (parts.length != 3) return null;
+
+      final month = int.parse(parts[0]);
+      final day = int.parse(parts[1]);
+      final year = int.parse(parts[2]);
+
+      return DateTime(year, month, day);
+    } catch (e) {
+      Logger.error('ScheduleDetailPage', 'Error parsing date: $dateStr - $e');
+      return null;
+    }
+  }
+
+  bool _isScheduleToday() {
+    final scheduleDate = _parseDate(widget.schedule.tglVisit);
+    if (scheduleDate == null) return false;
+
+    final now = DateTime.now();
+    return scheduleDate.year == now.year &&
+           scheduleDate.month == now.month &&
+           scheduleDate.day == now.day;
+  }
+
+  String _formatDisplayDate(String dateStr) {
+    final date = _parseDate(dateStr);
+    if (date == null) return dateStr;
+
+    // Format ke dd/MM/yyyy untuk tampilan
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -437,7 +472,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                         const SizedBox(height: 12),
                         _buildDetailRow(
                           label: 'Tanggal Visit',
-                          value: widget.schedule.tglVisit,
+                          value: _formatDisplayDate(widget.schedule.tglVisit),
                           icon: Icons.event,
                         ),
                         const SizedBox(height: 12),
@@ -775,14 +810,6 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
         ),
       ),
     );
-  }
-
-  bool _isScheduleToday() {
-    final now = DateTime.now();
-    final scheduleDate = DateTime.parse(widget.schedule.tglVisit);
-    return now.year == scheduleDate.year &&
-        now.month == scheduleDate.month &&
-        now.day == scheduleDate.day;
   }
 
   Widget _buildCard({

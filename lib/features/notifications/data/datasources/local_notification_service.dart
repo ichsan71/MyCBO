@@ -3,11 +3,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import '../../domain/entities/notification_settings.dart';
-import 'package:flutter/foundation.dart';
 import 'dart:io' show Platform;
 import 'package:logger/logger.dart';
 import '../../../../features/auth/domain/repositories/auth_repository.dart';
 import '../../../../features/schedule/domain/repositories/schedule_repository.dart';
+
+// Top-level function for handling background notifications
+@pragma('vm:entry-point')
+void notificationTapBackground(NotificationResponse notificationResponse) {
+  // Handle notification tap in background
+}
 
 abstract class LocalNotificationService {
   Future<void> initialize();
@@ -38,7 +43,7 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
       lineLength: 50,
       colors: true,
       printEmojis: true,
-      printTime: true,
+      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
     ),
   );
 
@@ -54,19 +59,20 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
     try {
       logger.i('Initializing notification service...');
 
-      // Initialize timezone
+      // Initialize timezone with explicit local timezone
       try {
         tz.initializeTimeZones();
-        logger.i('Timezone initialized successfully');
+        final jakarta = tz.getLocation('Asia/Jakarta');
+        tz.setLocalLocation(jakarta);
+        logger.i('Timezone initialized successfully to Asia/Jakarta');
       } catch (e) {
         logger.e('Failed to initialize timezone: $e');
         throw Exception('Failed to initialize timezone: $e');
       }
 
-      // Initialize Android settings
-      const androidSettings =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
-      logger.d('Android settings initialized');
+      // Initialize Android settings with specific icon
+      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      logger.d('Android settings initialized with icon: @mipmap/ic_launcher');
 
       // Initialize settings for all platforms
       const initializationSettings = InitializationSettings(
@@ -74,12 +80,14 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
       );
       logger.d('Platform settings initialized');
 
-      // Initialize the plugin
+      // Initialize the plugin with explicit handling of notification selection
       final initialized = await flutterLocalNotificationsPlugin.initialize(
         initializationSettings,
         onDidReceiveNotificationResponse: (NotificationResponse details) {
           logger.i('Notification clicked: ${details.payload}');
+          // Handle notification tap in foreground
         },
+        onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
       );
 
       if (initialized != true) {
@@ -89,31 +97,51 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
 
       logger.i('Notification plugin initialized successfully');
 
-      // Request notification permission
+      // Request notification permission with explicit error handling
       final hasPermission = await requestPermission();
       if (!hasPermission) {
         logger.w('Notification permissions not granted');
+        throw Exception('Notification permissions not granted');
       } else {
         logger.i('Notification permissions granted');
       }
 
-      // Create notification channel for Android
+      // Create notification channels for Android with distinct channels
       if (Platform.isAndroid) {
-        const androidChannel = AndroidNotificationChannel(
-          'notifications_channel',
-          'Notifications',
-          description: 'General notifications channel',
+        // Channel for daily greetings
+        const dailyGreetingChannel = AndroidNotificationChannel(
+          'daily_greeting_channel',
+          'Daily Greetings',
+          description: 'Channel for daily greeting notifications',
           importance: Importance.high,
           enableVibration: true,
           playSound: true,
+          showBadge: true,
         );
 
-        await flutterLocalNotificationsPlugin
-            .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin>()
-            ?.createNotificationChannel(androidChannel);
+        // Channel for checkout reminders
+        const checkoutChannel = AndroidNotificationChannel(
+          'checkout_channel',
+          'Checkout Reminders',
+          description: 'Channel for checkout reminder notifications',
+          importance: Importance.high,
+          enableVibration: true,
+          playSound: true,
+          showBadge: true,
+        );
 
-        logger.i('Android notification channel created');
+        final androidPlugin = flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>();
+
+        if (androidPlugin != null) {
+          await androidPlugin.createNotificationChannel(dailyGreetingChannel);
+          await androidPlugin.createNotificationChannel(checkoutChannel);
+          logger.i('Android notification channels created successfully');
+        } else {
+          logger.e('Failed to resolve Android plugin');
+          throw Exception('Failed to resolve Android plugin');
+        }
       }
 
       logger.i('Notification service initialization completed successfully');
@@ -126,31 +154,25 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
   @override
   Future<void> scheduleCheckoutNotification() async {
     try {
-      logger.i('Scheduling checkout notification...');
+      logger.i('Starting checkout notification scheduling...');
 
       // Get current user
       final userResult = await authRepository.getCurrentUser();
       if (userResult.isLeft()) {
-        logger.e('Failed to get current user');
+        logger.e('Failed to get current user for checkout notification');
         return;
       }
-      final user =
-          userResult.getOrElse(() => throw Exception('User not found'));
-      logger.d('Got current user: ${user.name}');
-
-      // Update username in settings
-      await sharedPreferences.setString('user_name', user.name);
-      logger.d('Updated username in settings to: ${user.name}');
+      final user = userResult.getOrElse(() => throw Exception('User not found'));
+      logger.d('Got current user for checkout: ${user.name}');
 
       // Get schedules for current user
-      final schedulesResult =
-          await scheduleRepository.getSchedules(user.idUser);
+      final schedulesResult = await scheduleRepository.getSchedules(user.idUser);
       if (schedulesResult.isLeft()) {
-        logger.e('Failed to get schedules');
+        logger.e('Failed to get schedules for checkout notification');
         return;
       }
       final schedules = schedulesResult.getOrElse(() => []);
-      logger.d('Got ${schedules.length} schedules');
+      logger.d('Retrieved ${schedules.length} schedules for checkout check');
 
       // Filter schedules that need checkout
       final pendingCheckouts = schedules
@@ -159,15 +181,44 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
           .toList();
       logger.d('Found ${pendingCheckouts.length} pending checkouts');
 
-      if (pendingCheckouts.isNotEmpty) {
-        // Cancel any existing notification first
-        await flutterLocalNotificationsPlugin.cancel(1);
-        logger.d('Cancelled existing checkout notifications');
+      // Cancel any existing notifications first
+      await flutterLocalNotificationsPlugin.cancel(1); // Immediate notification ID
+      await flutterLocalNotificationsPlugin.cancel(3); // Periodic notification ID
+      logger.d('Cancelled existing checkout notifications');
 
-        // Create Android-specific notification details
-        const androidDetails = AndroidNotificationDetails(
-          'checkout_channel',
-          'Checkout Reminders',
+      if (pendingCheckouts.isNotEmpty) {
+        // Create Android-specific notification details for immediate notification
+        const androidDetailsImmediate = AndroidNotificationDetails(
+          'checkout_immediate_channel',
+          'Checkout Reminders (Immediate)',
+          channelDescription: 'Immediate reminders for pending checkouts',
+          importance: Importance.max,
+          priority: Priority.high,
+          enableVibration: true,
+          playSound: true,
+          channelShowBadge: true,
+          visibility: NotificationVisibility.public,
+          category: AndroidNotificationCategory.alarm,
+          fullScreenIntent: true,
+        );
+
+        const notificationDetailsImmediate = NotificationDetails(
+          android: androidDetailsImmediate,
+        );
+
+        // Show immediate notification
+        await flutterLocalNotificationsPlugin.show(
+          1,
+          'Pengingat Checkout Penting',
+          'Halo ${user.name}, Anda memiliki ${pendingCheckouts.length} checkout yang belum diselesaikan. Mohon segera diselesaikan.',
+          notificationDetailsImmediate,
+        );
+        logger.i('Immediate checkout notification displayed');
+
+        // Create Android-specific notification details for periodic notification
+        const androidDetailsPeriodic = AndroidNotificationDetails(
+          'checkout_periodic_channel',
+          'Checkout Reminders (Periodic)',
           channelDescription: 'Periodic reminders for pending checkouts',
           importance: Importance.high,
           priority: Priority.high,
@@ -175,92 +226,119 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
           playSound: true,
           ongoing: true,
           autoCancel: false,
+          channelShowBadge: true,
+          visibility: NotificationVisibility.public,
+          category: AndroidNotificationCategory.reminder,
         );
 
-        const notificationDetails =
-            NotificationDetails(android: androidDetails);
+        const notificationDetailsPeriodic = NotificationDetails(
+          android: androidDetailsPeriodic,
+        );
 
-        // Schedule periodic notification every hour
+        // Schedule periodic notification every minute
         await flutterLocalNotificationsPlugin.periodicallyShow(
-          1,
-          'Checkout Reminder',
-          'Hello ${user.name}, you have ${pendingCheckouts.length} pending checkouts. Please complete them.',
-          RepeatInterval.hourly,
-          notificationDetails,
+          3,
+          'Pengingat Checkout',
+          'Halo ${user.name}, Anda masih memiliki ${pendingCheckouts.length} checkout yang belum diselesaikan.',
+          RepeatInterval.everyMinute,
+          notificationDetailsPeriodic,
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         );
-
-        logger.i('Periodic checkout notification scheduled for every hour');
+        logger.i('Periodic checkout notification scheduled (every minute)');
 
         // Save last checkout check time
         await sharedPreferences.setString(
           'last_checkout_check',
           DateTime.now().toIso8601String(),
         );
-        logger.d('Saved last checkout check time');
+        logger.d('Updated last checkout check timestamp');
       } else {
-        await flutterLocalNotificationsPlugin.cancel(1);
-        logger.i('No pending checkouts, cancelled notifications');
+        logger.i('No pending checkouts found, notifications cleared');
       }
-    } catch (e) {
-      logger.e('Error scheduling checkout notification: $e');
+    } catch (e, stackTrace) {
+      logger.e('Error in checkout notification: $e\n$stackTrace');
+      throw Exception('Failed to schedule checkout notification: $e');
     }
   }
 
   @override
   Future<void> scheduleDailyGreeting() async {
     try {
-      logger.i('Scheduling daily greeting...');
+      logger.i('Starting daily greeting scheduling...');
 
       // Get current user
       final userResult = await authRepository.getCurrentUser();
       if (userResult.isLeft()) {
-        logger.e('Failed to get current user');
+        logger.e('Failed to get current user for daily greeting');
         return;
       }
-      final user =
-          userResult.getOrElse(() => throw Exception('User not found'));
-      logger.d('Got current user: ${user.name}');
+      final user = userResult.getOrElse(() => throw Exception('User not found'));
+      logger.d('Got current user for greeting: ${user.name}');
 
-      // Update username in settings
-      await sharedPreferences.setString('user_name', user.name);
-      logger.d('Updated username in settings to: ${user.name}');
-
-      // Calculate next greeting time (9:00)
-      final now = DateTime.now();
-      var scheduledDate = DateTime(
-        now.year,
-        now.month,
-        now.day,
-        10,
-        0,
+      // Create Android-specific notification details
+      const androidDetails = AndroidNotificationDetails(
+        'daily_greeting_channel',
+        'Daily Greetings',
+        channelDescription: 'Channel for daily greeting notifications',
+        importance: Importance.high,
+        priority: Priority.high,
+        enableVibration: true,
+        playSound: true,
+        visibility: NotificationVisibility.public,
+        channelShowBadge: true,
+        category: AndroidNotificationCategory.reminder,
       );
 
-      // If it's past 9:00, schedule for tomorrow
-      if (now.isAfter(scheduledDate)) {
-        scheduledDate = scheduledDate.add(const Duration(days: 1));
-        logger.d('Scheduling greeting for tomorrow at 9:00');
-      } else {
-        logger.d('Scheduling greeting for today at 9:00');
+      const notificationDetails = NotificationDetails(android: androidDetails);
+
+      // Cancel any existing daily greeting notification
+      await flutterLocalNotificationsPlugin.cancel(2);
+      logger.d('Cancelled existing daily greeting notification');
+
+      // Get current time
+      final now = DateTime.now();
+      logger.d('Current time: $now');
+
+      // Check if we're in the greeting window (14:53 - 14:56)
+      if (now.hour == 14 && now.minute >= 53 && now.minute < 56) {
+        logger.d('Within greeting time window, showing immediate notification');
+        
+        // Show immediate notification
+        await flutterLocalNotificationsPlugin.show(
+          2,
+          'Sapaan Harian',
+          'Halo ${user.name}, semoga hari Anda menyenangkan!',
+          notificationDetails,
+        );
+        logger.i('Immediate daily greeting displayed');
       }
 
-      await scheduleNotification(
-        id: 2,
-        title: 'Daily Greeting',
-        body: 'Hello ${user.name}, have a great day!',
-        scheduledDate: scheduledDate,
+      // Schedule daily notification
+      final scheduledTime = DateTime(now.year, now.month, now.day, 15, 0);
+      final scheduledTimeString = '${scheduledTime.hour}:${scheduledTime.minute}';
+      logger.d('Attempting to schedule daily notification for $scheduledTimeString');
+
+      // Schedule periodic notification
+      await flutterLocalNotificationsPlugin.periodicallyShow(
+        4, // Different ID for periodic daily greeting
+        'Sapaan Harian',
+        'Halo ${user.name}, semoga hari Anda menyenangkan!',
+        RepeatInterval.daily,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
+
+      logger.i('Daily greeting scheduled successfully');
 
       // Save last daily greeting time
       await sharedPreferences.setString(
         'last_daily_greeting',
         DateTime.now().toIso8601String(),
       );
-      logger.d('Saved last daily greeting time');
-
-      logger.i('Daily greeting scheduled successfully');
-    } catch (e) {
-      logger.e('Error scheduling daily greeting: $e');
+      logger.d('Updated last daily greeting timestamp');
+    } catch (e, stackTrace) {
+      logger.e('Error in daily greeting: $e\n$stackTrace');
+      throw Exception('Failed to schedule daily greeting: $e');
     }
   }
 

@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import '../utils/logger.dart';
-import '../error/exceptions.dart';
 import 'api_config.dart';
 
 class DioConfig {

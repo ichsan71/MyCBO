@@ -17,6 +17,16 @@ class KpiResponse {
           .toList(),
     );
   }
+
+  KpiResponse copyWith({
+    bool? status,
+    List<KpiData>? data,
+  }) {
+    return KpiResponse(
+      status: status ?? this.status,
+      data: data ?? List.from(this.data),
+    );
+  }
 }
 
 class KpiData {
@@ -29,6 +39,14 @@ class KpiData {
       grafik: (json['grafik'] as List)
           .map((grafik) => KpiGrafik.fromJson(grafik))
           .toList(),
+    );
+  }
+
+  KpiData copyWith({
+    List<KpiGrafik>? grafik,
+  }) {
+    return KpiData(
+      grafik: grafik ?? List.from(this.grafik),
     );
   }
 }
@@ -49,6 +67,18 @@ class KpiGrafik extends Equatable {
       label: json['label'] as String,
       data: KpiMetrics.fromJson(json['data'] as Map<String, dynamic>),
       backgroundColor: json['backgroundColor'] as String,
+    );
+  }
+
+  KpiGrafik copyWith({
+    String? label,
+    KpiMetrics? data,
+    String? backgroundColor,
+  }) {
+    return KpiGrafik(
+      label: label ?? this.label,
+      data: data ?? this.data,
+      backgroundColor: backgroundColor ?? this.backgroundColor,
     );
   }
 
@@ -78,6 +108,22 @@ class KpiMetrics extends Equatable {
       target: json['target'].toString(),
       realisasi: json['realisasi']?.toString(),
       nilai: json['nilai'].toString(),
+    );
+  }
+
+  KpiMetrics copyWith({
+    String? ach,
+    String? bobot,
+    String? target,
+    String? realisasi,
+    String? nilai,
+  }) {
+    return KpiMetrics(
+      ach: ach ?? this.ach,
+      bobot: bobot ?? this.bobot,
+      target: target ?? this.target,
+      realisasi: realisasi ?? this.realisasi,
+      nilai: nilai ?? this.nilai,
     );
   }
 
