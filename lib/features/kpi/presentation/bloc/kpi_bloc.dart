@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:test_cbo/features/kpi/data/models/kpi_model.dart';
 import 'package:test_cbo/features/kpi/domain/usecases/get_kpi_data.dart';
+import 'package:flutter/foundation.dart';
 
 // Events
 abstract class KpiEvent extends Equatable {
@@ -70,6 +71,15 @@ class KpiBloc extends Bloc<KpiEvent, KpiState> {
       result.fold(
         (failure) => emit(KpiError('Failed to load KPI data')),
         (data) {
+          // Debug print untuk memeriksa data
+          debugPrint('KPI Bloc - Data received:');
+          for (var item in data.data) {
+            debugPrint('Grafik count: ${item.grafik.length}');
+            for (var grafik in item.grafik) {
+              debugPrint('Label: ${grafik.label}');
+            }
+          }
+          
           _lastUserId = event.userId;
           _lastResponse = data;
           emit(KpiLoaded(data));

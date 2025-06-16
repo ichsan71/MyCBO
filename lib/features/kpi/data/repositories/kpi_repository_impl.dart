@@ -40,7 +40,21 @@ class KpiRepositoryImpl implements KpiRepository {
       debugPrint('KPI Repository: Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        return Right(KpiResponse.fromJson(json.decode(response.body)));
+        final jsonData = json.decode(response.body);
+        debugPrint('KPI Repository - Parsed data:');
+        if (jsonData['data'] != null) {
+          final List<dynamic> dataList = jsonData['data'];
+          for (var data in dataList) {
+            if (data['grafik'] != null) {
+              final List<dynamic> grafikList = data['grafik'];
+              debugPrint('Grafik items count: ${grafikList.length}');
+              for (var grafik in grafikList) {
+                debugPrint('Label: ${grafik['label']}');
+              }
+            }
+          }
+        }
+        return Right(KpiResponse.fromJson(jsonData));
       } else {
         return Left(ServerFailure());
       }

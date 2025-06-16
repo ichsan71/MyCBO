@@ -89,6 +89,12 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('KpiChartNew build called');
+    debugPrint('Total KPI items: ${widget.kpiData.length}');
+    widget.kpiData.forEach((item) {
+      debugPrint('KPI item in build: ${item.label}');
+    });
+    
     if (widget.kpiData.isEmpty) {
       return _buildEmptyState();
     }
@@ -300,10 +306,23 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
       return Container();
     }
 
+    // Sort data berdasarkan achievement
+    final sortedData = List<KpiGrafik>.from(widget.kpiData);
+    sortedData.sort((a, b) {
+      final aAch = double.tryParse(a.data.ach) ?? 0.0;
+      final bAch = double.tryParse(b.data.ach) ?? 0.0;
+      return bAch.compareTo(aAch);
+    });
+
+    debugPrint('Sorted KPI data:');
+    sortedData.forEach((item) {
+      debugPrint('${item.label}: ${item.data.ach}%');
+    });
+
     final totalAchievement = _calculateTotalAchievement();
 
     return Container(
-      height: 200,
+      height: 220,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
@@ -324,29 +343,30 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
             child: Stack(
               alignment: Alignment.center,
               children: [
-                AnimatedBuilder(
-                  animation: _animationController,
-                  builder: (context, child) {
-                    return Transform.rotate(
-                      angle: _rotationAnimation.value,
-                      child: Transform.scale(
-                        scale: _scaleAnimation.value,
-                        child: PieChart(
-                          PieChartData(
-                            sectionsSpace: 2,
-                            centerSpaceRadius: 40,
-                            sections: _createPieSections(),
-                            pieTouchData: PieTouchData(
-                              enabled: true,
-                              touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                                // Handle touch events if needed
-                              },
-                            ),
-                          ),
+                PieChart(
+                  PieChartData(
+                    sectionsSpace: 2,
+                    centerSpaceRadius: 40,
+                    sections: sortedData.map((item) {
+                      final achievement = double.tryParse(item.data.ach) ?? 0.0;
+                      final color = Color(int.parse(item.backgroundColor.replaceAll('#', '0xFF')));
+                      
+                      return PieChartSectionData(
+                        color: color,
+                        value: achievement,
+                        title: achievement > 5 ? '${achievement.toStringAsFixed(0)}%' : '',
+                        radius: 50,
+                        titleStyle: GoogleFonts.poppins(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
                         ),
-                      ),
-                    );
-                  },
+                        showTitle: achievement > 5,
+                        titlePositionPercentageOffset: 0.6,
+                      );
+                    }).toList(),
+                    pieTouchData: PieTouchData(enabled: false),
+                  ),
                 ),
                 ScaleTransition(
                   scale: _scaleAnimation,
@@ -405,84 +425,65 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
           const SizedBox(width: 16),
           Expanded(
             flex: 2,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ...widget.kpiData.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final item = entry.value;
-                    return AnimatedBuilder(
-                      animation: _animationController,
-                      builder: (context, child) {
-                        final delay = index * 0.2;
-                        final opacity = _animationController.value > delay
-                            ? (((_animationController.value - delay) / 0.2).clamp(0.0, 1.0))
-                            : 0.0;
-                        return Opacity(
-                          opacity: opacity,
-                          child: Transform.translate(
-                            offset: Offset(20 * (1 - opacity), 0),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      color: Color(int.parse(item.backgroundColor.replaceAll('#', '0xFF'))),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      item.label,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Indikator:',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: ListView(
+                    shrinkWrap: true,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    children: sortedData.map((item) {
+                      debugPrint('Building legend item: ${item.label}');
+                      
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.only(top: 4),
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: Color(int.parse(item.backgroundColor.replaceAll('#', '0xFF'))),
+                                shape: BoxShape.circle,
                               ),
                             ),
-                          ),
-                        );
-                      },
-                    );
-                  }).toList(),
-                ],
-              ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                item.label,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
-  }
-
-  List<PieChartSectionData> _createPieSections() {
-    return widget.kpiData.map((item) {
-      final weight = double.tryParse(item.data.bobot) ?? 0.0;
-      final color = Color(int.parse(item.backgroundColor.replaceAll('#', '0xFF')));
-      
-      return PieChartSectionData(
-        color: color,
-        value: weight,
-        title: '${weight.toStringAsFixed(0)}%',
-        radius: 50,
-        titleStyle: GoogleFonts.poppins(
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-        showTitle: false,
-      );
-    }).toList();
   }
 
   double _calculateTotalAchievement() {
