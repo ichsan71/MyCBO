@@ -20,6 +20,7 @@ import '../widgets/checkin_form.dart';
 import '../widgets/checkout_form.dart';
 import '../../../../core/presentation/widgets/shimmer_schedule_detail_loading.dart';
 import '../../../check_in/presentation/utils/dialog_helper.dart';
+import '../../../../core/presentation/widgets/success_message.dart';
 
 class ScheduleDetailPage extends StatefulWidget {
   final Schedule schedule;
@@ -165,12 +166,14 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
 
       if (!mounted) return;
 
-      scaffoldMessenger.showSnackBar(
-        const SnackBar(
-          content: Text('Check-in berhasil'),
-          backgroundColor: Colors.green,
-        ),
+      SuccessMessage.show(
+        context: context,
+        message: 'Check-in berhasil!',
+        onDismissed: () {
+          if (mounted) Navigator.pop(context, true);
+        },
       );
+      
 
       navigator.pop(); // Close bottom sheet
     } catch (e) {
@@ -198,22 +201,23 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
           );
 
       // Store context for later use
-      final scaffoldMessenger = ScaffoldMessenger.of(context);
       final navigator = Navigator.of(context);
 
       await Future.delayed(const Duration(seconds: 2));
 
       if (!mounted) return;
 
-      scaffoldMessenger.showSnackBar(
-        const SnackBar(
-          content: Text('Check-out berhasil'),
-          backgroundColor: Colors.green,
-        ),
+      SuccessMessage.show(
+        context: context,
+        message: 'Check-out berhasil!',
+        onDismissed: () {
+          if (mounted) {
+            // Close bottom sheet and navigate to schedule list
+            navigator.popUntil((route) => route.isFirst);
+          }
+        },
       );
 
-      // Close bottom sheet and navigate to schedule list
-      navigator.popUntil((route) => route.isFirst);
     } catch (e) {
       if (!mounted) return;
 
@@ -349,7 +353,6 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        // Refresh schedule list before popping
         _refreshSchedule();
         return true;
       },
@@ -371,7 +374,6 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () {
-                // Refresh schedule list before popping
                 _refreshSchedule();
                 Navigator.pop(context);
               },
@@ -389,7 +391,6 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                       '/edit_schedule',
                       arguments: widget.schedule.id,
                     );
-                    // Refresh schedule after editing
                     _refreshSchedule();
                   },
                 ),
@@ -418,19 +419,16 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
         body: BlocConsumer<ScheduleBloc, ScheduleState>(
           listener: (context, state) {
             if (state is CheckInSuccess || state is CheckOutSuccess) {
-              // Show success message
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    state is CheckInSuccess
-                        ? 'Check-in berhasil!'
-                        : 'Check-out berhasil!',
-                  ),
-                  backgroundColor: Colors.green,
-                ),
+              // Show success message using SuccessMessage widget
+              SuccessMessage.show(
+                context: context,
+                message: state is CheckInSuccess
+                    ? 'Check-in berhasil!'
+                    : 'Check-out berhasil!',
+                onDismissed: () {
+                  if (mounted) Navigator.pop(context);
+                },
               );
-              // Pop back to schedule list
-              Navigator.pop(context);
             } else if (state is ScheduleError) {
               // Show error message
               ScaffoldMessenger.of(context).showSnackBar(
@@ -451,6 +449,17 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
             final status = widget.schedule.statusCheckin.toLowerCase().trim();
             final isToday = _isScheduleToday();
 
+            // Get the schedule type display value
+            final scheduleTypeDisplay = widget.schedule.namaTipeSchedule?.isNotEmpty == true
+                ? widget.schedule.namaTipeSchedule!
+                : widget.schedule.tipeSchedule.isNotEmpty
+                    ? widget.schedule.tipeSchedule
+                    : 'Tidak ada tipe';
+
+            Logger.info('ScheduleDetailPage', 'tipeSchedule: ${widget.schedule.tipeSchedule}');
+            Logger.info('ScheduleDetailPage', 'namaTipeSchedule: ${widget.schedule.namaTipeSchedule}');
+            Logger.info('ScheduleDetailPage', 'scheduleTypeDisplay: $scheduleTypeDisplay');
+
             return Container(
               color: theme.colorScheme.background,
               child: SingleChildScrollView(
@@ -465,8 +474,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                       children: [
                         _buildDetailRow(
                           label: 'Tipe Schedule',
-                          value: widget.schedule.namaTipeSchedule ??
-                              widget.schedule.tipeSchedule,
+                          value: scheduleTypeDisplay,
                           icon: Icons.label_outline,
                         ),
                         const SizedBox(height: 12),
@@ -478,7 +486,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                         const SizedBox(height: 12),
                         _buildDetailRow(
                           label: 'Shift',
-                          value: widget.schedule.shift ?? '',
+                          value: widget.schedule.shift,
                           icon: Icons.access_time,
                         ),
                         const SizedBox(height: 12),
@@ -486,7 +494,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                           label: 'Status',
                           value: _getDetailedStatus(widget.schedule),
                           status: widget.schedule.statusCheckin,
-                          draft: widget.schedule.draft ?? '',
+                          draft: widget.schedule.draft,
                           approved: widget.schedule.approved,
                           icon: Icons.info_outline,
                         ),

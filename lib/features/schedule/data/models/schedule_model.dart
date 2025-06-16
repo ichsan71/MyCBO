@@ -140,6 +140,33 @@ class ScheduleModel extends Schedule {
   factory ScheduleModel.fromJson(Map<String, dynamic> json) {
     Logger.info('ScheduleModel', 'Processing schedule with raw data: $json');
 
+    // Log raw type_schedule values
+    Logger.info('ScheduleModel', 'Raw type_schedule: ${json['type_schedule']}');
+    Logger.info('ScheduleModel', 'Raw tipe_schedule: ${json['tipe_schedule']}');
+
+    // Get tipeSchedule value - try both possible field names
+    String tipeScheduleValue = '';
+    if (json['type_schedule'] != null && json['type_schedule'].toString().isNotEmpty) {
+      tipeScheduleValue = json['type_schedule'].toString();
+    } else if (json['tipe_schedule'] != null && json['tipe_schedule'].toString().isNotEmpty) {
+      tipeScheduleValue = json['tipe_schedule'].toString();
+    }
+    Logger.info('ScheduleModel', 'Final tipeSchedule value: $tipeScheduleValue');
+
+    // Get namaTipeSchedule value
+    String? namaTipeScheduleValue;
+    if (json['nama_type_schedule'] != null && json['nama_type_schedule'].toString().isNotEmpty) {
+      namaTipeScheduleValue = json['nama_type_schedule'].toString();
+    } else if (json['nama_tipe_schedule'] != null && json['nama_tipe_schedule'].toString().isNotEmpty) {
+      namaTipeScheduleValue = json['nama_tipe_schedule'].toString();
+    }
+    Logger.info('ScheduleModel', 'Final namaTipeSchedule value: $namaTipeScheduleValue');
+
+    // Get shift value
+    String shiftValue = processShiftValue(json['shift']);
+    Logger.info('ScheduleModel', 'Raw shift value: ${json['shift']}');
+    Logger.info('ScheduleModel', 'Processed shift value: $shiftValue');
+
     // Helper function untuk parse nullable int
     int? parseNullableIntValue(dynamic value) {
       if (value == null) return null;
@@ -254,27 +281,9 @@ class ScheduleModel extends Schedule {
     }
 
     // Log raw values for debugging
-    Logger.info('ScheduleModel', 'Raw type_schedule: ${json['type_schedule']}');
-    Logger.info('ScheduleModel', 'Raw tipe_schedule: ${json['tipe_schedule']}');
     Logger.info('ScheduleModel', 'Raw id_tujuan: ${json['id_tujuan']}');
     Logger.info('ScheduleModel', 'Raw approved: ${json['approved']}');
     Logger.info('ScheduleModel', 'Raw id_user: ${json['id_user']}');
-
-    final shiftValue = processShiftValue(json['shift']);
-    Logger.info('ScheduleModel', 'Raw shift value: ${json['shift']}');
-    Logger.info('ScheduleModel', 'Processed shift value: $shiftValue');
-
-    // Process type_schedule value
-    final tipeScheduleValue = json['type_schedule']?.toString() ?? '';
-    
-    // Process nama_type_schedule value with fallback
-    String? namaTipeScheduleValue = json['nama_type_schedule']?.toString();
-    if (namaTipeScheduleValue == null || namaTipeScheduleValue.isEmpty) {
-      namaTipeScheduleValue = json['nama_tipe_schedule']?.toString();
-    }
-    
-    Logger.info('ScheduleModel',
-        'Final namaTipeSchedule value: $namaTipeScheduleValue');
 
     return ScheduleModel(
       id: parseIntValue(json['id']),
