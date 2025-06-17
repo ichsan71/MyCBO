@@ -173,7 +173,7 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
         // Show immediate notification
         await flutterLocalNotificationsPlugin.show(
           1,
-          'Pengingat Checkout Penting',
+          'Pengingat Check-out',
           'Halo ${user.name}, Anda memiliki ${pendingCheckouts.length} checkout yang belum diselesaikan. Mohon segera diselesaikan.',
           notificationDetailsImmediate,
         );
@@ -202,7 +202,7 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
         // Schedule periodic notification every minute
         await flutterLocalNotificationsPlugin.periodicallyShow(
           3,
-          'Pengingat Checkout',
+          'Pengingat Check-out',
           'Halo ${user.name}, Anda masih memiliki ${pendingCheckouts.length} checkout yang belum diselesaikan.',
           RepeatInterval.hourly,
           notificationDetailsPeriodic,
@@ -270,8 +270,8 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
         // Show immediate notification
         await flutterLocalNotificationsPlugin.show(
           2,
-          'Sapaan Pagi',
-          'Selamat pagi ${user.name}, semoga hari Anda menyenangkan!',
+          'Selamat Pagi,',
+          'Halo ${user.name}, semoga hari Anda menyenangkan!',
           notificationDetails,
         );
         logger.i('Immediate daily greeting displayed');
@@ -285,8 +285,8 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
       // Schedule periodic notification
       await flutterLocalNotificationsPlugin.periodicallyShow(
         4, // Different ID for periodic daily greeting
-        'Sapaan Pagi',
-        'Selamat pagi ${user.name}, semoga hari Anda menyenangkan!',
+        'Selamat Pagi,',
+        'Halo ${user.name}, semoga hari Anda menyenangkan!',
         RepeatInterval.daily,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
