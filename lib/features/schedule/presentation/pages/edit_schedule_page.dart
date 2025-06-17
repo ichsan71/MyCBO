@@ -15,6 +15,7 @@ import 'package:test_cbo/features/schedule/presentation/bloc/schedule_bloc.dart'
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_event.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_state.dart';
 import 'package:test_cbo/core/presentation/widgets/shimmer_schedule_loading.dart';
+import 'package:test_cbo/core/presentation/widgets/success_message.dart';
 import '../../data/models/edit_schedule_data_model.dart';
 import '../../data/models/update_schedule_request_model.dart';
 import '../../data/models/edit/edit_schedule_product_model.dart';
@@ -110,6 +111,75 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
     _filteredDoctorsNotifier.dispose();
     _filteredProductsNotifier.dispose();
     super.dispose();
+  }
+
+  // Helper function to format date for display (MM/dd/yyyy)
+  String _formatDateForDisplay(String date) {
+    try {
+      DateTime parsedDate;
+      // Try to parse the date from various formats
+      if (date.contains('-')) {
+        // If date is in YYYY-MM-DD format
+        parsedDate = DateTime.parse(date);
+      } else if (date.contains('/')) {
+        // If date is in MM/dd/yyyy format
+        final parts = date.split('/');
+        if (parts.length == 3) {
+          parsedDate = DateTime(
+            int.parse(parts[2]), // year
+            int.parse(parts[0]), // month
+            int.parse(parts[1]), // day
+          );
+        } else {
+          throw FormatException('Invalid date format');
+        }
+      } else {
+        throw FormatException('Unsupported date format');
+      }
+      
+      // Format the date as MM/dd/yyyy
+      return DateFormat('MM/dd/yyyy').format(parsedDate);
+    } catch (e) {
+      Logger.error(_tag, 'Error formatting date: $e');
+      return date;
+    }
+  }
+
+  // Helper function to validate date format
+  bool _isValidDateFormat(String date) {
+    try {
+      final parts = date.split('/');
+      if (parts.length != 3) return false;
+      
+      final month = int.parse(parts[0]);
+      final day = int.parse(parts[1]);
+      final year = int.parse(parts[2]);
+      
+      if (month < 1 || month > 12) return false;
+      if (day < 1 || day > 31) return false;
+      if (year < 2000 || year > 2100) return false;
+      
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Show date picker
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      setState(() {
+        // Format the date as MM/dd/yyyy
+        _tanggalController.text = DateFormat('MM/dd/yyyy').format(picked);
+      });
+    }
   }
 
   void _populateFields(EditScheduleDataModel data) {
@@ -215,7 +285,7 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
       // Set date
       try {
         final dateTime = DateTime.parse(scheduleData.tglVisit);
-        _tanggalController.text = DateFormat('dd/MM/yyyy').format(dateTime);
+        _tanggalController.text = DateFormat('MM/dd/yyyy').format(dateTime);
       } catch (e) {
         Logger.error(_tag, 'Error parsing date: $e');
         _tanggalController.text = scheduleData.tglVisit;
@@ -291,21 +361,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
       Logger.info(_tag, 'Selected divisi IDs: $_selectedDivisiIds');
       Logger.info(_tag, 'Selected spesialis IDs: $_selectedSpesialisIds');
     });
-  }
-
-  Future<void> _selectDate(BuildContext context) async {
-    if (!mounted) return;
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (picked != null && mounted) {
-      setState(() {
-        _tanggalController.text = DateFormat('dd/MM/yyyy').format(picked);
-      });
-    }
   }
 
   Future<void> _submitForm(int userId) async {
@@ -529,7 +584,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
 
     return Scaffold(
       appBar: const AppBarWidget(title: 'Edit Jadwal'),
-      // Add this to prevent unnecessary rebuilds
       restorationId: 'edit_schedule_page_${widget.scheduleId}',
       body: BlocBuilder<AuthBloc, AuthState>(
         buildWhen: (previous, current) => previous != current,
@@ -540,29 +594,23 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
               buildWhen: (previous, current) => previous != current,
               listener: (context, state) {
                 if (state is ScheduleUpdated) {
-                  // Tampilkan snackbar sukses
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Jadwal berhasil diperbarui'),
-                        backgroundColor: Colors.green,
-                        duration: Duration(seconds: 2),
-                      ),
+                    SuccessMessage.show(
+                      context: context,
+                      message: 'Jadwal berhasil diperbarui',
+                      onDismissed: () {
+                        if (mounted) {
+                          // Navigasi ke DashboardPage dengan tab jadwal aktif
+                          Navigator.pushNamedAndRemoveUntil(
+                            context,
+                            '/dashboard',
+                            (route) => false,
+                            arguments: 1, // Index 1 untuk tab jadwal
+                          );
+                        }
+                      },
                     );
                   }
-
-                  // Tunggu snackbar selesai sebelum navigasi
-                  Future.delayed(const Duration(seconds: 2), () {
-                    if (mounted) {
-                      // Navigasi ke DashboardPage dengan tab jadwal aktif
-                      Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        '/dashboard',
-                        (route) => false,
-                        arguments: 1, // Index 1 untuk tab jadwal
-                      );
-                    }
-                  });
                 } else if (state is ScheduleUpdateError) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -580,7 +628,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
               builder: (context, state) {
                 if (state is EditScheduleLoaded) {
                   return SingleChildScrollView(
-                    // Add keys for better reconciliation
                     key: ValueKey('edit_schedule_${widget.scheduleId}'),
                     padding: const EdgeInsets.all(16.0),
                     child: Form(
@@ -588,7 +635,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Form Header
                           AppCard(
                             elevation: 2,
                             backgroundColor: AppTheme.scheduleCardColor,
@@ -619,7 +665,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                           ),
                           _spacer16,
 
-                          // Schedule Type
                           AppCard(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -636,7 +681,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                           ),
                           _spacer16,
 
-                          // Date
                           AppCard(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -646,19 +690,12 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                                   style: theme.textTheme.titleMedium,
                                 ),
                                 _spacer8,
-                                AppTextField(
-                                  controller: _tanggalController,
-                                  hintText: 'Pilih Tanggal',
-                                  readOnly: true,
-                                  onTap: () => _selectDate(context),
-                                  suffixIcon: const Icon(Icons.calendar_today),
-                                ),
+                                _buildDateField(),
                               ],
                             ),
                           ),
                           _spacer16,
 
-                          // Shift
                           AppCard(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -703,7 +740,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                           ),
                           _spacer24,
 
-                          // Tujuan Section
                           Row(
                             children: [
                               const Icon(
@@ -723,7 +759,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                           ),
                           _spacer16,
 
-                          // Destination Type
                           AppCard(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -763,7 +798,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                           ),
                           _spacer16,
 
-                          // Doctor Selection
                           if (_selectedDestinationType == 'dokter') ...[
                             Row(
                               children: [
@@ -787,7 +821,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Search field
                                   AppTextField(
                                     controller: _doctorSearchController,
                                     hintText: 'Cari dokter...',
@@ -802,14 +835,12 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                                   ),
                                   _spacer16,
 
-                                  // Doctor count text
                                   Text(
                                     'Pilih Dokter (${_filteredDoctors.length} dokter ditemukan)',
                                     style: theme.textTheme.titleMedium,
                                   ),
                                   _spacer8,
 
-                                  // Doctor list
                                   _buildDoctorList(_filteredDoctors),
                                 ],
                               ),
@@ -817,7 +848,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                           ],
                           _spacer24,
 
-                          // Product Section
                           Row(
                             children: [
                               const Icon(
@@ -837,12 +867,10 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                           ),
                           _spacer16,
 
-                          // Product Search and Selection
                           AppCard(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Selected Products Display
                                 if (_selectedProducts.isNotEmpty) ...[
                                   Text(
                                     'Produk Terpilih',
@@ -899,7 +927,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                                   _spacer16,
                                 ],
 
-                                // Product Search
                                 AppTextField(
                                   controller: _productSearchController,
                                   hintText: 'Cari Produk',
@@ -913,7 +940,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                                 ),
                                 _spacer16,
 
-                                // Product List
                                 Container(
                                   constraints:
                                       const BoxConstraints(maxHeight: 300),
@@ -1119,7 +1145,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                           ),
                           _spacer24,
 
-                          // Notes Section
                           Row(
                             children: [
                               const Icon(
@@ -1175,7 +1200,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                           ),
                           _spacer24,
 
-                          // Submit Button
                           AppButton(
                             text: 'Simpan',
                             onPressed: () => _submitForm(authState.user.idUser),
@@ -1372,6 +1396,26 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildDateField() {
+    return AppTextField(
+      controller: _tanggalController,
+      hintText: 'Pilih tanggal visit',
+      labelText: 'Tanggal Visit',
+      readOnly: true,
+      onTap: () => _selectDate(context),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Tanggal visit harus diisi';
+        }
+        if (!_isValidDateFormat(value)) {
+          return 'Format tanggal tidak valid (MM/dd/yyyy)';
+        }
+        return null;
+      },
+      suffixIcon: const Icon(Icons.calendar_today),
     );
   }
 }

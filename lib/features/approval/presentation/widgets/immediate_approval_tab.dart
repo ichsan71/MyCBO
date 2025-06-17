@@ -61,6 +61,7 @@ class ImmediateApprovalTab extends StatelessWidget {
                                                 ApproveRequest(
                                                   approvalId: approval.id,
                                                   notes: '',
+                                                  context: context,
                                                 ),
                                               );
                                         }
@@ -162,6 +163,7 @@ class ImmediateApprovalTab extends StatelessWidget {
                                                   idRejecter: approval.userId
                                                       .toString(),
                                                   comment: comment,
+                                                  context: context,
                                                 ),
                                               );
                                         }
@@ -288,6 +290,7 @@ class ImmediateApprovalTab extends StatelessWidget {
                           ApproveRequest(
                             approvalId: approval.id,
                             notes: '',
+                            context: context,
                           ),
                         );
                   },
@@ -383,6 +386,7 @@ class ImmediateApprovalTab extends StatelessWidget {
                       idSchedule: approval.id.toString(),
                       idRejecter: approval.userId.toString(),
                       comment: comment,
+                      context: context,
                     ),
                   );
             },

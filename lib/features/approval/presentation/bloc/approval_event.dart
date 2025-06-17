@@ -47,29 +47,33 @@ class FilterApprovals extends ApprovalEvent {
 class ApproveRequest extends ApprovalEvent {
   final int approvalId;
   final String notes;
+  final BuildContext context;
 
   const ApproveRequest({
     required this.approvalId,
     required this.notes,
+    required this.context,
   });
 
   @override
-  List<Object?> get props => [approvalId, notes];
+  List<Object?> get props => [approvalId, notes, context];
 }
 
 class RejectRequest extends ApprovalEvent {
   final String idSchedule;
   final String idRejecter;
   final String comment;
+  final BuildContext context;
 
   const RejectRequest({
     required this.idSchedule,
     required this.idRejecter,
     required this.comment,
+    required this.context,
   });
 
   @override
-  List<Object?> get props => [idSchedule, idRejecter, comment];
+  List<Object?> get props => [idSchedule, idRejecter, comment, context];
 }
 
 class SendApproval extends ApprovalEvent {
@@ -92,12 +96,14 @@ class SendApproval extends ApprovalEvent {
 class BatchApproveRequest extends ApprovalEvent {
   final List<int> scheduleIds;
   final String notes;
+  final BuildContext context;
 
   const BatchApproveRequest({
     required this.scheduleIds,
     required this.notes,
+    required this.context,
   });
 
   @override
-  List<Object?> get props => [scheduleIds, notes];
+  List<Object?> get props => [scheduleIds, notes, context];
 }

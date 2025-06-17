@@ -35,18 +35,23 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
       title: Text(
         title,
         style: theme.textTheme.headlineMedium?.copyWith(
-          color: theme.colorScheme.onPrimary,
+          color: Colors.white,
           fontWeight: FontWeight.w600,
         ),
       ),
       centerTitle: centerTitle,
       automaticallyImplyLeading: automaticallyImplyLeading,
-      leading: leading,
+      leading: leading ?? IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
       actions: actions,
       bottom: bottom,
       elevation: showShadow == true ? AppTheme.elevationMedium : elevation,
       backgroundColor: backgroundColor ?? theme.colorScheme.primary,
       flexibleSpace: flexibleSpace,
+      iconTheme: const IconThemeData(color: Colors.white),
+      actionsIconTheme: const IconThemeData(color: Colors.white),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           bottom: Radius.circular(16),

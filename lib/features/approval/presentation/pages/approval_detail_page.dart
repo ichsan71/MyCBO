@@ -481,6 +481,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
                 scheduleJoinVisitIds: _joinVisitScheduleIds.toList(),
                 userId: monthlyApproval.idBawahan,
                 userAtasanId: int.parse(widget.userId),
+                context: context,
               ),
             );
       } else {
@@ -495,6 +496,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
               BatchApproveRequest(
                 scheduleIds: selectedSchedules.map((s) => s.id).toList(),
                 notes: result,
+                context: context,
               ),
             );
       }
@@ -545,6 +547,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
                 userAtasanId: int.parse(widget.userId),
                 isRejected: true,
                 comment: result,
+                context: context,
               ),
             );
       } else {
@@ -565,6 +568,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
                     idSchedule: scheduleId.toString(),
                     idRejecter: widget.userId,
                     comment: result,
+                    context: context,
                   ),
                 );
           } catch (e) {
@@ -588,10 +592,12 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
           'Detail Persetujuan',
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
+            color: Colors.white,
           ),
         ),
         elevation: 0,
         backgroundColor: Theme.of(context).primaryColor,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: MultiBlocListener(
         listeners: [
@@ -599,22 +605,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
             listener: (context, state) {
               setState(() => _isLoading = state is MonthlyApprovalLoading);
 
-              if (state is MonthlyApprovalSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      state.message,
-                      style: GoogleFonts.poppins(),
-                    ),
-                    backgroundColor: AppTheme.successColor,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                );
-                Navigator.pop(context);
-              } else if (state is MonthlyApprovalError) {
+              if (state is MonthlyApprovalError) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
@@ -635,22 +626,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
             listener: (context, state) {
               setState(() => _isLoading = state is ApprovalLoading);
 
-              if (state is ApprovalSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      state.message,
-                      style: GoogleFonts.poppins(),
-                    ),
-                    backgroundColor: AppTheme.successColor,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                );
-                Navigator.pop(context);
-              } else if (state is ApprovalError) {
+              if (state is ApprovalError) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(

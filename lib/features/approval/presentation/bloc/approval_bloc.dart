@@ -1,5 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
+import '../../../../core/presentation/widgets/success_message.dart';
 import '../../domain/entities/approval.dart';
 import '../../domain/entities/approval_filter.dart';
 import '../../domain/entities/monthly_approval.dart';
@@ -74,13 +76,25 @@ class ApprovalBloc extends Bloc<ApprovalEvent, ApprovalState> {
     result.fold(
       (failure) => emit(ApprovalError(message: failure.message)),
       (_) {
-        emit(ApprovalSuccess(message: 'Persetujuan berhasil dikirim'));
-        if (state is ApprovalLoaded) {
-          final currentState = state as ApprovalLoaded;
-          if (currentState.approvals.isNotEmpty) {
-            add(GetApprovals(userId: currentState.approvals.first.idBawahan));
-          }
-        }
+        SuccessMessage.show(
+          context: event.context,
+          message: 'Persetujuan berhasil dikirim',
+          onDismissed: () {
+            // Navigate back to approval list page
+            Navigator.of(event.context).popUntil((route) {
+              return route.settings.name == '/approval_list' || route.isFirst;
+            });
+            // Refresh the list after showing success message
+            if (state is ApprovalLoaded) {
+              final currentState = state as ApprovalLoaded;
+              if (currentState.approvals.isNotEmpty) {
+                add(GetApprovals(userId: currentState.approvals.first.idBawahan));
+              }
+            }
+          },
+        );
+        // Emit loading state while refreshing
+        emit(ApprovalLoading());
       },
     );
   }
@@ -98,9 +112,20 @@ class ApprovalBloc extends Bloc<ApprovalEvent, ApprovalState> {
     result.fold(
       (failure) => emit(ApprovalError(message: failure.message)),
       (_) {
-        emit(ApprovalSuccess(message: 'Penolakan berhasil dikirim'));
-        add(GetApprovals(
-            userId: int.parse(event.idRejecter))); // Refresh the list
+        SuccessMessage.show(
+          context: event.context,
+          message: 'Penolakan berhasil dikirim',
+          onDismissed: () {
+            // Navigate back to approval list page
+            Navigator.of(event.context).popUntil((route) {
+              return route.settings.name == '/approval_list' || route.isFirst;
+            });
+            // Refresh the list after showing success message
+            add(GetApprovals(userId: int.parse(event.idRejecter)));
+          },
+        );
+        // Emit loading state while refreshing
+        emit(ApprovalLoading());
       },
     );
   }
@@ -137,13 +162,20 @@ class ApprovalBloc extends Bloc<ApprovalEvent, ApprovalState> {
     result.fold(
       (failure) => emit(ApprovalError(message: failure.message)),
       (_) {
-        emit(ApprovalSuccess(message: 'Persetujuan berhasil dikirim'));
-        if (state is ApprovalLoaded) {
-          final currentState = state as ApprovalLoaded;
-          if (currentState.approvals.isNotEmpty) {
-            add(GetApprovals(userId: currentState.approvals.first.idBawahan));
-          }
-        }
+        SuccessMessage.show(
+          context: event.context,
+          message: 'Persetujuan berhasil dikirim',
+          onDismissed: () {
+            if (state is ApprovalLoaded) {
+              final currentState = state as ApprovalLoaded;
+              if (currentState.approvals.isNotEmpty) {
+                add(GetApprovals(userId: currentState.approvals.first.idBawahan));
+              }
+            }
+          },
+        );
+        // Emit loading state while refreshing
+        emit(ApprovalLoading());
       },
     );
   }

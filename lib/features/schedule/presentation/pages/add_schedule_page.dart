@@ -366,7 +366,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBarWidget(
+      appBar: const AppBarWidget(
         title: 'Tambah Jadwal',
         centerTitle: true,
         automaticallyImplyLeading: true,

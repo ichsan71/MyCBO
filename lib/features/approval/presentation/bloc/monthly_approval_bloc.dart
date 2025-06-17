@@ -1,5 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
+import '../../../../core/presentation/widgets/success_message.dart';
 import '../../domain/entities/monthly_approval.dart';
 import '../../domain/repositories/approval_repository.dart';
 
@@ -32,22 +34,36 @@ class MonthlyApprovalBloc
     SendMonthlyApproval event,
     Emitter<MonthlyApprovalState> emit,
   ) async {
-    try {
-      emit(MonthlyApprovalLoading());
-
-      final result = await repository.sendMonthlyApproval(
-        scheduleIds: event.scheduleIds,
-        scheduleJoinVisitIds: event.scheduleJoinVisitIds,
-        userId: event.userId,
-        userAtasanId: event.userAtasanId,
-      );
-
-      result.fold(
-        (failure) => emit(MonthlyApprovalError(message: failure.message)),
-        (message) => emit(MonthlyApprovalSuccess(message: message)),
-      );
-    } catch (e) {
-      emit(MonthlyApprovalError(message: e.toString()));
-    }
+    emit(MonthlyApprovalLoading());
+    final result = await repository.sendMonthlyApproval(
+      scheduleIds: event.scheduleIds,
+      scheduleJoinVisitIds: event.scheduleJoinVisitIds,
+      userId: event.userId,
+      userAtasanId: event.userAtasanId,
+      isRejected: event.isRejected,
+      comment: event.comment,
+    );
+    result.fold(
+      (failure) => emit(MonthlyApprovalError(message: failure.message)),
+      (message) {
+        // Show success message
+        SuccessMessage.show(
+          context: event.context,
+          message: event.isRejected 
+              ? 'Penolakan berhasil dikirim'
+              : 'Persetujuan berhasil dikirim',
+          onDismissed: () {
+            // Navigate back to approval list page
+            Navigator.of(event.context).popUntil((route) {
+              return route.settings.name == '/approval_list' || route.isFirst;
+            });
+            // Refresh the list after showing success message
+            add(GetMonthlyApprovals(userId: event.userId));
+          },
+        );
+        // Emit loading state while refreshing
+        emit(MonthlyApprovalLoading());
+      },
+    );
   }
 }

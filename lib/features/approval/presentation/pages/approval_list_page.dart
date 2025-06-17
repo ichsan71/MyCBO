@@ -14,6 +14,8 @@ import '../widgets/monthly_approval_card.dart';
 class ApprovalListPage extends StatelessWidget {
   const ApprovalListPage({Key? key}) : super(key: key);
 
+  static const String routeName = '/approval_list';
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(

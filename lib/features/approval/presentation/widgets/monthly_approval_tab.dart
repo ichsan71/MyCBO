@@ -279,6 +279,7 @@ class _MonthlyApprovalTabState extends State<MonthlyApprovalTab> {
                                         : [],
                                     userId: approval.idBawahan,
                                     userAtasanId: approval.idBawahan,
+                                    context: context,
                                   ),
                                 );
                           },
@@ -398,12 +399,8 @@ class _MonthlyApprovalTabState extends State<MonthlyApprovalTab> {
                             scheduleJoinVisitIds: [], // No join visit for bulk approve
                             userId: approval.idBawahan,
                             userAtasanId: approval.idBawahan,
+                            context: context,
                           ),
-                        );
-
-                    // Refresh list after bulk action
-                    context.read<MonthlyApprovalBloc>().add(
-                          GetMonthlyApprovals(userId: approval.idBawahan),
                         );
                   }
                 },
@@ -489,12 +486,10 @@ class _MonthlyApprovalTabState extends State<MonthlyApprovalTab> {
                             scheduleJoinVisitIds: [], // No join visit for bulk reject
                             userId: approval.idBawahan,
                             userAtasanId: approval.idBawahan,
+                            isRejected: true,
+                            comment: commentController.text,
+                            context: context,
                           ),
-                        );
-
-                    // Refresh list after bulk action
-                    context.read<MonthlyApprovalBloc>().add(
-                          GetMonthlyApprovals(userId: approval.idBawahan),
                         );
                   }
                 },

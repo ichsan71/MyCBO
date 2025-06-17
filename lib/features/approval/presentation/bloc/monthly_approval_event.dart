@@ -23,6 +23,7 @@ class SendMonthlyApproval extends MonthlyApprovalEvent {
   final int userAtasanId;
   final bool isRejected;
   final String? comment;
+  final BuildContext context;
 
   const SendMonthlyApproval({
     required this.scheduleIds,
@@ -31,6 +32,7 @@ class SendMonthlyApproval extends MonthlyApprovalEvent {
     required this.userAtasanId,
     this.isRejected = false,
     this.comment,
+    required this.context,
   });
 
   @override
@@ -41,5 +43,6 @@ class SendMonthlyApproval extends MonthlyApprovalEvent {
         userAtasanId,
         isRejected,
         comment,
+        context,
       ];
 }

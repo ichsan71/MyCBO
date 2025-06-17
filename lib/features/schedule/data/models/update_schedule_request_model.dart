@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 class UpdateScheduleRequestModel {
   final int id;
   final int typeSchedule;
@@ -29,12 +31,25 @@ class UpdateScheduleRequestModel {
     required this.klinik,
   });
 
+  // Helper function to format date
+  static String _formatDateForServer(String date) {
+    try {
+      // Parse the date from MM/dd/yyyy format
+      final parsedDate = DateFormat('MM/dd/yyyy').parse(date);
+      // Format it to YYYY-MM-DD for MySQL
+      return DateFormat('yyyy-MM-dd').format(parsedDate);
+    } catch (e) {
+      // If parsing fails, return the original date
+      return date;
+    }
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id_schedule': id.toString(),
       'type-schedule': typeSchedule.toString(),
       'tujuan': tujuan,
-      'tgl-visit': tglVisit,
+      'tgl-visit': _formatDateForServer(tglVisit),
       'product': product.map((id) => '"$id"').toList().toString(),
       'catatan': note,
       'id_user': idUser.toString(),

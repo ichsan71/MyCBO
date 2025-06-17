@@ -159,7 +159,6 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
           );
 
       // Store context for later use
-      final scaffoldMessenger = ScaffoldMessenger.of(context);
       final navigator = Navigator.of(context);
 
       await Future.delayed(const Duration(seconds: 2));
@@ -170,12 +169,12 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
         context: context,
         message: 'Check-in berhasil!',
         onDismissed: () {
-          if (mounted) Navigator.pop(context, true);
+          if (mounted) {
+            navigator.pop(); // Close bottom sheet
+            _refreshSchedule();
+          }
         },
       );
-      
-
-      navigator.pop(); // Close bottom sheet
     } catch (e) {
       if (!mounted) return;
 
@@ -214,10 +213,10 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
           if (mounted) {
             // Close bottom sheet and navigate to schedule list
             navigator.popUntil((route) => route.isFirst);
+            _refreshSchedule();
           }
         },
       );
-
     } catch (e) {
       if (!mounted) return;
 
@@ -419,18 +418,18 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
         body: BlocConsumer<ScheduleBloc, ScheduleState>(
           listener: (context, state) {
             if (state is CheckInSuccess || state is CheckOutSuccess) {
-              // Show success message using SuccessMessage widget
               SuccessMessage.show(
                 context: context,
                 message: state is CheckInSuccess
                     ? 'Check-in berhasil!'
                     : 'Check-out berhasil!',
                 onDismissed: () {
-                  if (mounted) Navigator.pop(context);
+                  if (mounted) {
+                    _refreshSchedule();
+                  }
                 },
               );
             } else if (state is ScheduleError) {
-              // Show error message
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
@@ -534,17 +533,123 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                       icon: Icons.shopping_bag,
                       iconColor: theme.colorScheme.tertiary,
                       children: [
-                        _buildDetailRow(
-                          label: 'Nama Produk',
-                          value: widget.schedule.namaProduct ?? '-',
-                          icon: Icons.medication_outlined,
-                        ),
+                        if (widget.schedule.namaProduct != null &&
+                            widget.schedule.namaProduct!.isNotEmpty) ...[
+                          Text(
+                            'Produk',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: widget.schedule.namaProduct!
+                                .split(',')
+                                .where((product) => product.trim().isNotEmpty)
+                                .map((product) => Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.primary
+                                            .withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: theme.colorScheme.primary
+                                              .withOpacity(0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: IntrinsicWidth(
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.medication,
+                                              size: 16,
+                                              color: theme.colorScheme.primary,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Flexible(
+                                              child: Text(
+                                                product.trim(),
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 13,
+                                                  height: 1.2,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: theme.colorScheme.primary,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ))
+                                .toList(),
+                          ),
+                        ] else
+                          _buildDetailRow(
+                            label: 'Nama Produk',
+                            value: '-',
+                            icon: Icons.medication_outlined,
+                          ),
                         const SizedBox(height: 12),
-                        _buildDetailRow(
-                          label: 'Divisi',
-                          value: widget.schedule.namaDivisi ?? '-',
-                          icon: Icons.category_outlined,
-                        ),
+                        if (widget.schedule.namaDivisi != null &&
+                            widget.schedule.namaDivisi!.isNotEmpty) ...[
+                          Text(
+                            'Divisi',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color:
+                                  theme.colorScheme.secondary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color:
+                                    theme.colorScheme.secondary.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: IntrinsicWidth(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.category,
+                                    size: 16,
+                                    color: theme.colorScheme.secondary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      widget.schedule.namaDivisi!,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 13,
+                                        height: 1.2,
+                                        fontWeight: FontWeight.w500,
+                                        color: theme.colorScheme.secondary,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ] else
+                          _buildDetailRow(
+                            label: 'Divisi',
+                            value: '-',
+                            icon: Icons.category_outlined,
+                          ),
                       ],
                     ),
                     const SizedBox(height: 16),
