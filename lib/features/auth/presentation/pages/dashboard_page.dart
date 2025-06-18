@@ -12,7 +12,6 @@ import 'package:test_cbo/features/schedule/presentation/bloc/schedule_bloc.dart'
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_event.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_state.dart';
 import 'package:test_cbo/features/kpi/presentation/bloc/kpi_bloc.dart';
-import 'package:test_cbo/core/presentation/widgets/custom_snackbar.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -25,12 +24,19 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
   int _selectedIndex = 0;
   DateTime? _lastBackPressTime;
   bool _isExiting = false;
+  late String _currentYear;
+  late String _currentMonth;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initializeData();
+    
+    // Set default year and month to current date
+    final now = DateTime.now();
+    _currentYear = now.year.toString();
+    _currentMonth = now.month.toString().padLeft(2, '0');
   }
 
   @override
@@ -44,6 +50,16 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
     if (state == AppLifecycleState.resumed) {
       // Reset exit flag when app is resumed
       _isExiting = false;
+      
+      // Refresh KPI data when app is resumed
+      final authState = context.read<AuthBloc>().state;
+      if (authState is AuthAuthenticated) {
+        context.read<KpiBloc>().add(GetKpiDataEvent(
+          authState.user.idUser.toString(),
+          _currentYear,
+          _currentMonth,
+        ));
+      }
     }
   }
 
@@ -61,7 +77,11 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
       final authState = context.read<AuthBloc>().state;
       if (authState is AuthAuthenticated) {
         // Initialize KPI data with actual user ID
-        context.read<KpiBloc>().add(GetKpiDataEvent(authState.user.idUser.toString()));
+        context.read<KpiBloc>().add(GetKpiDataEvent(
+          authState.user.idUser.toString(),
+          _currentYear,
+          _currentMonth,
+        ));
         _refreshScheduleIfNeeded();
       }
     });
@@ -102,7 +122,12 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
             ),
           ],
         ),
-        backgroundColor: Theme.of(context).primaryColor.withOpacity(0.9),
+        backgroundColor: Theme.of(context).primaryColor.withValues(
+          alpha: 230.0,
+          red: Theme.of(context).primaryColor.red.toDouble(),
+          green: Theme.of(context).primaryColor.green.toDouble(),
+          blue: Theme.of(context).primaryColor.blue.toDouble(),
+        ),
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
         margin: EdgeInsets.only(
@@ -118,53 +143,6 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
     );
   }
 
-  Future<void> _showExitDialog() async {
-    if (!mounted) return;
-
-    final shouldExit = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Keluar Aplikasi',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: Text(
-          'Apakah Anda yakin ingin keluar dari aplikasi?',
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              'Batal',
-              style: GoogleFonts.poppins(
-                color: Colors.grey,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              'Keluar',
-              style: GoogleFonts.poppins(
-                color: Theme.of(context).primaryColor,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldExit == true) {
-      _performExit();
-    }
-  }
-
   Future<void> _performExit() async {
     if (!mounted) return;
 
@@ -176,8 +154,8 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => WillPopScope(
-        onWillPop: () async => false, // Prevent dismissing during exit
+      builder: (context) => PopScope(
+        canPop: false,
         child: const Center(
           child: CircularProgressIndicator(),
         ),
@@ -221,13 +199,14 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return PopScope( // Using PopScope instead of WillPopScope for better gesture support
+    return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) async {
-        if (didPop) return;
-        final shouldPop = await _onWillPop();
-        if (shouldPop && mounted) {
-          SystemNavigator.pop();
+      onPopInvoked: (bool didPop) async {
+        if (!didPop) {
+          final shouldPop = await _onWillPop();
+          if (shouldPop && mounted) {
+            SystemNavigator.pop();
+          }
         }
       },
       child: Scaffold(

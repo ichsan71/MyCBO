@@ -3,15 +3,23 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:test_cbo/features/kpi/data/models/kpi_model.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:month_year_picker/month_year_picker.dart';
 
 class KpiChartNew extends StatefulWidget {
   final List<KpiGrafik> kpiData;
   final VoidCallback onRefresh;
+  final Function(String year, String month) onFilterChanged;
+  final String currentYear;
+  final String currentMonth;
 
   const KpiChartNew({
     Key? key, 
     required this.kpiData,
     required this.onRefresh,
+    required this.onFilterChanged,
+    required this.currentYear,
+    required this.currentMonth,
   }) : super(key: key);
 
   @override
@@ -25,22 +33,46 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
   late Animation<double> _slideAnimation;
   late Animation<double> _fadeAnimation;
   bool _isExpanded = false;
+  late String _selectedYear;
+  late String _selectedMonth;
 
   @override
   void initState() {
     super.initState();
     
-    // Inisialisasi animation controller
+    debugPrint('KpiChartNew - Initializing with year: ${widget.currentYear}, month: ${widget.currentMonth}');
+    _selectedYear = widget.currentYear;
+    _selectedMonth = widget.currentMonth;
+    
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
 
-    // Inisialisasi semua animasi
     _initializeAnimations();
-
-    // Mulai animasi
     _animationController.forward();
+  }
+
+  @override
+  void didUpdateWidget(KpiChartNew oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // Update selected values if they changed from parent
+    if (oldWidget.currentYear != widget.currentYear || 
+        oldWidget.currentMonth != widget.currentMonth) {
+      debugPrint('KpiChartNew - Updating to year: ${widget.currentYear}, month: ${widget.currentMonth}');
+      
+      // Reset animations for new data
+      _animationController.reset();
+      
+      setState(() {
+        _selectedYear = widget.currentYear;
+        _selectedMonth = widget.currentMonth;
+      });
+      
+      // Start animations
+      _animationController.forward();
+    }
   }
 
   void _initializeAnimations() {
@@ -50,7 +82,7 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
       end: 2 * math.pi,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeInOutBack,
+      curve: const Interval(0.0, 0.7, curve: Curves.easeInOut),
     ));
 
     // Scale animation untuk pie chart dan cards
@@ -59,7 +91,7 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
       end: 1,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeOutBack,
+      curve: const Interval(0.3, 1.0, curve: Curves.easeOutBack),
     ));
 
     // Slide animation untuk kategori kinerja
@@ -68,7 +100,7 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
       end: 0,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: const Interval(0.2, 1, curve: Curves.easeOutBack),
+      curve: const Interval(0.5, 1.0, curve: Curves.easeOutBack),
     ));
 
     // Fade animation untuk kategori kinerja
@@ -77,8 +109,29 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
       end: 1,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: const Interval(0.3, 1, curve: Curves.easeOut),
+      curve: const Interval(0.5, 1.0, curve: Curves.easeOut),
     ));
+  }
+
+  void _refreshToCurrentDate() {
+    final now = DateTime.now();
+    final currentYear = now.year.toString();
+    final currentMonth = now.month.toString().padLeft(2, '0');
+    
+    debugPrint('KpiChartNew - Refreshing to current date: $currentYear-$currentMonth');
+    
+    // Reset animations
+    _animationController.reset();
+    
+    // Update state and trigger refresh
+    setState(() {
+      _selectedYear = currentYear;
+      _selectedMonth = currentMonth;
+    });
+    
+    // Notify parent of date change
+    widget.onFilterChanged(currentYear, currentMonth);
+    widget.onRefresh();
   }
 
   @override
@@ -89,49 +142,154 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('KpiChartNew build called');
-    debugPrint('Total KPI items: ${widget.kpiData.length}');
-    widget.kpiData.forEach((item) {
-      debugPrint('KPI item in build: ${item.label}');
-    });
-    
     if (widget.kpiData.isEmpty) {
-      return _buildEmptyState();
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildFilterSection(),
+            const SizedBox(height: 32),
+            Icon(
+              Icons.bar_chart_outlined,
+              size: 48,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Data KPI tidak tersedia untuk periode ini',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _refreshToCurrentDate,
+              icon: const Icon(Icons.refresh),
+              label: Text(
+                'Kembali ke Bulan Ini',
+                style: GoogleFonts.poppins(),
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
-    final totalAchievement = _calculateTotalAchievement();
+    final totalNilai = _calculateTotalNilai();
 
     return Column(
       children: [
-        // Pie Chart Section
-        _buildPieChartSection(),
-        
+        _buildFilterSection(),
         const SizedBox(height: 16),
-        // Performance Category Section
-        _buildPerformanceCategory(totalAchievement),
-        
+        _buildPieChartSection(totalNilai),
         const SizedBox(height: 16),
-        // Expandable Detail Section
+        _buildPerformanceCategory(totalNilai),
+        const SizedBox(height: 16),
         _buildExpandableDetail(),
       ],
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildFilterSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
         children: [
-          const Text('Tidak ada data KPI'),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: widget.onRefresh,
-            icon: const Icon(Icons.refresh),
-            label: const Text('Refresh'),
+          Expanded(
+            child: InkWell(
+              onTap: () => _showMonthYearPicker(),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      DateFormat('MMMM yyyy', 'id_ID').format(
+                        DateTime(
+                          int.parse(_selectedYear),
+                          int.parse(_selectedMonth),
+                        ),
+                      ),
+                      style: GoogleFonts.poppins(fontSize: 14),
+                    ),
+                    const Icon(Icons.calendar_today, size: 18),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _showMonthYearPicker() async {
+    final selected = await showMonthYearPicker(
+      context: context,
+      initialDate: DateTime(
+        int.parse(_selectedYear),
+        int.parse(_selectedMonth),
+      ),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      locale: const Locale('id', 'ID'),
+    );
+
+    if (selected != null) {
+      debugPrint('KpiChartNew - Month/Year picked: ${selected.year}-${selected.month.toString().padLeft(2, '0')}');
+      
+      // Reset animations for new data
+      _animationController.reset();
+      
+      setState(() {
+        _selectedYear = selected.year.toString();
+        _selectedMonth = selected.month.toString().padLeft(2, '0');
+      });
+      
+      // Notify parent of date change
+      widget.onFilterChanged(_selectedYear, _selectedMonth);
+      
+      // Start animations
+      _animationController.forward();
+    }
+  }
+
+  double _calculateTotalNilai() {
+    double totalNilai = 0;
+    for (var item in widget.kpiData) {
+      final nilai = double.tryParse(item.data.nilai) ?? 0.0;
+      totalNilai += nilai;
+    }
+    return totalNilai;
   }
 
   Widget _buildExpandableDetail() {
@@ -301,29 +459,10 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildPieChartSection() {
-    if (widget.kpiData.isEmpty) {
-      return Container();
-    }
-
-    // Sort data berdasarkan achievement
-    final sortedData = List<KpiGrafik>.from(widget.kpiData);
-    sortedData.sort((a, b) {
-      final aAch = double.tryParse(a.data.ach) ?? 0.0;
-      final bAch = double.tryParse(b.data.ach) ?? 0.0;
-      return bAch.compareTo(aAch);
-    });
-
-    debugPrint('Sorted KPI data:');
-    sortedData.forEach((item) {
-      debugPrint('${item.label}: ${item.data.ach}%');
-    });
-
-    final totalAchievement = _calculateTotalAchievement();
-
+  Widget _buildPieChartSection(double totalNilai) {
     return Container(
       height: 220,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
@@ -336,86 +475,107 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
         ],
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             flex: 3,
             child: Stack(
               alignment: Alignment.center,
               children: [
-                PieChart(
-                  PieChartData(
-                    sectionsSpace: 2,
-                    centerSpaceRadius: 40,
-                    sections: sortedData.map((item) {
-                      final achievement = double.tryParse(item.data.ach) ?? 0.0;
-                      final color = Color(int.parse(item.backgroundColor.replaceAll('#', '0xFF')));
-                      
-                      return PieChartSectionData(
-                        color: color,
-                        value: achievement,
-                        title: achievement > 5 ? '${achievement.toStringAsFixed(0)}%' : '',
-                        radius: 50,
-                        titleStyle: GoogleFonts.poppins(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                        showTitle: achievement > 5,
-                        titlePositionPercentageOffset: 0.6,
-                      );
-                    }).toList(),
-                    pieTouchData: PieTouchData(enabled: false),
-                  ),
-                ),
-                ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: FadeTransition(
-                    opacity: _scaleAnimation,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 5,
-                            spreadRadius: 1,
+                AnimatedBuilder(
+                  animation: _animationController,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: _scaleAnimation.value,
+                      child: Transform.rotate(
+                        angle: _rotationAnimation.value,
+                        child: PieChart(
+                          PieChartData(
+                            sections: widget.kpiData.map((item) {
+                              final achievement = double.tryParse(item.data.ach) ?? 0.0;
+                              final color = Color(int.parse(item.backgroundColor.replaceAll('#', '0xFF')));
+                              
+                              return PieChartSectionData(
+                                color: color,
+                                value: achievement,
+                                title: achievement > 5 ? '${achievement.toStringAsFixed(0)}%' : '',
+                                titleStyle: GoogleFonts.poppins(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black.withOpacity(0.3),
+                                      blurRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                                radius: 50,
+                                titlePositionPercentageOffset: 0.6,
+                                showTitle: achievement > 5,
+                              );
+                            }).toList(),
+                            sectionsSpace: 2,
+                            centerSpaceRadius: 40,
+                            startDegreeOffset: 270,
                           ),
-                        ],
+                        ),
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Total',
+                    );
+                  },
+                ),
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 5,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Total\nNilai',
                             style: GoogleFonts.poppins(
                               fontSize: 12,
                               color: Colors.grey[600],
+                              height: 1.2,
                             ),
+                            textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 2),
-                          TweenAnimationBuilder<double>(
-                            tween: Tween<double>(
-                              begin: 0,
-                              end: totalAchievement,
-                            ),
-                            duration: const Duration(milliseconds: 1500),
-                            curve: Curves.easeOutBack,
-                            builder: (context, value, child) {
-                              return Text(
-                                '${value.toStringAsFixed(1)}%',
+                        ),
+                        const SizedBox(height: 2),
+                        TweenAnimationBuilder<double>(
+                          tween: Tween<double>(
+                            begin: 0,
+                            end: totalNilai,
+                          ),
+                          duration: const Duration(milliseconds: 1500),
+                          curve: Curves.easeOutBack,
+                          builder: (context, value, child) {
+                            return FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                value.toStringAsFixed(1),
                                 style: GoogleFonts.poppins(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                   color: _getAchievementColor(value),
                                 ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -443,7 +603,7 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
                     shrinkWrap: true,
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: EdgeInsets.zero,
-                    children: sortedData.map((item) {
+                    children: widget.kpiData.map((item) {
                       debugPrint('Building legend item: ${item.label}');
                       
                       return Padding(
@@ -484,20 +644,6 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
         ],
       ),
     );
-  }
-
-  double _calculateTotalAchievement() {
-    double totalAchievement = 0;
-    double totalWeight = 0;
-
-    for (var item in widget.kpiData) {
-      final achievement = double.tryParse(item.data.ach) ?? 0.0;
-      final weight = double.tryParse(item.data.bobot) ?? 0.0;
-      totalAchievement += (achievement * weight / 100);
-      totalWeight += weight;
-    }
-
-    return totalWeight > 0 ? (totalAchievement / totalWeight) * 100 : 0;
   }
 
   Color _getAchievementColor(double achievement) {

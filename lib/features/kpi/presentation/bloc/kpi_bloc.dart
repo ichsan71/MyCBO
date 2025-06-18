@@ -12,20 +12,24 @@ abstract class KpiEvent extends Equatable {
 
 class GetKpiDataEvent extends KpiEvent {
   final String userId;
+  final String year;
+  final String month;
 
-  GetKpiDataEvent(this.userId);
+  GetKpiDataEvent(this.userId, this.year, this.month);
 
   @override
-  List<Object> get props => [userId];
+  List<Object> get props => [userId, year, month];
 }
 
 class ResetAndRefreshKpiDataEvent extends KpiEvent {
   final String userId;
+  final String year;
+  final String month;
 
-  ResetAndRefreshKpiDataEvent(this.userId);
+  ResetAndRefreshKpiDataEvent(this.userId, this.year, this.month);
 
   @override
-  List<Object> get props => [userId];
+  List<Object> get props => [userId, year, month];
 }
 
 // States
@@ -40,11 +44,13 @@ class KpiLoading extends KpiState {}
 
 class KpiLoaded extends KpiState {
   final KpiResponse kpiData;
+  final String currentYear;
+  final String currentMonth;
 
-  KpiLoaded(this.kpiData);
+  KpiLoaded(this.kpiData, this.currentYear, this.currentMonth);
 
   @override
-  List<Object?> get props => [kpiData];
+  List<Object?> get props => [kpiData, currentYear, currentMonth];
 }
 
 class KpiError extends KpiState {
@@ -60,72 +66,63 @@ class KpiError extends KpiState {
 class KpiBloc extends Bloc<KpiEvent, KpiState> {
   final GetKpiData getKpiData;
   String? _lastUserId;
-  KpiResponse? _lastResponse;
+  String? _lastYear;
+  String? _lastMonth;
 
   KpiBloc({required this.getKpiData}) : super(KpiInitial()) {
     on<GetKpiDataEvent>((event, emit) async {
       emit(KpiLoading());
       
-      final result = await getKpiData(Params(userId: event.userId));
+      final result = await getKpiData(Params(
+        userId: event.userId,
+        year: event.year,
+        month: event.month,
+      ));
       
       result.fold(
         (failure) => emit(KpiError('Failed to load KPI data')),
         (data) {
-          // Debug print untuk memeriksa data
-          debugPrint('KPI Bloc - Data received:');
-          for (var item in data.data) {
-            debugPrint('Grafik count: ${item.grafik.length}');
-            for (var grafik in item.grafik) {
-              debugPrint('Label: ${grafik.label}');
-            }
-          }
-          
+          debugPrint('KPI Bloc - GetKpiDataEvent - Data received for ${event.year}-${event.month}');
           _lastUserId = event.userId;
-          _lastResponse = data;
-          emit(KpiLoaded(data));
+          _lastYear = event.year;
+          _lastMonth = event.month;
+          emit(KpiLoaded(data, event.year, event.month));
         },
       );
     });
 
     on<ResetAndRefreshKpiDataEvent>((event, emit) async {
       try {
-        // Reset state and cache
-        _lastResponse = null;
-        _lastUserId = null;
-        emit(KpiInitial());
+        debugPrint('KPI Bloc - ResetAndRefreshKpiDataEvent - Starting refresh for ${event.year}-${event.month}');
         
-        // Force a small delay to ensure UI updates
-        await Future.delayed(const Duration(milliseconds: 100));
+        // Reset state
+        emit(KpiInitial());
         emit(KpiLoading());
         
         // Get fresh data
-        final result = await getKpiData(Params(userId: event.userId));
+        final result = await getKpiData(Params(
+          userId: event.userId,
+          year: event.year,
+          month: event.month,
+        ));
         
         if (isClosed) return;
         
         result.fold(
           (failure) => emit(KpiError('Failed to load KPI data')),
           (data) {
-            // Only update if user ID matches current request
-            if (event.userId == _lastUserId) {
-              emit(KpiError('Data might be stale, retrying...'));
-              add(ResetAndRefreshKpiDataEvent(event.userId));
-              return;
-            }
-            
-            // Store new data
+            debugPrint('KPI Bloc - ResetAndRefreshKpiDataEvent - Data received');
+            // Update cache
             _lastUserId = event.userId;
-            _lastResponse = data;
+            _lastYear = event.year;
+            _lastMonth = event.month;
             
-            // Emit fresh state with new data
-            emit(KpiLoaded(data.copyWith(
-              data: data.data.map((item) => item.copyWith(
-                grafik: item.grafik.map((g) => g.copyWith()).toList(),
-              )).toList(),
-            )));
+            // Emit new state
+            emit(KpiLoaded(data, event.year, event.month));
           },
         );
       } catch (e) {
+        debugPrint('KPI Bloc - ResetAndRefreshKpiDataEvent - Error: $e');
         if (!isClosed) {
           emit(KpiError('An unexpected error occurred'));
         }
@@ -135,8 +132,6 @@ class KpiBloc extends Bloc<KpiEvent, KpiState> {
 
   @override
   Future<void> close() {
-    _lastResponse = null;
-    _lastUserId = null;
     return super.close();
   }
 } 

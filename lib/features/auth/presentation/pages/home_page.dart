@@ -50,12 +50,21 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
   String? _currentUserId;
   bool _isFirstLoad = true;
   bool _mounted = true;
+  late String _currentYear;
+  late String _currentMonth;
+  bool _isManualRefresh = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _currentUserId = widget.user.user.idUser.toString();
+    
+    // Set default year and month to current date
+    final now = DateTime.now();
+    _currentYear = now.year.toString();
+    _currentMonth = now.month.toString().padLeft(2, '0');
+    
     // Delay the first load slightly to ensure proper initialization
     Future.microtask(() {
       if (_mounted) {
@@ -102,14 +111,41 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
     
     final bloc = context.read<KpiBloc>();
     
-    // Always use ResetAndRefreshKpiDataEvent for force refresh or first load
-    if (isForceRefresh || _isFirstLoad) {
-      _isFirstLoad = false; // Reset first load flag
-      bloc.add(ResetAndRefreshKpiDataEvent(_currentUserId ?? ''));
+    if (isForceRefresh) {
+      // Update to current date only if it's a manual refresh (from refresh button)
+      if (_isManualRefresh) {
+        final now = DateTime.now();
+        debugPrint('Manual refresh - Updating to current date: ${now.year}-${now.month}');
+        setState(() {
+          _currentYear = now.year.toString();
+          _currentMonth = now.month.toString().padLeft(2, '0');
+          _isManualRefresh = false;
+        });
+      } else if (_isFirstLoad) {
+        debugPrint('First load - Using current date');
+        _isFirstLoad = false;
+      } else {
+        debugPrint('Force refresh - Using selected date: $_currentYear-$_currentMonth');
+      }
+      
+      bloc.add(ResetAndRefreshKpiDataEvent(_currentUserId ?? '', _currentYear, _currentMonth));
     } else {
-      // Use regular GetKpiDataEvent for normal refresh
-      bloc.add(GetKpiDataEvent(_currentUserId ?? ''));
+      debugPrint('Normal refresh - Using selected date: $_currentYear-$_currentMonth');
+      bloc.add(GetKpiDataEvent(_currentUserId ?? '', _currentYear, _currentMonth));
     }
+  }
+
+  void _handleFilterChanged(String year, String month) {
+    debugPrint('Filter changed to year: $year, month: $month');
+    setState(() {
+      _currentYear = year;
+      _currentMonth = month;
+      _isManualRefresh = false;
+    });
+    
+    // Use GetKpiDataEvent for filter changes to preserve selected date
+    final bloc = context.read<KpiBloc>();
+    bloc.add(GetKpiDataEvent(_currentUserId ?? '', year, month));
   }
 
   @override
@@ -233,7 +269,12 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
                               builder: (context, state) {
                                 if (state is KpiLoaded) {
                                   return IconButton(
-                                    onPressed: () => _refreshKpiData(isForceRefresh: true),
+                                    onPressed: () {
+                                      setState(() {
+                                        _isManualRefresh = true;
+                                      });
+                                      _refreshKpiData(isForceRefresh: true);
+                                    },
                                     icon: Icon(
                                       Icons.refresh_rounded,
                                       color: Theme.of(context).primaryColor,
@@ -250,10 +291,13 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
                         builder: (context, state) {
                           if (state is KpiLoading) {
                             return const KpiChartShimmer();
-                          } else if (state is KpiLoaded && state.kpiData.data.isNotEmpty) {
+                          } else if (state is KpiLoaded && state.kpiData.dataKpiAtasan.isNotEmpty) {
                             return KpiChartNew(
-                              kpiData: state.kpiData.data.first.grafik,
+                              kpiData: state.kpiData.dataKpiAtasan.first.grafik,
                               onRefresh: () => _refreshKpiData(isForceRefresh: true),
+                              onFilterChanged: _handleFilterChanged,
+                              currentYear: _currentYear,
+                              currentMonth: _currentMonth,
                             );
                           } else if (state is KpiError) {
                             return Center(

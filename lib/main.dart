@@ -24,6 +24,7 @@ import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_bloc.d
 import 'package:test_cbo/core/database/app_database.dart';
 import 'package:flutter/foundation.dart';
 import 'package:test_cbo/features/kpi/presentation/bloc/kpi_bloc.dart';
+import 'package:month_year_picker/month_year_picker.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -97,6 +98,7 @@ class MyApp extends StatelessWidget {
                 GlobalMaterialLocalizations.delegate,
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
+                MonthYearPickerLocalizations.delegate,
               ],
               supportedLocales: const [
                 Locale('id'),

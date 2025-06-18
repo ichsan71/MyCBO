@@ -17,7 +17,7 @@ class KpiRepositoryImpl implements KpiRepository {
   });
 
   @override
-  Future<Either<Failure, KpiResponse>> getKpiData(String userId) async {
+  Future<Either<Failure, KpiResponse>> getKpiData(String userId, String year, String month) async {
     try {
       final token = sharedPreferences.getString('token');
       if (token == null) {
@@ -25,7 +25,7 @@ class KpiRepositoryImpl implements KpiRepository {
         return Left(ServerFailure());
       }
 
-      final url = 'https://dev-bco.businesscorporateofficer.com/api/my-kpi/$userId';
+      final url = 'https://dev-bco.businesscorporateofficer.com/api/my-kpi/$userId/$year/$month';
       debugPrint('KPI Repository: Fetching data from $url');
 
       final response = await client.get(

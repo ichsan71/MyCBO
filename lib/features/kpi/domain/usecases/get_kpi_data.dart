@@ -12,15 +12,21 @@ class GetKpiData implements UseCase<KpiResponse, Params> {
 
   @override
   Future<Either<Failure, KpiResponse>> call(Params params) async {
-    return await repository.getKpiData(params.userId);
+    return await repository.getKpiData(params.userId, params.year, params.month);
   }
 }
 
 class Params extends Equatable {
   final String userId;
+  final String year;
+  final String month;
 
-  const Params({required this.userId});
+  const Params({
+    required this.userId,
+    required this.year,
+    required this.month,
+  });
 
   @override
-  List<Object> get props => [userId];
+  List<Object> get props => [userId, year, month];
 } 
