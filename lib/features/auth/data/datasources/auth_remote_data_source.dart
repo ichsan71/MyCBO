@@ -106,6 +106,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
                 Constants.userDataKey,
                 json.encode(user.toJson()),
               );
+              // Store user ID separately for easy access
+              await sharedPreferences.setString(Constants.userIdKey, user.idUser.toString());
               return user;
             } catch (e) {
               throw AuthenticationException(
@@ -207,6 +209,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       // Hapus data user dari SharedPreferences menggunakan konstanta
       await sharedPreferences.remove(Constants.tokenKey);
       await sharedPreferences.remove(Constants.userDataKey);
+      await sharedPreferences.remove(Constants.userIdKey);
 
       if (kDebugMode) {
         print('2. Membersihkan database lokal');

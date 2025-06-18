@@ -18,7 +18,7 @@ class NotificationSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeProvider = Provider.of<ThemeProvider>(context);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -75,7 +75,6 @@ class NotificationSettingsPage extends StatelessWidget {
     AppLocalizations l10n,
   ) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return ListView(
       padding: const EdgeInsets.all(16.0),
@@ -119,17 +118,26 @@ class NotificationSettingsPage extends StatelessWidget {
           Icons.palette,
           Colors.purple,
           [
-            _buildAnimatedSwitchTile(
-              context,
-              title: l10n.darkMode,
-              subtitle: l10n.darkModeDesc,
-              value: themeProvider.isDarkMode,
-              icon:
-                  themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-              onChanged: (bool value) {
-                Logger.debug(_tag, 'Toggling theme mode');
-                themeProvider.toggleThemeMode();
+            SwitchListTile(
+              title: Text(
+                l10n.darkMode,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              value: themeProvider.themeMode == ThemeMode.dark,
+              onChanged: (value) {
+                themeProvider.setThemeMode(
+                  value ? ThemeMode.dark : ThemeMode.light,
+                );
               },
+              secondary: Icon(
+                themeProvider.themeMode == ThemeMode.dark
+                    ? Icons.dark_mode
+                    : Icons.light_mode,
+                color: Theme.of(context).primaryColor,
+              ),
             ),
             _buildLanguageSelector(context, l10n),
           ],
@@ -145,15 +153,13 @@ class NotificationSettingsPage extends StatelessWidget {
     Color color,
     List<Widget> children,
   ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -169,7 +175,7 @@ class NotificationSettingsPage extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(isDark ? 0.2 : 0.1),
+                    color: color.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -204,8 +210,6 @@ class NotificationSettingsPage extends StatelessWidget {
     required IconData icon,
     required ValueChanged<bool> onChanged,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Material(
@@ -223,8 +227,8 @@ class NotificationSettingsPage extends StatelessWidget {
                     color: value
                         ? Theme.of(context)
                             .primaryColor
-                            .withOpacity(isDark ? 0.2 : 0.1)
-                        : Colors.grey.withOpacity(0.1),
+                            .withOpacity(0.1)
+                        : Colors.grey.withAlpha(51),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -250,11 +254,7 @@ class NotificationSettingsPage extends StatelessWidget {
                         subtitle,
                         style: GoogleFonts.poppins(
                           fontSize: 14,
-                          color: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.color
-                              ?.withOpacity(0.7),
+                          color: Colors.grey.withAlpha(38),
                         ),
                       ),
                     ],
@@ -275,8 +275,6 @@ class NotificationSettingsPage extends StatelessWidget {
   }
 
   Widget _buildLanguageSelector(BuildContext context, AppLocalizations l10n) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Material(
@@ -295,7 +293,7 @@ class NotificationSettingsPage extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Theme.of(context)
                         .primaryColor
-                        .withOpacity(isDark ? 0.2 : 0.1),
+                        .withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -321,11 +319,7 @@ class NotificationSettingsPage extends StatelessWidget {
                         l10n.languageDesc,
                         style: GoogleFonts.poppins(
                           fontSize: 14,
-                          color: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.color
-                              ?.withOpacity(0.7),
+                          color: Colors.grey.withAlpha(13),
                         ),
                       ),
                     ],

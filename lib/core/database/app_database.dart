@@ -40,6 +40,20 @@ class AppDatabase {
     }
   }
 
+  Future<void> initialize() async {
+    try {
+      await database;
+      if (kDebugMode) {
+        print('Database initialized successfully');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error initializing database: $e');
+      }
+      rethrow;
+    }
+  }
+
   Future<void> _createDB(Database db, int version) async {
     try {
       if (kDebugMode) {
@@ -90,6 +104,17 @@ class AppDatabase {
       if (kDebugMode) {
         print('Tabel schedule_types berhasil dibuat');
       }
+
+      // Create tables here
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS notifications (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          body TEXT NOT NULL,
+          timestamp INTEGER NOT NULL,
+          isRead INTEGER NOT NULL DEFAULT 0
+        )
+      ''');
     } catch (e) {
       if (kDebugMode) {
         print('Error saat membuat tabel: $e');
@@ -296,6 +321,7 @@ class AppDatabase {
       batch.delete('doctors');
       batch.delete('products');
       batch.delete('schedule_types');
+      batch.delete('notifications');
 
       // Tambahkan tabel lain jika ada
 

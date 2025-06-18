@@ -12,6 +12,7 @@ class KpiChartNew extends StatefulWidget {
   final Function(String year, String month) onFilterChanged;
   final String currentYear;
   final String currentMonth;
+  final bool isFilterEnabled;
 
   const KpiChartNew({
     Key? key, 
@@ -20,6 +21,7 @@ class KpiChartNew extends StatefulWidget {
     required this.onFilterChanged,
     required this.currentYear,
     required this.currentMonth,
+    this.isFilterEnabled = true,
   }) : super(key: key);
 
   @override
@@ -221,31 +223,54 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
       child: Row(
         children: [
           Expanded(
-            child: InkWell(
-              onTap: () => _showMonthYearPicker(),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      DateFormat('MMMM yyyy', 'id_ID').format(
-                        DateTime(
-                          int.parse(_selectedYear),
-                          int.parse(_selectedMonth),
-                        ),
+            child: widget.isFilterEnabled
+                ? InkWell(
+                    onTap: () => _showMonthYearPicker(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      style: GoogleFonts.poppins(fontSize: 14),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            DateFormat('MMMM yyyy', 'id_ID').format(
+                              DateTime(
+                                int.parse(_selectedYear),
+                                int.parse(_selectedMonth),
+                              ),
+                            ),
+                            style: GoogleFonts.poppins(fontSize: 14),
+                          ),
+                          const Icon(Icons.calendar_today, size: 18),
+                        ],
+                      ),
                     ),
-                    const Icon(Icons.calendar_today, size: 18),
-                  ],
-                ),
-              ),
-            ),
+                  )
+                : Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey[300]!),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          DateFormat('MMMM yyyy', 'id_ID').format(
+                            DateTime(
+                              int.parse(_selectedYear),
+                              int.parse(_selectedMonth),
+                            ),
+                          ),
+                          style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600]),
+                        ),
+                        const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
+                      ],
+                    ),
+                  ),
           ),
         ],
       ),

@@ -10,4 +10,5 @@ class Constants {
   /// Key untuk token di SharedPreferences
   static const String tokenKey = 'token';
   static const String userDataKey = 'USER_DATA';
+  static const String userIdKey = 'user_id';
 }

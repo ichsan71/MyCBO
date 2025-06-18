@@ -6,6 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:test_cbo/core/database/app_database.dart';
 import 'package:test_cbo/core/network/network_info.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/tipe_schedule_bloc.dart';
+import 'package:dio/dio.dart';
 
 import '../../features/auth/di/auth_injection.dart';
 import '../../features/schedule/di/schedule_injection.dart';
@@ -33,117 +34,115 @@ import '../../features/kpi/data/repositories/kpi_repository_impl.dart';
 import '../../features/kpi/domain/repositories/kpi_repository.dart';
 import '../../features/kpi/domain/usecases/get_kpi_data.dart';
 import '../../features/kpi/presentation/bloc/kpi_bloc.dart';
+import '../../features/kpi/presentation/bloc/kpi_member_bloc.dart';
+import '../../features/kpi/data/datasources/kpi_member_remote_data_source.dart';
+import '../../features/kpi/data/repositories/kpi_member_repository_impl.dart';
+import '../../features/kpi/domain/repositories/kpi_member_repository.dart';
+import '../../features/kpi/domain/usecases/get_kpi_member_data_usecase.dart';
 
 /// Service locator instance
 final sl = GetIt.instance;
 
-/// Inisialisasi dependency injection untuk seluruh aplikasi
-///
-/// Fungsi ini akan menginisialisasi semua dependency yang diperlukan oleh aplikasi,
-/// termasuk external dependencies, core modules, dan feature modules.
-///
-/// Dependency injection membantu dalam:
-/// 1. Memisahkan pembuatan objek dari penggunaannya
-/// 2. Memudahkan testing dengan mock objects
-/// 3. Mengurangi coupling antar komponen
-/// 4. Memudahkan pengelolaan lifecycle objek
+/// Initialize all dependencies
 Future<void> init() async {
-  //! External dependencies
+  // External dependencies
   await _initExternalDependencies();
 
-  //! Core dependencies
+  // Core dependencies
   _initCoreDependencies();
 
-  //! Feature dependencies
-  // Initialize Notification Service first
-  _initNotificationDependencies();
-
-  await initAuthDependencies();
-  await initScheduleDependencies();
-  await initApprovalDependencies();
-  await initRealisasiVisitDependencies();
-
-  // Inisialisasi Tipe Schedule
-  _initTipeScheduleDependencies();
-
-  // Edit Schedule
-  sl.registerFactory(
-    () => EditScheduleBloc(
-      getEditScheduleData: sl(),
-    ),
-  );
-
-  // Use cases
-  sl.registerLazySingleton(() => GetSchedules(sl()));
-  sl.registerLazySingleton(() => GetSchedulesByRangeDate(sl()));
-  sl.registerLazySingleton(() => GetEditScheduleData(sl()));
-  sl.registerLazySingleton(() => UpdateSchedule(sl()));
-  sl.registerLazySingleton(() => GetRejectedSchedules(sl()));
-
-  // Check-in
-  sl.registerLazySingleton<CheckInRemoteDataSource>(
-    () => CheckInRemoteDataSourceImpl(
-      dio: sl(),
-      sharedPreferences: sl(),
-    ),
-  );
-
-  sl.registerLazySingleton<CheckInRepository>(
-    () => CheckInRepositoryImpl(
-      remoteDataSource: sl(),
-      networkInfo: sl(),
-    ),
-  );
-
-  // KPI Feature
-  // Bloc
-  sl.registerFactory(
-    () => KpiBloc(getKpiData: sl()),
-  );
-
-  // Use cases
-  sl.registerLazySingleton(() => GetKpiData(sl()));
-
-  // Repository
-  sl.registerLazySingleton<KpiRepository>(
-    () => KpiRepositoryImpl(
-      client: sl(),
-      sharedPreferences: sl(),
-    ),
-  );
+  // Feature dependencies
+  await _initFeatureDependencies();
 }
 
-/// Inisialisasi dependencies untuk fitur Tipe Schedule
+/// Initialize external dependencies
+Future<void> _initExternalDependencies() async {
+  // Shared Preferences
+  final sharedPreferences = await SharedPreferences.getInstance();
+  sl.registerLazySingleton(() => sharedPreferences);
+
+  // HTTP Clients
+  sl.registerLazySingleton(() => http.Client());
+  sl.registerLazySingleton(() => DioConfig.createDio());
+  sl.registerLazySingleton(() => InternetConnectionChecker());
+}
+
+/// Initialize core dependencies
+void _initCoreDependencies() {
+  // Network info
+  sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));
+
+  // Database
+  sl.registerLazySingleton(() => AppDatabase.instance);
+
+  // Notifications
+  sl.registerLazySingleton(() => FlutterLocalNotificationsPlugin());
+}
+
+/// Initialize feature dependencies
+Future<void> _initFeatureDependencies() async {
+  // Auth feature
+  await initAuthDependencies();
+
+  // Schedule feature
+  await initScheduleDependencies();
+  _initTipeScheduleDependencies();
+  _initEditScheduleDependencies();
+
+  // Approval feature
+  await initApprovalDependencies();
+
+  // Realisasi Visit feature
+  await initRealisasiVisitDependencies();
+
+  // Notification feature
+  _initNotificationDependencies();
+
+  // Check-in feature
+  _initCheckInDependencies();
+
+  // KPI feature
+  _initKpiDependencies();
+}
+
+/// Initialize Tipe Schedule dependencies
 void _initTipeScheduleDependencies() {
-  // UseCases
+  // Use cases
   sl.registerLazySingleton(() => GetTipeSchedules(sl()));
 
   // Repository
   sl.registerLazySingleton<TipeScheduleRepository>(
-    () => TipeScheduleRepositoryImpl(
-      remoteDataSource: sl(),
-    ),
+    () => TipeScheduleRepositoryImpl(remoteDataSource: sl()),
   );
 
   // Data sources
   sl.registerLazySingleton<TipeScheduleRemoteDataSource>(
     () => TipeScheduleRemoteDataSourceImpl(
-      client: sl<http.Client>(),
-      sharedPreferences: sl<SharedPreferences>(),
+      client: sl(),
+      sharedPreferences: sl(),
     ),
   );
 
   // Bloc
-  sl.registerLazySingleton(
-      () => TipeScheduleBloc(getTipeSchedules: sl<GetTipeSchedules>()));
+  sl.registerLazySingleton(() => TipeScheduleBloc(getTipeSchedules: sl()));
 }
 
-/// Initialize notification dependencies
-void _initNotificationDependencies() {
-  // FlutterLocalNotificationsPlugin
-  sl.registerLazySingleton(() => FlutterLocalNotificationsPlugin());
+/// Initialize Edit Schedule dependencies
+void _initEditScheduleDependencies() {
+  // Bloc
+  sl.registerFactory(() => EditScheduleBloc(getEditScheduleData: sl()));
 
-  // LocalNotificationService
+  // Use cases
+  sl.registerLazySingleton(() => GetEditScheduleData(sl()));
+  sl.registerLazySingleton(() => GetSchedules(sl()));
+  sl.registerLazySingleton(() => GetSchedulesByRangeDate(sl()));
+  sl.registerLazySingleton(() => UpdateSchedule(sl()));
+  sl.registerLazySingleton(() => GetRejectedSchedules(sl()));
+}
+
+/// Initialize Notification dependencies
+void _initNotificationDependencies() {
+  // Service
   sl.registerLazySingleton<LocalNotificationService>(
     () => LocalNotificationServiceImpl(
       flutterLocalNotificationsPlugin: sl(),
@@ -163,33 +162,54 @@ void _initNotificationDependencies() {
     ),
   );
 
-  // Blocs
-  sl.registerFactory(
-    () => NotificationBloc(
-      repository: sl(),
+  // Bloc
+  sl.registerFactory(() => NotificationBloc(repository: sl()));
+}
+
+/// Initialize Check-in dependencies
+void _initCheckInDependencies() {
+  // Data sources
+  sl.registerLazySingleton<CheckInRemoteDataSource>(
+    () => CheckInRemoteDataSourceImpl(
+      dio: sl(),
+      sharedPreferences: sl(),
+    ),
+  );
+
+  // Repository
+  sl.registerLazySingleton<CheckInRepository>(
+    () => CheckInRepositoryImpl(
+      remoteDataSource: sl(),
+      networkInfo: sl(),
     ),
   );
 }
 
-/// Inisialisasi external dependencies seperti shared preferences, http client, dll
-Future<void> _initExternalDependencies() async {
-  // Shared Preferences untuk penyimpanan lokal
-  final sharedPreferences = await SharedPreferences.getInstance();
-  sl.registerLazySingleton(() => sharedPreferences);
+/// Initialize KPI dependencies
+void _initKpiDependencies() {
+  // KPI Member
+  sl.registerFactory(() => KpiMemberBloc(getKpiMemberDataUseCase: sl()));
+  sl.registerLazySingleton(() => GetKpiMemberDataUseCase(sl()));
+  sl.registerLazySingleton<KpiMemberRepository>(
+    () => KpiMemberRepositoryImpl(
+      remoteDataSource: sl(),
+      networkInfo: sl(),
+    ),
+  );
+  sl.registerLazySingleton<KpiMemberRemoteDataSource>(
+    () => KpiMemberRemoteDataSourceImpl(
+      dio: sl(),
+      sharedPreferences: sl(),
+    ),
+  );
 
-  // HTTP Clients untuk komunikasi dengan API
-  sl.registerLazySingleton(() => http.Client());
-  sl.registerLazySingleton(() => DioConfig.createDio());
-  sl.registerLazySingleton(() => InternetConnectionChecker());
-}
-
-/// Inisialisasi core dependencies yang digunakan di seluruh aplikasi
-void _initCoreDependencies() {
-  // Database
-  sl.registerLazySingleton(() => AppDatabase.instance);
-
-  // Network info untuk cek koneksi internet
-  sl.registerLazySingleton<NetworkInfo>(
-    () => NetworkInfoImpl(sl()),
+  // KPI
+  sl.registerFactory(() => KpiBloc(getKpiData: sl()));
+  sl.registerLazySingleton(() => GetKpiData(sl()));
+  sl.registerLazySingleton<KpiRepository>(
+    () => KpiRepositoryImpl(
+      client: sl(),
+      sharedPreferences: sl(),
+    ),
   );
 }

@@ -150,11 +150,9 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
 
   @override
   Widget build(BuildContext context) {
-    // Update current user ID if needed
     final newUserId = widget.user.user.idUser.toString();
     if (_currentUserId != newUserId) {
       _currentUserId = newUserId;
-      // Schedule a refresh for next frame if user changed
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _refreshKpiData(isForceRefresh: true);
@@ -174,6 +172,7 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
         role == 'RSM' ||
         role == 'DM' ||
         role == 'AM';
+    final hasKpiAccess = role != 'PS';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SafeArea(
@@ -370,13 +369,14 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
                             mainAxisSpacing: 16,
                             childAspectRatio: 1.1,
                             children: [
-                              _buildMenuCard(
-                                context: context,
-                                title: l10n.report,
-                                icon: Icons.bar_chart,
-                                color: Colors.blue[600]!,
-                                onTap: () {},
-                              ),
+                              if (hasKpiAccess)
+                                _buildMenuCard(
+                                  context: context,
+                                  title: l10n.report,
+                                  icon: Icons.bar_chart,
+                                  color: Colors.blue[600]!,
+                                  onTap: () => Navigator.pushNamed(context, '/kpi_member'),
+                                ),
                               _buildMenuCard(
                                 context: context,
                                 title: l10n.addSchedule,
