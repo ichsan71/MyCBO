@@ -163,7 +163,7 @@ void _initNotificationDependencies() {
   );
 
   // Bloc
-  sl.registerFactory(() => NotificationBloc(repository: sl()));
+  sl.registerLazySingleton(() => NotificationBloc(repository: sl()));
 }
 
 /// Initialize Check-in dependencies

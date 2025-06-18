@@ -9,11 +9,28 @@ import 'package:test_cbo/features/notifications/presentation/bloc/notification_s
 import 'package:test_cbo/core/presentation/widgets/app_bar_widget.dart';
 import 'package:test_cbo/core/utils/logger.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:test_cbo/core/di/injection_container.dart' as di;
+import 'package:test_cbo/features/notifications/data/datasources/local_notification_service.dart';
+import 'package:shimmer/shimmer.dart';
 
-class NotificationSettingsPage extends StatelessWidget {
+class NotificationSettingsPage extends StatefulWidget {
   const NotificationSettingsPage({super.key});
 
+  @override
+  State<NotificationSettingsPage> createState() => _NotificationSettingsPageState();
+}
+
+class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   static const String _tag = 'NotificationSettingsPage';
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize notifications when page is opened
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<NotificationBloc>().add(const InitializeNotifications());
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,8 +46,14 @@ class NotificationSettingsPage extends StatelessWidget {
       ),
       body: BlocBuilder<NotificationBloc, NotificationState>(
         builder: (context, state) {
+          // Debug logging
+          Logger.debug(_tag, 'Current state: ${state.runtimeType}');
+          if (state is NotificationSettingsLoaded) {
+            Logger.debug(_tag, 'Settings loaded: checkout=${state.isCheckoutEnabled}, greeting=${state.isDailyGreetingEnabled}');
+          }
+          
           if (state is NotificationLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return _buildShimmerLoading(context);
           }
 
           if (state is NotificationError) {
@@ -54,6 +77,13 @@ class NotificationSettingsPage extends StatelessWidget {
                     ),
                     textAlign: TextAlign.center,
                   ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      context.read<NotificationBloc>().add(const InitializeNotifications());
+                    },
+                    child: const Text('Coba Lagi'),
+                  ),
                 ],
               ),
             );
@@ -63,7 +93,8 @@ class NotificationSettingsPage extends StatelessWidget {
             return _buildSettingsContent(context, state, l10n);
           }
 
-          return const SizedBox.shrink();
+          // Show shimmer loading for initial state
+          return _buildShimmerLoading(context);
         },
       ),
     );
@@ -107,6 +138,57 @@ class NotificationSettingsPage extends StatelessWidget {
                 context.read<NotificationBloc>().add(
                       ToggleDailyGreetingNotification(enabled: value),
                     );
+              },
+            ),
+            // Test buttons
+            _buildTestButton(
+              context,
+              title: 'Test Notifikasi Checkout',
+              subtitle: 'Klik untuk test notifikasi checkout',
+              icon: Icons.notifications_active,
+              onTap: () async {
+                try {
+                  final notificationService = di.sl<LocalNotificationService>();
+                  await notificationService.showTestCheckoutNotification(state.userName);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Test notifikasi checkout berhasil!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+            ),
+            _buildTestButton(
+              context,
+              title: 'Test Notifikasi Sapaan',
+              subtitle: 'Klik untuk test notifikasi sapaan pagi',
+              icon: Icons.wb_sunny,
+              onTap: () async {
+                try {
+                  final notificationService = di.sl<LocalNotificationService>();
+                  await notificationService.showTestDailyGreeting(state.userName);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Test notifikasi sapaan berhasil!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               },
             ),
           ],
@@ -254,7 +336,7 @@ class NotificationSettingsPage extends StatelessWidget {
                         subtitle,
                         style: GoogleFonts.poppins(
                           fontSize: 14,
-                          color: Colors.grey.withAlpha(38),
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                         ),
                       ),
                     ],
@@ -319,7 +401,7 @@ class NotificationSettingsPage extends StatelessWidget {
                         l10n.languageDesc,
                         style: GoogleFonts.poppins(
                           fontSize: 14,
-                          color: Colors.grey.withAlpha(13),
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                         ),
                       ),
                     ],
@@ -339,6 +421,256 @@ class NotificationSettingsPage extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTestButton(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .primaryColor
+                        .withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: Theme.of(context).primaryColor,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Theme.of(context).textTheme.titleLarge?.color,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShimmerLoading(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: ListView(
+        padding: const EdgeInsets.all(16.0),
+        children: [
+          // Notification settings section shimmer
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        width: 150,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Shimmer items
+                for (int i = 0; i < 4; i++)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: double.infinity,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                width: 200,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 40,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Appearance settings section shimmer
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        width: 150,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Shimmer items
+                for (int i = 0; i < 2; i++)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: double.infinity,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                width: 200,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 40,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

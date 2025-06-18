@@ -10,6 +10,8 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
 
   NotificationBloc({required this.repository}) : super(NotificationInitial()) {
     on<InitializeNotifications>(_onInitializeNotifications);
+    on<ToggleCheckoutNotification>(_onToggleCheckoutNotification);
+    on<ToggleDailyGreetingNotification>(_onToggleDailyGreetingNotification);
     on<ToggleScheduleNotifications>(_onToggleScheduleNotifications);
     on<ToggleApprovalNotifications>(_onToggleApprovalNotifications);
   }
@@ -19,6 +21,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     Emitter<NotificationState> emit,
   ) async {
     try {
+      emit(NotificationLoading());
       final settingsEither = await repository.getNotificationSettings();
 
       void handleFailure(failure) {
@@ -34,6 +37,92 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
 
       void handleSuccess(settings) {
         emit(NotificationSettingsLoaded.fromSettings(settings));
+      }
+
+      settingsEither.fold(handleFailure, handleSuccess);
+    } catch (e) {
+      emit(NotificationError(
+        message: e.toString(),
+        isCheckoutEnabled: state.isCheckoutEnabled,
+        isDailyGreetingEnabled: state.isDailyGreetingEnabled,
+        userName: state.userName,
+        lastCheckoutCheck: state.lastCheckoutCheck,
+        lastDailyGreeting: state.lastDailyGreeting,
+      ));
+    }
+  }
+
+  Future<void> _onToggleCheckoutNotification(
+    ToggleCheckoutNotification event,
+    Emitter<NotificationState> emit,
+  ) async {
+    try {
+      final settingsEither = await repository.saveNotificationSettings(
+        NotificationSettings(
+          isCheckoutEnabled: event.enabled,
+          isDailyGreetingEnabled: state.isDailyGreetingEnabled,
+          userName: state.userName,
+          lastCheckoutCheck: state.lastCheckoutCheck,
+          lastDailyGreeting: state.lastDailyGreeting,
+        ),
+      );
+
+      void handleFailure(failure) {
+        emit(NotificationError(
+          message: failure.message,
+          isCheckoutEnabled: state.isCheckoutEnabled,
+          isDailyGreetingEnabled: state.isDailyGreetingEnabled,
+          userName: state.userName,
+          lastCheckoutCheck: state.lastCheckoutCheck,
+          lastDailyGreeting: state.lastDailyGreeting,
+        ));
+      }
+
+      void handleSuccess(_) {
+        _loadNotificationSettings(emit);
+      }
+
+      settingsEither.fold(handleFailure, handleSuccess);
+    } catch (e) {
+      emit(NotificationError(
+        message: e.toString(),
+        isCheckoutEnabled: state.isCheckoutEnabled,
+        isDailyGreetingEnabled: state.isDailyGreetingEnabled,
+        userName: state.userName,
+        lastCheckoutCheck: state.lastCheckoutCheck,
+        lastDailyGreeting: state.lastDailyGreeting,
+      ));
+    }
+  }
+
+  Future<void> _onToggleDailyGreetingNotification(
+    ToggleDailyGreetingNotification event,
+    Emitter<NotificationState> emit,
+  ) async {
+    try {
+      final settingsEither = await repository.saveNotificationSettings(
+        NotificationSettings(
+          isCheckoutEnabled: state.isCheckoutEnabled,
+          isDailyGreetingEnabled: event.enabled,
+          userName: state.userName,
+          lastCheckoutCheck: state.lastCheckoutCheck,
+          lastDailyGreeting: state.lastDailyGreeting,
+        ),
+      );
+
+      void handleFailure(failure) {
+        emit(NotificationError(
+          message: failure.message,
+          isCheckoutEnabled: state.isCheckoutEnabled,
+          isDailyGreetingEnabled: state.isDailyGreetingEnabled,
+          userName: state.userName,
+          lastCheckoutCheck: state.lastCheckoutCheck,
+          lastDailyGreeting: state.lastDailyGreeting,
+        ));
+      }
+
+      void handleSuccess(_) {
+        _loadNotificationSettings(emit);
       }
 
       settingsEither.fold(handleFailure, handleSuccess);
@@ -106,6 +195,38 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
           lastDailyGreeting: state.lastDailyGreeting,
         ),
       );
+
+      void handleFailure(failure) {
+        emit(NotificationError(
+          message: failure.message,
+          isCheckoutEnabled: state.isCheckoutEnabled,
+          isDailyGreetingEnabled: state.isDailyGreetingEnabled,
+          userName: state.userName,
+          lastCheckoutCheck: state.lastCheckoutCheck,
+          lastDailyGreeting: state.lastDailyGreeting,
+        ));
+      }
+
+      void handleSuccess(settings) {
+        emit(NotificationSettingsLoaded.fromSettings(settings));
+      }
+
+      settingsEither.fold(handleFailure, handleSuccess);
+    } catch (e) {
+      emit(NotificationError(
+        message: e.toString(),
+        isCheckoutEnabled: state.isCheckoutEnabled,
+        isDailyGreetingEnabled: state.isDailyGreetingEnabled,
+        userName: state.userName,
+        lastCheckoutCheck: state.lastCheckoutCheck,
+        lastDailyGreeting: state.lastDailyGreeting,
+      ));
+    }
+  }
+
+  Future<void> _loadNotificationSettings(Emitter<NotificationState> emit) async {
+    try {
+      final settingsEither = await repository.getNotificationSettings();
 
       void handleFailure(failure) {
         emit(NotificationError(
