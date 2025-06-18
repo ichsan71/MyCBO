@@ -8,6 +8,7 @@ import '../../domain/entities/kpi_member.dart';
 import '../../../../core/presentation/widgets/app_bar_widget.dart';
 import '../../../../core/presentation/widgets/app_button.dart';
 import '../../../../core/presentation/widgets/shimmer_loading.dart';
+import '../../data/models/kpi_model.dart';
 
 class KpiMemberPage extends StatefulWidget {
   const KpiMemberPage({Key? key}) : super(key: key);
@@ -178,6 +179,7 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
   }
 
   Widget _buildKodeRayonCard(KpiMember kpiMember) {
+    final achievement = _calculateAverageAchievement(kpiMember.grafik);
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
@@ -187,77 +189,91 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
       child: InkWell(
         onTap: () => _navigateToDetail(kpiMember),
         borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        child: Stack(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.location_on,
-                      color: Theme.of(context).primaryColor,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Kode Rayon',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                          ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          kpiMember.kodeRayon,
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).primaryColor,
-                          ),
+                        child: Icon(
+                          Icons.location_on,
+                          color: Theme.of(context).primaryColor,
+                          size: 24,
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Kode Rayon',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              kpiMember.kodeRayon,
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    color: Colors.grey[400],
-                    size: 16,
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      _buildInfoItem(
+                        icon: Icons.bar_chart,
+                        label: 'Indikator KPI',
+                        value: '${kpiMember.grafik.length}',
+                      ),
+                      const SizedBox(width: 24),
+                      _buildInfoItem(
+                        icon: Icons.calendar_today,
+                        label: 'Periode',
+                        value: DateFormat('MMM yyyy', 'id_ID').format(
+                          DateTime(int.parse(_currentYear), int.parse(_currentMonth))
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      _buildInfoItem(
+                        icon: Icons.star,
+                        label: 'Total Nilai',
+                        value: _calculateTotalNilai(kpiMember.grafik).toStringAsFixed(1),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  _buildInfoItem(
-                    icon: Icons.bar_chart,
-                    label: 'Indikator KPI',
-                    value: '${kpiMember.grafik.length}',
-                  ),
-                  const SizedBox(width: 24),
-                  _buildInfoItem(
-                    icon: Icons.calendar_today,
-                    label: 'Periode',
-                    value: DateFormat('MMM yyyy', 'id_ID').format(
-                      DateTime(int.parse(_currentYear), int.parse(_currentMonth))
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+            ),
+            Positioned(
+              top: 12,
+              right: 12,
+              child: _buildCategoryBadge(achievement),
+            ),
+          ],
         ),
       ),
     );
@@ -360,6 +376,100 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
         ],
       ),
     );
+  }
+
+  double _calculateTotalNilai(List<KpiGrafik> grafik) {
+    double total = 0;
+    for (var item in grafik) {
+      total += double.tryParse(item.data.nilai) ?? 0.0;
+    }
+    return total;
+  }
+
+  double _calculateAverageAchievement(List<KpiGrafik> grafik) {
+    if (grafik.isEmpty) return 0;
+    double total = 0;
+    for (var item in grafik) {
+      total += double.tryParse(item.data.ach) ?? 0.0;
+    }
+    return total / grafik.length;
+  }
+
+  Widget _buildCategoryBadge(double achievement) {
+    final color = _getCategoryColor(achievement);
+    final icon = _getCategoryIcon(achievement);
+    final label = _getCategoryLabel(achievement);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.2),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: 16),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getCategoryColor(double value) {
+    if (value >= 91) {
+      return Colors.green;
+    } else if (value >= 76) {
+      return Colors.blue;
+    } else if (value >= 66) {
+      return Colors.yellow.shade700;
+    } else if (value >= 51) {
+      return Colors.orange;
+    } else {
+      return Colors.red;
+    }
+  }
+
+  String _getCategoryLabel(double value) {
+    if (value >= 91) {
+      return 'Sangat Baik';
+    } else if (value >= 76) {
+      return 'Baik';
+    } else if (value >= 66) {
+      return 'Cukup';
+    } else if (value >= 51) {
+      return 'Buruk';
+    } else {
+      return 'Sangat Buruk';
+    }
+  }
+
+  IconData _getCategoryIcon(double value) {
+    if (value >= 91) {
+      return Icons.sentiment_very_satisfied;
+    } else if (value >= 76) {
+      return Icons.sentiment_satisfied;
+    } else if (value >= 66) {
+      return Icons.sentiment_neutral;
+    } else if (value >= 51) {
+      return Icons.sentiment_dissatisfied;
+    } else {
+      return Icons.sentiment_very_dissatisfied;
+    }
   }
 
   @override

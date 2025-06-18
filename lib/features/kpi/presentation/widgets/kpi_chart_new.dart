@@ -225,29 +225,29 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
           Expanded(
             child: widget.isFilterEnabled
                 ? InkWell(
-                    onTap: () => _showMonthYearPicker(),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey[300]!),
-                        borderRadius: BorderRadius.circular(8),
+              onTap: () => _showMonthYearPicker(),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      DateFormat('MMMM yyyy', 'id_ID').format(
+                        DateTime(
+                          int.parse(_selectedYear),
+                          int.parse(_selectedMonth),
+                        ),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            DateFormat('MMMM yyyy', 'id_ID').format(
-                              DateTime(
-                                int.parse(_selectedYear),
-                                int.parse(_selectedMonth),
-                              ),
-                            ),
-                            style: GoogleFonts.poppins(fontSize: 14),
-                          ),
-                          const Icon(Icons.calendar_today, size: 18),
-                        ],
-                      ),
+                      style: GoogleFonts.poppins(fontSize: 14),
                     ),
+                    const Icon(Icons.calendar_today, size: 18),
+                  ],
+                ),
+              ),
                   )
                 : Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -270,7 +270,7 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
                         const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
                       ],
                     ),
-                  ),
+            ),
           ),
         ],
       ),

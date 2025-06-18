@@ -370,13 +370,13 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
                             childAspectRatio: 1.1,
                             children: [
                               if (hasKpiAccess)
-                                _buildMenuCard(
-                                  context: context,
-                                  title: l10n.report,
-                                  icon: Icons.bar_chart,
-                                  color: Colors.blue[600]!,
+                              _buildMenuCard(
+                                context: context,
+                                title: l10n.report,
+                                icon: Icons.bar_chart,
+                                color: Colors.blue[600]!,
                                   onTap: () => Navigator.pushNamed(context, '/kpi_member'),
-                                ),
+                              ),
                               _buildMenuCard(
                                 context: context,
                                 title: l10n.addSchedule,

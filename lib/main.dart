@@ -71,25 +71,25 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider(
           create: (context) => di.sl<AuthBloc>()
             ..add(const CheckAuthStatusEvent()),
         ),
         BlocProvider(
           create: (context) => di.sl<NotificationBloc>(),
-        ),
-        BlocProvider(
-          create: (context) => di.sl<ScheduleBloc>(),
-        ),
-        BlocProvider(
+              ),
+              BlocProvider(
+                create: (context) => di.sl<ScheduleBloc>(),
+              ),
+              BlocProvider(
           create: (context) => di.sl<KpiBloc>(),
-        ),
-        BlocProvider(
+              ),
+              BlocProvider(
           create: (context) => di.sl<KpiMemberBloc>(),
-        ),
-      ],
+              ),
+            ],
       child: ChangeNotifierProvider(
         create: (context) => ThemeProvider(),
         child: Consumer<ThemeProvider>(
@@ -129,7 +129,7 @@ class MyApp extends StatelessWidget {
                 '/kpi_member': (context) => BlocProvider.value(
                       value: context.read<KpiMemberBloc>(),
                       child: const KpiMemberPage(),
-                    ),
+            ),
                 '/kpi_member_detail': (context) {
                   final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
                   return KpiMemberDetailPage(
@@ -139,8 +139,8 @@ class MyApp extends StatelessWidget {
                   );
                 },
               },
-            );
-          },
+          );
+        },
         ),
       ),
     );
