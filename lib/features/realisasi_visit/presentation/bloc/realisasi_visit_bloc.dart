@@ -1,37 +1,38 @@
-import 'package:bloc/bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/error/exceptions.dart';
+import '../../../../core/utils/logger.dart';
 import '../../domain/entities/realisasi_visit.dart';
 import '../../domain/entities/realisasi_visit_gm.dart';
 import '../../domain/entities/realisasi_visit_response.dart';
-import '../../domain/usecases/approve_realisasi_visit_gm_usecase.dart';
-import '../../domain/usecases/approve_realisasi_visit_usecase.dart';
-import '../../domain/usecases/get_realisasi_visits_gm_usecase.dart';
-import '../../domain/usecases/get_realisasi_visits_usecase.dart';
-import '../../domain/usecases/reject_realisasi_visit_usecase.dart';
+import '../../domain/usecases/approve_realisasi_visit.dart';
+import '../../domain/usecases/get_realisasi_visits.dart';
+import '../../domain/usecases/get_realisasi_visits_gm.dart';
+import '../../domain/usecases/get_realisasi_visits_gm_details.dart';
+import '../../domain/usecases/reject_realisasi_visit.dart';
 
 part 'realisasi_visit_event.dart';
 part 'realisasi_visit_state.dart';
 
-class RealisasiVisitBloc
-    extends Bloc<RealisasiVisitEvent, RealisasiVisitState> {
-  final GetRealisasiVisitsUseCase getRealisasiVisits;
-  final GetRealisasiVisitsGMUseCase getRealisasiVisitsGM;
-  final ApproveRealisasiVisitUseCase approveRealisasiVisit;
-  final ApproveRealisasiVisitGMUseCase approveRealisasiVisitGM;
-  final RejectRealisasiVisitUseCase rejectRealisasiVisit;
+class RealisasiVisitBloc extends Bloc<RealisasiVisitEvent, RealisasiVisitState> {
+  final GetRealisasiVisits getRealisasiVisits;
+  final GetRealisasiVisitsGM getRealisasiVisitsGM;
+  final GetRealisasiVisitsGMDetails getRealisasiVisitsGMDetails;
+  final ApproveRealisasiVisit approveRealisasiVisit;
+  final RejectRealisasiVisit rejectRealisasiVisit;
 
   RealisasiVisitBloc({
     required this.getRealisasiVisits,
     required this.getRealisasiVisitsGM,
+    required this.getRealisasiVisitsGMDetails,
     required this.approveRealisasiVisit,
-    required this.approveRealisasiVisitGM,
     required this.rejectRealisasiVisit,
   }) : super(RealisasiVisitInitial()) {
     on<GetRealisasiVisitsEvent>(_onGetRealisasiVisits);
     on<GetRealisasiVisitsGMEvent>(_onGetRealisasiVisitsGM);
+    on<GetRealisasiVisitsGMDetailsEvent>(_onGetRealisasiVisitsGMDetails);
     on<ApproveRealisasiVisitEvent>(_onApproveRealisasiVisit);
-    on<ApproveRealisasiVisitGMEvent>(_onApproveRealisasiVisitGM);
     on<RejectRealisasiVisitEvent>(_onRejectRealisasiVisit);
   }
 
@@ -40,14 +41,14 @@ class RealisasiVisitBloc
     Emitter<RealisasiVisitState> emit,
   ) async {
     emit(RealisasiVisitLoading());
-    final result = await getRealisasiVisits(
-      GetRealisasiVisitsParams(idAtasan: event.idAtasan),
-    );
+    final result = await getRealisasiVisits(event.idAtasan);
     result.fold(
-      (failure) =>
-          emit(RealisasiVisitError(message: _mapFailureToMessage(failure))),
-      (realisasiVisits) =>
-          emit(RealisasiVisitLoaded(realisasiVisits: realisasiVisits)),
+      (failure) => emit(RealisasiVisitError(
+        message: _mapFailureToMessage(failure),
+      )),
+      (realisasiVisits) => emit(RealisasiVisitLoaded(
+        realisasiVisits: realisasiVisits,
+      )),
     );
   }
 
@@ -56,50 +57,67 @@ class RealisasiVisitBloc
     Emitter<RealisasiVisitState> emit,
   ) async {
     emit(RealisasiVisitLoading());
-    final result = await getRealisasiVisitsGM(
-      GetRealisasiVisitsGMParams(idAtasan: event.idAtasan),
-    );
+    final result = await getRealisasiVisitsGM(event.idAtasan);
     result.fold(
-      (failure) =>
-          emit(RealisasiVisitError(message: _mapFailureToMessage(failure))),
-      (realisasiVisitsGM) =>
-          emit(RealisasiVisitGMLoaded(realisasiVisitsGM: realisasiVisitsGM)),
+      (failure) => emit(RealisasiVisitError(
+        message: _mapFailureToMessage(failure),
+      )),
+      (realisasiVisitsGM) => emit(RealisasiVisitGMLoaded(
+        realisasiVisitsGM: realisasiVisitsGM,
+      )),
     );
+  }
+
+  Future<void> _onGetRealisasiVisitsGMDetails(
+    GetRealisasiVisitsGMDetailsEvent event,
+    Emitter<RealisasiVisitState> emit,
+  ) async {
+    Logger.info('realisasi_visit_bloc', '=== FETCHING BCO DETAILS ===');
+    Logger.info('realisasi_visit_bloc', 'BCO ID: ${event.idBCO}');
+    
+    emit(RealisasiVisitLoading());
+
+    try {
+      final result = await getRealisasiVisitsGMDetails(event.idBCO);
+      
+      result.fold(
+        (failure) {
+          Logger.error('realisasi_visit_bloc', 'Error: ${failure.toString()}');
+          emit(RealisasiVisitError(message: _mapFailureToMessage(failure)));
+        },
+        (realisasiVisitsGM) {
+          Logger.info('realisasi_visit_bloc', 'Success! Received ${realisasiVisitsGM.length} items');
+          for (var item in realisasiVisitsGM) {
+            Logger.info('realisasi_visit_bloc', '- Item: ${item.name} (${item.id})');
+            Logger.info('realisasi_visit_bloc', '  Details count: ${item.details.length}');
+          }
+          emit(RealisasiVisitGMDetailsLoaded(realisasiVisitsGM: realisasiVisitsGM));
+        },
+      );
+    } catch (e) {
+      Logger.error('realisasi_visit_bloc', 'Exception: $e');
+      emit(RealisasiVisitError(
+        message: 'Terjadi kesalahan saat memuat detail BCO: $e',
+      ));
+    }
   }
 
   Future<void> _onApproveRealisasiVisit(
     ApproveRealisasiVisitEvent event,
     Emitter<RealisasiVisitState> emit,
   ) async {
-    emit(RealisasiVisitProcessing());
+    emit(RealisasiVisitLoading());
     final result = await approveRealisasiVisit(
       ApproveRealisasiVisitParams(
-        idAtasan: event.idAtasan,
-        idSchedule: event.idSchedule,
+        idRealisasiVisit: event.idRealisasiVisit,
+        idUser: event.idUser,
       ),
     );
     result.fold(
-      (failure) =>
-          emit(RealisasiVisitError(message: _mapFailureToMessage(failure))),
-      (response) => emit(RealisasiVisitApproved(response: response)),
-    );
-  }
-
-  Future<void> _onApproveRealisasiVisitGM(
-    ApproveRealisasiVisitGMEvent event,
-    Emitter<RealisasiVisitState> emit,
-  ) async {
-    emit(RealisasiVisitProcessing());
-    final result = await approveRealisasiVisitGM(
-      ApproveRealisasiVisitGMParams(
-        idAtasan: event.idAtasan,
-        idSchedule: event.idSchedule,
-      ),
-    );
-    result.fold(
-      (failure) =>
-          emit(RealisasiVisitError(message: _mapFailureToMessage(failure))),
-      (response) => emit(RealisasiVisitApproved(response: response)),
+      (failure) => emit(RealisasiVisitError(
+        message: _mapFailureToMessage(failure),
+      )),
+      (message) => emit(RealisasiVisitApproved(message: message)),
     );
   }
 
@@ -107,30 +125,32 @@ class RealisasiVisitBloc
     RejectRealisasiVisitEvent event,
     Emitter<RealisasiVisitState> emit,
   ) async {
-    emit(RealisasiVisitProcessing());
+    emit(RealisasiVisitLoading());
     final result = await rejectRealisasiVisit(
       RejectRealisasiVisitParams(
-        idAtasan: event.idAtasan,
-        idSchedule: event.idSchedule,
+        idRealisasiVisit: event.idRealisasiVisit,
+        idUser: event.idUser,
+        reason: event.reason,
       ),
     );
     result.fold(
-      (failure) =>
-          emit(RealisasiVisitError(message: _mapFailureToMessage(failure))),
-      (response) => emit(RealisasiVisitRejected(response: response)),
+      (failure) => emit(RealisasiVisitError(
+        message: _mapFailureToMessage(failure),
+      )),
+      (message) => emit(RealisasiVisitRejected(message: message)),
     );
   }
 
   String _mapFailureToMessage(Failure failure) {
     switch (failure.runtimeType) {
       case ServerFailure:
-        return (failure as ServerFailure).message;
+        return 'Terjadi kesalahan pada server';
       case NetworkFailure:
-        return 'Tidak dapat terhubung ke server. Cek koneksi internet Anda.';
-      case AuthenticationFailure:
-        return (failure as AuthenticationFailure).message;
+        return 'Tidak ada koneksi internet';
+      case CacheFailure:
+        return 'Terjadi kesalahan pada cache';
       default:
-        return 'Terjadi kesalahan yang tidak terduga';
+        return 'Terjadi kesalahan yang tidak diketahui';
     }
   }
 }

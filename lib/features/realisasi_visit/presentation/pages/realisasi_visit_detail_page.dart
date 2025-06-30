@@ -48,11 +48,11 @@ class RealisasiVisitDetailView extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _RealisasiVisitDetailViewState createState() =>
-      _RealisasiVisitDetailViewState();
+  State<RealisasiVisitDetailView> createState() =>
+      RealisasiVisitDetailViewState();
 }
 
-class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
+class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
   final List<String> _selectedScheduleIds = [];
   bool _isProcessing = false;
   final TextEditingController _searchController = TextEditingController();
@@ -101,7 +101,7 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
             setState(() => _isProcessing = false);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.response.message),
+                content: const Text('Realisasi visit berhasil disetujui'),
                 backgroundColor: AppTheme.successColor,
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(
@@ -114,7 +114,7 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
             setState(() => _isProcessing = false);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.response.message),
+                content: const Text('Realisasi visit berhasil ditolak'),
                 backgroundColor: AppTheme.successColor,
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(
@@ -203,7 +203,12 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor.withOpacity(0.1),
+                                  color: AppTheme.primaryColor.withValues(
+                                    alpha: (255 * 0.1),
+                                    red: AppTheme.primaryColor.red.toDouble(),
+                                    green: AppTheme.primaryColor.green.toDouble(),
+                                    blue: AppTheme.primaryColor.blue.toDouble(),
+                                  ),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
@@ -226,7 +231,12 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: AppTheme.primaryColor.withOpacity(0.1),
+                              color: AppTheme.primaryColor.withValues(
+                                alpha: (255 * 0.1),
+                                red: AppTheme.primaryColor.red.toDouble(),
+                                green: AppTheme.primaryColor.green.toDouble(),
+                                blue: AppTheme.primaryColor.blue.toDouble(),
+                              ),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Text(
@@ -400,7 +410,12 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(
+                    alpha: (255 * 0.1),
+                    red: AppTheme.primaryColor.red.toDouble(),
+                    green: AppTheme.primaryColor.green.toDouble(),
+                    blue: AppTheme.primaryColor.blue.toDouble(),
+                  ),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -1361,28 +1376,32 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, [IconData? icon]) {
+  Widget _buildDetailRowCompact(String label, String value, IconData icon) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (icon != null) ...[
           Icon(icon, size: 14, color: AppTheme.primaryColor),
           const SizedBox(width: 4),
-        ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
         Text(
-          '$label: ',
+                '$label:',
           style: GoogleFonts.poppins(
             fontSize: 14,
             color: Colors.grey[600],
           ),
         ),
-        Expanded(
-          child: Text(
+              Text(
             value,
             style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
-            overflow: TextOverflow.ellipsis,
+                overflow: TextOverflow.visible,
+              ),
+            ],
           ),
         ),
       ],
@@ -1554,7 +1573,7 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
             text: 'Setujui',
             onPressed: () {
               Navigator.pop(context);
-              _approveSchedule(_selectedScheduleIds);
+              _handleApproveSelected();
             },
             type: AppButtonType.success,
             prefixIcon: const Icon(
@@ -1570,45 +1589,53 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
     );
   }
 
-  void _approveSchedule(List<String> scheduleIds) {
-    setState(() => _isProcessing = true);
-
-    // Debug log
-    Logger.info('realisasi_visit',
-        '[APPROVAL DEBUG] Approve scheduleIds: $scheduleIds, userId: ${widget.userId}');
-
-    // Mencari role user dari BLoC
-    final authState = context.read<AuthBloc>().state;
-    if (authState is AuthAuthenticated) {
-      final String role = authState.user.role.toUpperCase();
-      Logger.info('realisasi_visit', '[APPROVAL DEBUG] User role: $role');
-
-      if (role == 'GM') {
-        // Gunakan API khusus GM untuk approval
-        context.read<RealisasiVisitBloc>().add(
-              ApproveRealisasiVisitGMEvent(
-                idAtasan: widget.userId,
-                idSchedule: scheduleIds,
+  void _handleApproveSelected() {
+    if (_selectedScheduleIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Pilih minimal satu jadwal untuk disetujui'),
+          backgroundColor: AppTheme.errorColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppTheme.borderRadiusSmall,
+          ),
               ),
             );
-      } else {
-        // Gunakan API standar untuk role lainnya
+      return;
+    }
+
+    setState(() => _isProcessing = true);
         context.read<RealisasiVisitBloc>().add(
               ApproveRealisasiVisitEvent(
-                idAtasan: widget.userId,
-                idSchedule: scheduleIds,
+            idRealisasiVisit: int.parse(_selectedScheduleIds.first),
+            idUser: widget.userId,
               ),
             );
       }
-    } else {
-      // Fallback ke API standar jika tidak dapat menentukan role
+
+  void _handleRejectSelected() {
+    if (_selectedScheduleIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Pilih minimal satu jadwal untuk ditolak'),
+          backgroundColor: AppTheme.errorColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppTheme.borderRadiusSmall,
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isProcessing = true);
       context.read<RealisasiVisitBloc>().add(
-            ApproveRealisasiVisitEvent(
-              idAtasan: widget.userId,
-              idSchedule: scheduleIds,
+          RejectRealisasiVisitEvent(
+            idRealisasiVisit: int.parse(_selectedScheduleIds.first),
+            idUser: widget.userId,
+            reason: 'Ditolak oleh atasan', // Add default reason
             ),
           );
-    }
   }
 
   bool _filterSchedule(RealisasiVisitDetail schedule) {
@@ -1645,38 +1672,5 @@ class _RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
             jenis.contains(query) ||
             products.contains(query);
     }
-  }
-
-  // Add this new helper method for compact detail rows
-  Widget _buildDetailRowCompact(String label, String value, IconData icon) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 14, color: AppTheme.primaryColor),
-        const SizedBox(width: 4),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '$label:',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
-              Text(
-                value,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-                overflow: TextOverflow.visible,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
   }
 }

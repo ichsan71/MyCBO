@@ -7,6 +7,7 @@ import '../../../../core/presentation/widgets/app_button.dart';
 import '../../../../core/presentation/theme/app_theme.dart';
 import '../../../../core/utils/logger.dart';
 import '../../domain/entities/realisasi_visit.dart';
+import '../../domain/entities/realisasi_visit_gm.dart';
 import '../bloc/realisasi_visit_bloc.dart';
 import '../widgets/realisasi_visit_card.dart';
 import '../widgets/shimmer_loading.dart';
@@ -30,17 +31,31 @@ class RealisasiVisitListView extends StatefulWidget {
   const RealisasiVisitListView({Key? key}) : super(key: key);
 
   @override
-  _RealisasiVisitListViewState createState() => _RealisasiVisitListViewState();
+  State<RealisasiVisitListView> createState() => _RealisasiVisitListViewState();
 }
 
 class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
   final TextEditingController _searchController = TextEditingController();
+  final List<RealisasiVisit> _gmDetailsList = [];
   String _searchQuery = '';
+  RealisasiVisitGM? _selectedBCO;
+  List<RealisasiVisitGM> _gmList = [];
+  bool _isLoadingDetails = false;
 
   @override
   void initState() {
     super.initState();
-    _loadRealisasiVisits();
+    final authState = context.read<AuthBloc>().state;
+    final bool isGM = authState is AuthAuthenticated &&
+        authState.user.role.toUpperCase() == 'GM';
+
+    if (isGM) {
+      _loadRealisasiVisits();
+    } else if (authState is AuthAuthenticated) {
+      context.read<RealisasiVisitBloc>().add(
+        GetRealisasiVisitsEvent(idAtasan: authState.user.idUser),
+      );
+    }
   }
 
   @override
@@ -49,27 +64,38 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
     super.dispose();
   }
 
-  void _loadRealisasiVisits() {
+  Future<void> _loadRealisasiVisits() async {
+    setState(() {
+      _isLoadingDetails = true;
+      _gmDetailsList.clear();
+    });
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
-      if (authState.user.role.toUpperCase() == 'GM') {
-        // Jika role adalah GM, gunakan API khusus GM
-        context.read<RealisasiVisitBloc>().add(
-              GetRealisasiVisitsGMEvent(idAtasan: authState.user.idUser),
-            );
-      } else {
-        // Jika role bukan GM, gunakan API normal
-        context.read<RealisasiVisitBloc>().add(
-              GetRealisasiVisitsEvent(idAtasan: authState.user.idUser),
-            );
-      }
+      context.read<RealisasiVisitBloc>().add(
+        GetRealisasiVisitsGMEvent(idAtasan: authState.user.idUser),
+      );
+    }
+  }
+
+  Future<void> _loadBCODetails(int bcoId) async {
+    setState(() {
+      _isLoadingDetails = true;
+      _gmDetailsList.clear();
+    });
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthAuthenticated) {
+      context.read<RealisasiVisitBloc>().add(
+        GetRealisasiVisitsGMDetailsEvent(
+          idBCO: bcoId,
+          idAtasan: authState.user.idUser,
+        ),
+      );
     }
   }
 
   // Fungsi untuk menghitung jumlah dokter dari detail
   String _countDoctorsFromDetails(List<RealisasiVisitDetail> details) {
     try {
-      // Menghitung jumlah dokter unik berdasarkan idTujuan
       final uniqueDoctorIds = <int>{};
       for (var detail in details) {
         if (detail.tujuan.toLowerCase() == 'dokter') {
@@ -83,68 +109,9 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
     }
   }
 
-  // Fungsi untuk memperbaiki nama dokter pada details jika kosong
-  List<RealisasiVisitDetail> _enhanceDetailsWithNameIfMissing(
-      List<RealisasiVisitDetail> details) {
-    try {
-      Logger.info(
-          'realisasi_visit', 'Memperbaiki nama dokter untuk ${details.length} detail');
-
-      // Dummy data untuk ilustrasi
-      final Map<int, String> doctorNameMap = {
-        // ID Dokter -> Nama Dokter
-        // Dapat diisi dari database lokal jika diperlukan
-      };
-
-      return details.map((detail) {
-        // Jika namaDokter kosong dan tujuan adalah dokter, coba isi dengan informasi yang ada
-        if (detail.tujuanData.namaDokter.isEmpty &&
-            detail.tujuan.toLowerCase() == 'dokter') {
-          Logger.info(
-              'realisasi_visit',
-              'Detail dengan id ${detail.id} memiliki namaDokter kosong, mencoba memperbaiki');
-
-          // Jika kita memiliki mapping ID ke nama dokter, gunakan itu
-          final String doctorName = doctorNameMap[detail.idTujuan] ??
-              'Dokter (ID: ${detail.idTujuan})';
-
-          // Buat objek RealisasiVisitDetail baru dengan tujuanData yang dimodifikasi
-          return RealisasiVisitDetail(
-            id: detail.id,
-            typeSchedule: detail.typeSchedule,
-            tujuan: detail.tujuan,
-            idTujuan: detail.idTujuan,
-            tglVisit: detail.tglVisit,
-            product: detail.product,
-            note: detail.note,
-            shift: detail.shift,
-            jenis: detail.jenis,
-            checkin: detail.checkin,
-            fotoSelfie: detail.fotoSelfie,
-            checkout: detail.checkout,
-            fotoSelfieDua: detail.fotoSelfieDua,
-            statusTerrealisasi: detail.statusTerrealisasi,
-            realisasiVisitApproved: detail.realisasiVisitApproved,
-            productData: detail.productData,
-            tujuanData: TujuanData(
-              idDokter: detail.tujuanData.idDokter,
-              namaDokter: doctorName,
-            ),
-          );
-        }
-
-        return detail;
-      }).toList();
-    } catch (e) {
-      Logger.error('realisasi_visit', 'Error saat memperbaiki nama dokter: $e');
-      return details;
-    }
-  }
-
   // Fungsi untuk menghitung jumlah klinik dari detail
   String _countClinicsFromDetails(List<RealisasiVisitDetail> details) {
     try {
-      // Menghitung jumlah klinik unik berdasarkan idTujuan
       final uniqueClinicIds = <int>{};
       for (var detail in details) {
         if (detail.tujuan.toLowerCase() == 'klinik' ||
@@ -155,233 +122,602 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
       }
       return uniqueClinicIds.length.toString();
     } catch (e) {
-      print('Error menghitung jumlah klinik: $e');
+      Logger.error('realisasi_visit', 'Error menghitung jumlah klinik: $e');
       return '0';
     }
   }
 
-  void _onSearchChanged(String query) {
-    setState(() {
-      _searchQuery = query.toLowerCase();
-    });
+  Widget _buildBCODropdown() {
+    // Log current state for debugging
+    Logger.info('realisasi_visit_page', '=== DROPDOWN STATE ===');
+    Logger.info('realisasi_visit_page', 'Selected BCO ID: ${_selectedBCO?.id}');
+    Logger.info('realisasi_visit_page', 'Total BCOs in list: ${_gmList.length}');
+    
+    // Create a map to track duplicate IDs
+    final Map<int, bool> idMap = {};
+    final List<RealisasiVisitGM> uniqueBCOs = [];
+    
+    for (var bco in _gmList) {
+      if (!idMap.containsKey(bco.id)) {
+        idMap[bco.id] = true;
+        uniqueBCOs.add(bco);
+      } else {
+        Logger.error('realisasi_visit_page', 'Duplicate BCO ID found: ${bco.id}');
+      }
+    }
+    
+    Logger.info('realisasi_visit_page', 'Unique BCOs: ${uniqueBCOs.length}');
+    
+    // If selected BCO is not in the unique list, reset it
+    if (_selectedBCO != null && !uniqueBCOs.any((bco) => bco.id == _selectedBCO!.id)) {
+      Logger.info('realisasi_visit_page', 'Selected BCO not found in unique list, resetting selection');
+      _selectedBCO = null;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Pilih BCO',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.primaryColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<int>(
+            decoration: InputDecoration(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            value: _selectedBCO?.id,
+            isExpanded: true,
+            items: uniqueBCOs.map((bco) {
+              Logger.info('realisasi_visit_page', 'Creating dropdown item for BCO: ${bco.id} - ${bco.name}');
+              return DropdownMenuItem<int>(
+                value: bco.id,
+                child: Text(
+                  '${bco.name} - ${bco.kodeRayon}',
+                  style: GoogleFonts.poppins(fontSize: 14),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            }).toList(),
+            onChanged: (int? value) {
+              Logger.info('realisasi_visit_page', 'Dropdown value changed to: $value');
+              if (value != null) {
+                final selectedBCO = uniqueBCOs.firstWhere((bco) => bco.id == value);
+                Logger.info('realisasi_visit_page', 'Found matching BCO: ${selectedBCO.name}');
+                setState(() {
+                  _selectedBCO = selectedBCO;
+                  _gmDetailsList.clear();
+                });
+                _loadBCODetails(value);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchField() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (value) => setState(() => _searchQuery = value),
+        decoration: InputDecoration(
+          hintText: 'Cari berdasarkan nama...',
+          prefixIcon: const Icon(Icons.search),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.read<AuthBloc>().state;
+    final bool isGM = authState is AuthAuthenticated &&
+        authState.user.role.toUpperCase() == 'GM';
+
     return Scaffold(
-      appBar: const AppBarWidget(
-        title: 'Daftar Realisasi Visit',
+      appBar: AppBarWidget(
+        title: 'Realisasi Visit',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              if (isGM) {
+                if (_selectedBCO != null) {
+                  _loadBCODetails(_selectedBCO!.id);
+                } else {
+                  _loadRealisasiVisits();
+                }
+              } else if (authState is AuthAuthenticated) {
+                context.read<RealisasiVisitBloc>().add(
+                  GetRealisasiVisitsEvent(idAtasan: authState.user.idUser),
+                );
+              }
+            },
+          ),
+        ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              onChanged: _onSearchChanged,
-              decoration: InputDecoration(
-                hintText: 'Cari nama bawahan...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: AppTheme.borderRadiusSmall,
+      body: BlocConsumer<RealisasiVisitBloc, RealisasiVisitState>(
+        listener: (context, state) {
+          Logger.info('realisasi_visit_page', '=== STATE CHANGED ===');
+          Logger.info('realisasi_visit_page', 'Current state: ${state.runtimeType}');
+          
+          if (state is RealisasiVisitGMLoaded) {
+            Logger.info('realisasi_visit_page', '=== API PERTAMA RESPONSE ===');
+            Logger.info('realisasi_visit_page', 'Received ${state.realisasiVisitsGM.length} BCOs');
+            for (var bco in state.realisasiVisitsGM) {
+              Logger.info('realisasi_visit_page', 'BCO in list: ${bco.name} (ID: ${bco.id})');
+            }
+            
+            setState(() {
+              _gmList = state.realisasiVisitsGM;
+              Logger.info('realisasi_visit_page', 'Updated _gmList length: ${_gmList.length}');
+            });
+          } else if (state is RealisasiVisitGMDetailsLoaded) {
+            Logger.info('realisasi_visit_page', '=== API KEDUA RESPONSE ===');
+            Logger.info('realisasi_visit_page', 'Selected BCO: ${_selectedBCO?.name} (ID: ${_selectedBCO?.id})');
+            Logger.info('realisasi_visit_page', 'Received ${state.realisasiVisitsGM.length} items');
+            
+            setState(() {
+              _isLoadingDetails = false;
+              _gmDetailsList.clear();
+              
+              for (var item in state.realisasiVisitsGM) {
+                Logger.info('realisasi_visit_page', 'Processing item:');
+                Logger.info('realisasi_visit_page', '- ID: ${item.id}');
+                Logger.info('realisasi_visit_page', '- Name: ${item.name}');
+                Logger.info('realisasi_visit_page', '- Role: ${item.roleUsers}');
+                Logger.info('realisasi_visit_page', '- Details count: ${item.details.length}');
+                
+                _gmDetailsList.add(
+                  RealisasiVisit(
+                    idBawahan: item.id,
+                    namaBawahan: item.name,
+                    role: item.roleUsers,
+                    totalSchedule: item.jumlah.isNotEmpty ? item.jumlah.first.total : 0,
+                    jumlahDokter: _countDoctorsFromDetails(item.details),
+                    jumlahKlinik: _countClinicsFromDetails(item.details),
+                    totalTerrealisasi: item.jumlah.isNotEmpty ? item.jumlah.first.realisasi : '0',
+                    approved: 0,
+                    details: item.details,
+                  )
+                );
+              }
+              
+              Logger.info('realisasi_visit_page', 'Updated _gmDetailsList length: ${_gmDetailsList.length}');
+            });
+          } else if (state is RealisasiVisitError) {
+            setState(() {
+              _isLoadingDetails = false;
+            });
+          }
+        },
+        builder: (context, state) {
+          Widget contentWidget;
+          
+          if (isGM) {
+            List<Widget> children = [
+              _buildBCODropdown(),
+              _buildSearchField(),
+              const SizedBox(height: 16),
+            ];
+
+            if (state is RealisasiVisitLoading) {
+              _logState('Showing loading state');
+              children.add(
+                const Expanded(
+                  child: ShimmerLoading(),
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              );
+            } else if (state is RealisasiVisitError) {
+              _logState('Showing error state: ${state.message}');
+              children.add(
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(state.message),
+                      const SizedBox(height: 16),
+                      AppButton(
+                        text: 'Coba Lagi',
+                        onPressed: () {
+                          if (_selectedBCO != null) {
+                            _loadBCODetails(_selectedBCO!.id);
+                          } else {
+                            _loadRealisasiVisits();
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            } else if (_selectedBCO == null) {
+              _logState('Showing empty state (no BCO selected)');
+              children.add(
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      'Pilih BCO untuk melihat daftar jadwal',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            } else if (_isLoadingDetails) {
+              _logState('Showing details loading state');
+              children.add(
+                const Expanded(
+                  child: ShimmerLoading(),
+                ),
+              );
+            } else {
+              _logDataState();
+              children.add(
+                Expanded(
+                  child: Column(
+                    children: [
+                      _buildBCOInfoCard(),
+                      Expanded(
+                        child: _gmDetailsList.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'Tidak ada data realisasi visit',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              )
+                            : _buildRealisasiVisitList(_gmDetailsList),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            contentWidget = Column(children: children);
+          } else {
+            // Tampilan untuk role lain
+            if (state is RealisasiVisitLoading) {
+              contentWidget = const ShimmerLoading();
+            } else if (state is RealisasiVisitError) {
+              contentWidget = Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(state.message),
+                    const SizedBox(height: 16),
+                    AppButton(
+                      text: 'Coba Lagi',
+                      onPressed: () {
+                        if (authState is AuthAuthenticated) {
+                          context.read<RealisasiVisitBloc>().add(
+                            GetRealisasiVisitsEvent(idAtasan: authState.user.idUser),
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              );
+            } else if (state is RealisasiVisitLoaded) {
+              final realisasiVisits = state.realisasiVisits
+                  .where((realisasiVisit) =>
+                      realisasiVisit.namaBawahan
+                          .toLowerCase()
+                          .contains(_searchQuery.toLowerCase()) ||
+                      realisasiVisit.role
+                          .toLowerCase()
+                          .contains(_searchQuery.toLowerCase()))
+                  .toList();
+
+              contentWidget = Column(
+                children: [
+                  _buildSearchField(),
+                  const SizedBox(height: 16),
+                  if (realisasiVisits.isEmpty)
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          _searchQuery.isNotEmpty
+                              ? 'Tidak ada realisasi visit yang sesuai dengan pencarian'
+                              : 'Tidak ada realisasi visit yang perlu disetujui',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: () async {
+                          if (authState is AuthAuthenticated) {
+                            context.read<RealisasiVisitBloc>().add(
+                              GetRealisasiVisitsEvent(idAtasan: authState.user.idUser),
+                            );
+                          }
+                          return Future<void>.value();
+                        },
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: realisasiVisits.length,
+                          itemBuilder: (context, index) {
+                            final realisasiVisit = realisasiVisits[index];
+                            return RealisasiVisitCard(
+                              realisasiVisit: realisasiVisit,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => RealisasiVisitDetailPage(
+                                      realisasiVisit: realisasiVisit,
+                                      userId: (context.read<AuthBloc>().state as AuthAuthenticated)
+                                          .user
+                                          .idUser,
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            } else {
+              contentWidget = const ShimmerLoading();
+            }
+          }
+
+          return contentWidget;
+        },
+      ),
+    );
+  }
+
+  void _logState(String message) {
+    Logger.info('realisasi_visit_page', message);
+  }
+
+  void _logDataState() {
+    Logger.info('realisasi_visit_page', 'Showing data state');
+    Logger.info('realisasi_visit_page', 'Selected BCO details: ${_selectedBCO?.name} (${_selectedBCO?.id})');
+    Logger.info('realisasi_visit_page', 'Details list count: ${_gmDetailsList.length}');
+  }
+
+  Widget _buildBCOInfoCard() {
+    if (_selectedBCO == null) return const SizedBox.shrink();
+    
+    // Cek jika jumlah kosong atau total = 0
+    if (_selectedBCO!.jumlah.isEmpty || 
+        (_selectedBCO!.jumlah.isNotEmpty && _selectedBCO!.jumlah.first.total == 0)) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => RealisasiVisitDetailPage(
+                realisasiVisit: RealisasiVisit(
+                  idBawahan: _selectedBCO!.id,
+                  namaBawahan: _selectedBCO!.name,
+                  role: _selectedBCO!.roleUsers,
+                  totalSchedule: _selectedBCO!.jumlah.isNotEmpty ? _selectedBCO!.jumlah.first.total : 0,
+                  jumlahDokter: _countDoctorsFromDetails(_selectedBCO!.details),
+                  jumlahKlinik: _countClinicsFromDetails(_selectedBCO!.details),
+                  totalTerrealisasi: _selectedBCO!.jumlah.isNotEmpty ? _selectedBCO!.jumlah.first.realisasi : '0',
+                  approved: 0,
+                  details: _selectedBCO!.details,
+                ),
+                userId: (context.read<AuthBloc>().state as AuthAuthenticated).user.idUser,
+              ),
+            ),
+          );
+        },
+        child: Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(12.0),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTheme.primaryColor.withOpacity(0.8),
+                  AppTheme.primaryColor,
+                ],
+              ),
+            ),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Informasi BCO
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _selectedBCO!.name,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _selectedBCO!.kodeRayon,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.white70,
+                          ),
+                        ),
+                        Text(
+                          _selectedBCO!.roleUsers,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Vertical Divider
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 12),
+                    width: 1,
+                    color: Colors.white24,
+                  ),
+                  // Statistik
+                  if (_selectedBCO!.jumlah.isNotEmpty) 
+                    Expanded(
+                      flex: 2,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildCompactStatistic(
+                            label: 'Total',
+                            value: _selectedBCO!.jumlah.first.total.toString(),
+                          ),
+                          _buildCompactStatistic(
+                            label: 'Realisasi',
+                            value: _selectedBCO!.jumlah.first.realisasi,
+                          ),
+                        ],
+                      ),
+                    ),
+                  // Arrow icon
+                  Container(
+                    margin: const EdgeInsets.only(left: 8),
+                    child: const Icon(
+                      Icons.arrow_forward_ios,
+                      color: Colors.white54,
+                      size: 16,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          Expanded(
-            child: BlocBuilder<AuthBloc, AuthState>(
-              builder: (context, authState) {
-                if (authState is AuthAuthenticated) {
-                  // Cek apakah user memiliki role yang diizinkan
-                  final allowedRoles = [
-                    'ADMIN',
-                    'GM',
-                    'BCO',
-                    'RSM',
-                    'DM',
-                    'AM'
-                  ];
-                  if (!allowedRoles.contains(authState.user.role)) {
-                    return Center(
-                      child: Text(
-                        'Anda tidak memiliki akses ke fitur ini',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    );
-                  }
+        ),
+      ),
+    );
+  }
 
-                  return BlocBuilder<RealisasiVisitBloc, RealisasiVisitState>(
-                    builder: (context, state) {
-                      if (state is RealisasiVisitLoading) {
-                        return ListView.builder(
-                          itemCount: 5,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemBuilder: (context, index) {
-                            return const ShimmerRealisasiVisitCard();
-                          },
-                        );
-                      } else if (state is RealisasiVisitError) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                state.message,
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              AppButton(
-                                text: 'Coba Lagi',
-                                onPressed: _loadRealisasiVisits,
-                                type: AppButtonType.primary,
-                              ),
-                            ],
-                          ),
-                        );
-                      } else if (state is RealisasiVisitLoaded) {
-                        final realisasiVisits =
-                            state.realisasiVisits.where((realisasi) {
-                          final matchesSearch = realisasi.namaBawahan
-                              .toLowerCase()
-                              .contains(_searchQuery);
-                          return matchesSearch;
-                        }).toList();
-
-                        if (realisasiVisits.isEmpty) {
-                          return Center(
-                            child: Text(
-                              _searchQuery.isNotEmpty
-                                  ? 'Tidak ada realisasi visit yang sesuai dengan pencarian'
-                                  : 'Tidak ada realisasi visit yang perlu disetujui',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          );
-                        }
-
-                        return RefreshIndicator(
-                          onRefresh: () async => _loadRealisasiVisits(),
-                          child: ListView.builder(
-                            itemCount: realisasiVisits.length,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemBuilder: (context, index) {
-                              final realisasiVisit = realisasiVisits[index];
-                              return RealisasiVisitCard(
-                                realisasiVisit: realisasiVisit,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          RealisasiVisitDetailPage(
-                                        realisasiVisit: realisasiVisit,
-                                        userId: authState.user.idUser,
-                                      ),
-                                    ),
-                                  ).then((_) => _loadRealisasiVisits());
-                                },
-                              );
-                            },
-                          ),
-                        );
-                      } else if (state is RealisasiVisitGMLoaded) {
-                        final realisasiVisitsGM =
-                            state.realisasiVisitsGM.where((realisasi) {
-                          final matchesSearch = realisasi.namaBawahan
-                              .toLowerCase()
-                              .contains(_searchQuery);
-                          return matchesSearch;
-                        }).toList();
-
-                        if (realisasiVisitsGM.isEmpty) {
-                          return Center(
-                            child: Text(
-                              _searchQuery.isNotEmpty
-                                  ? 'Tidak ada realisasi visit yang sesuai dengan pencarian'
-                                  : 'Tidak ada realisasi visit yang perlu disetujui',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          );
-                        }
-
-                        return RefreshIndicator(
-                          onRefresh: () async => _loadRealisasiVisits(),
-                          child: ListView.builder(
-                            itemCount: realisasiVisitsGM.length,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemBuilder: (context, index) {
-                              final realisasiVisitGM = realisasiVisitsGM[index];
-
-                              // Konversi model GM ke model standar
-                              final convertedRealisasiVisit = RealisasiVisit(
-                                idBawahan: realisasiVisitGM.idBawahan,
-                                namaBawahan: realisasiVisitGM.namaBawahan,
-                                role: realisasiVisitGM.roleUsers,
-                                totalSchedule:
-                                    realisasiVisitGM.jumlah.isNotEmpty
-                                        ? realisasiVisitGM.jumlah.first.total
-                                        : 0,
-                                // Ekstrak dan hitung jumlah dokter dari details
-                                jumlahDokter: _countDoctorsFromDetails(
-                                    realisasiVisitGM.details),
-                                // Ekstrak dan hitung jumlah klinik dari details
-                                jumlahKlinik: _countClinicsFromDetails(
-                                    realisasiVisitGM.details),
-                                totalTerrealisasi: realisasiVisitGM
-                                        .jumlah.isNotEmpty
-                                    ? realisasiVisitGM.jumlah.first.realisasi
-                                    : '0',
-                                approved: 0,
-                                details: _enhanceDetailsWithNameIfMissing(
-                                    realisasiVisitGM.details),
-                              );
-
-                              return RealisasiVisitCard(
-                                realisasiVisit: convertedRealisasiVisit,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          RealisasiVisitDetailPage(
-                                        realisasiVisit: convertedRealisasiVisit,
-                                        userId: authState.user.idUser,
-                                      ),
-                                    ),
-                                  ).then((_) => _loadRealisasiVisits());
-                                },
-                              );
-                            },
-                          ),
-                        );
-                      }
-                      return const SizedBox();
-                    },
-                  );
-                } else {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-              },
-            ),
+  Widget _buildCompactStatistic({
+    required String label,
+    required String value,
+  }) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          value,
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
           ),
-        ],
+        ),
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 11,
+            color: Colors.white70,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRealisasiVisitList(List<RealisasiVisit> realisasiVisits) {
+    Logger.info('realisasi_visit_page', '=== BUILDING LIST ===');
+    Logger.info('realisasi_visit_page', 'Items to display: ${realisasiVisits.length}');
+    
+    // Filter out items with total = 0
+    final filteredVisits = realisasiVisits.where((visit) => visit.totalSchedule > 0).toList();
+    
+    if (filteredVisits.isEmpty) {
+      Logger.info('realisasi_visit_page', 'No items to display');
+      return Center(
+        child: Text(
+          'Tidak ada data realisasi visit',
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            color: Colors.grey[600],
+          ),
+        ),
+      );
+    }
+
+    Logger.info('realisasi_visit_page', 'Building list with ${filteredVisits.length} items');
+    return RefreshIndicator(
+      onRefresh: () {
+        if (_selectedBCO != null) {
+          return _loadBCODetails(_selectedBCO!.id);
+        }
+        return Future<void>.value();
+      },
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: filteredVisits.length,
+        itemBuilder: (context, index) {
+          final realisasiVisit = filteredVisits[index];
+          Logger.info('realisasi_visit_page', 'Building item $index: ${realisasiVisit.namaBawahan}');
+          return RealisasiVisitCard(
+            realisasiVisit: realisasiVisit,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RealisasiVisitDetailPage(
+                    realisasiVisit: realisasiVisit,
+                    userId: (context.read<AuthBloc>().state as AuthAuthenticated)
+                        .user
+                        .idUser,
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

@@ -35,8 +35,8 @@ class _CheckoutFormState extends State<CheckoutForm> {
   String? _compressedImagePath;
   String? _imageTimestamp;
   bool _isLoading = false;
-  final _statusOptions = ['Selesai', 'Ditolak'];
-  String _selectedStatus = 'Selesai';
+  final _statusOptions = ['Done', 'Reject'];
+  String _selectedStatus = 'Done';
   String? _noteError;
   String? _imageError;
 

@@ -47,13 +47,13 @@ class _SchedulePageState extends State<SchedulePage> {
     _scrollController.addListener(_onScroll);
     _searchController.addListener(_onSearchChanged);
 
-    final authState = context.read<AuthBloc>().state;
-    if (authState is AuthAuthenticated) {
-      context.read<ScheduleBloc>().add(
-        GetSchedulesEvent(userId: authState.user.idUser),
-      );
+      final authState = context.read<AuthBloc>().state;
+      if (authState is AuthAuthenticated) {
+        context.read<ScheduleBloc>().add(
+              GetSchedulesEvent(userId: authState.user.idUser),
+            );
+      }
     }
-  }
 
   void _onScroll() {
     // Pastikan scroll controller attached dan memiliki posisi
@@ -74,22 +74,22 @@ class _SchedulePageState extends State<SchedulePage> {
         if (authState is AuthAuthenticated) {
           // Prevent multiple calls
           if (!_isLoadingMoreFilter) {
-            setState(() {
+      setState(() {
               _isLoadingMoreFilter = true;
-            });
-            
+      });
+
             // Increment page and fetch data
             _currentFilterPage++;
-            context.read<ScheduleBloc>().add(
+        context.read<ScheduleBloc>().add(
               GetSchedulesByRangeDateEvent(
                 userId: authState.user.idUser,
                 rangeDate: _formatRangeDate(_selectedDateRange!),
                 page: _currentFilterPage,
               ),
             );
-          }
-        }
       }
+    }
+  }
     }
   }
 
@@ -100,7 +100,7 @@ class _SchedulePageState extends State<SchedulePage> {
       if (_originalRangeSchedules.isEmpty) {
         _filteredRangeSchedules = [];
         return;
-      }
+    }
 
       var filtered = List<Schedule>.from(_originalRangeSchedules);
 
@@ -119,31 +119,31 @@ class _SchedulePageState extends State<SchedulePage> {
       final l10n = AppLocalizations.of(context)!;
       if (_selectedFilter.isNotEmpty && _selectedFilter != l10n.filterAll) {
         filtered = filtered.where((schedule) {
-          final lowerStatus = schedule.statusCheckin.toLowerCase().trim();
-          final lowerDraft = schedule.draft.toLowerCase().trim();
+      final lowerStatus = schedule.statusCheckin.toLowerCase().trim();
+      final lowerDraft = schedule.draft.toLowerCase().trim();
 
-          switch (_selectedFilter) {
+      switch (_selectedFilter) {
             case 'Pending':
               return (schedule.approved == 0 && !lowerDraft.contains('rejected')) ||
                   ((lowerStatus == 'check-out' ||
-                      lowerStatus == 'selesai' ||
-                      lowerStatus == 'detail') &&
+                          lowerStatus == 'selesai' ||
+                          lowerStatus == 'detail') &&
                       (schedule.realisasiApprove == null ||
                           schedule.realisasiApprove == 0));
-            case 'Check-in':
+        case 'Check-in':
               return schedule.approved == 1 &&
-                  !lowerDraft.contains('rejected') &&
-                  lowerStatus == 'belum checkin';
-            case 'Check-out':
+              !lowerDraft.contains('rejected') &&
+              lowerStatus == 'belum checkin';
+        case 'Check-out':
               return schedule.approved == 1 &&
-                  !lowerDraft.contains('rejected') &&
-                  (lowerStatus == 'check-in' || lowerStatus == 'belum checkout');
-            case 'Selesai':
+              !lowerDraft.contains('rejected') &&
+              (lowerStatus == 'check-in' || lowerStatus == 'belum checkout');
+        case 'Selesai':
               return (lowerStatus == 'check-out' ||
                   lowerStatus == 'selesai' ||
                   lowerStatus == 'detail') &&
-                  schedule.realisasiApprove == 1;
-            case 'Ditolak':
+              schedule.realisasiApprove == 1;
+        case 'Ditolak':
               return lowerDraft.contains('rejected');
             default:
               return true;
@@ -258,7 +258,7 @@ Current Selected Range: ${_selectedDateRange?.start} - ${_selectedDateRange?.end
         );
       },
     );
-    
+
     if (picked != null) {
       Logger.info('SchedulePage', '''
 ====== New Date Range Selected ======
@@ -277,7 +277,7 @@ Formatted: ${_formatRangeDate(picked)}
         _searchController.clear();
         _selectedFilter = AppLocalizations.of(context)!.filterAll;
       });
-      
+
       final authState = context.read<AuthBloc>().state;
       if (authState is AuthAuthenticated) {
         final formattedRange = _formatRangeDate(picked);
@@ -294,7 +294,7 @@ Page: 1
             rangeDate: formattedRange,
             page: 1,
           ),
-        );
+            );
       }
     } else {
       Logger.info('SchedulePage', 'Date range selection cancelled');
@@ -312,12 +312,12 @@ Page: 1
       _searchController.clear();
       _selectedFilter = AppLocalizations.of(context)!.filterAll;
     });
-    
+
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
       context.read<ScheduleBloc>().add(
-        GetSchedulesEvent(userId: authState.user.idUser),
-      );
+            GetSchedulesEvent(userId: authState.user.idUser),
+          );
     }
   }
 
@@ -370,142 +370,142 @@ Page: 1
         }
       },
       child: Scaffold(
-        appBar: null,
-        floatingActionButton: BlocBuilder<AuthBloc, AuthState>(
-          builder: (context, state) {
-            if (state is AuthAuthenticated) {
-              return FloatingActionButton(
-                onPressed: () => _navigateToAddSchedule(),
-                backgroundColor: Theme.of(context).primaryColor,
-                child: const Icon(Icons.add),
-              );
-            }
-            return const SizedBox.shrink();
-          },
-        ),
-        body: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16.0, 40.0, 16.0, 0.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.scheduleTitle,
-                      style: GoogleFonts.poppins(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
+      appBar: null,
+      floatingActionButton: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, state) {
+          if (state is AuthAuthenticated) {
+            return FloatingActionButton(
+              onPressed: () => _navigateToAddSchedule(),
+              backgroundColor: Theme.of(context).primaryColor,
+              child: const Icon(Icons.add),
+            );
+          }
+          return const SizedBox.shrink();
+        },
+      ),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16.0, 40.0, 16.0, 0.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.scheduleTitle,
+                    style: GoogleFonts.poppins(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 16),
-                    _buildDateRangeFilter(),
-                    const SizedBox(height: 12),
-                    // Search Bar
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 8,
-                            spreadRadius: 1,
-                            offset: const Offset(0, 2),
-                          ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildDateRangeFilter(),
+                  const SizedBox(height: 12),
+                  // Search Bar
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      style: GoogleFonts.poppins(fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: l10n.searchHint,
+                        hintStyle: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.grey[400],
+                        ),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: Colors.grey[400],
+                          size: 20,
+                        ),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? Container(
+                                margin: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  shape: BoxShape.circle,
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.clear, size: 16),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () {
+                                    setState(() {
+                                      _searchController.clear();
+                                    });
+                                  },
+                                  color: Colors.grey[600],
+                                ),
+                              )
+                            : null,
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 14, horizontal: 8),
+                        fillColor: Colors.white,
+                        filled: true,
+                      ),
+                      onChanged: (value) {
+                        setState(() {});
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Filter Categories
+                  Container(
+                    height: 40,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildFilterChip(l10n.filterAll),
+                            _buildFilterChip('Pending'),
+                          _buildFilterChip('Check-in'),
+                          _buildFilterChip('Check-out'),
+                          _buildFilterChip('Selesai'),
+                          _buildFilterChip('Ditolak'),
                         ],
                       ),
-                      child: TextField(
-                        controller: _searchController,
-                        style: GoogleFonts.poppins(fontSize: 14),
-                        decoration: InputDecoration(
-                          hintText: l10n.searchHint,
-                          hintStyle: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.grey[400],
-                          ),
-                          prefixIcon: Icon(
-                            Icons.search,
-                            color: Colors.grey[400],
-                            size: 20,
-                          ),
-                          suffixIcon: _searchController.text.isNotEmpty
-                              ? Container(
-                                  margin: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[200],
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: IconButton(
-                                    icon: const Icon(Icons.clear, size: 16),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                    onPressed: () {
-                                      setState(() {
-                                        _searchController.clear();
-                                      });
-                                    },
-                                    color: Colors.grey[600],
-                                  ),
-                                )
-                              : null,
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                              vertical: 14, horizontal: 8),
-                          fillColor: Colors.white,
-                          filled: true,
-                        ),
-                        onChanged: (value) {
-                          setState(() {});
-                        },
-                      ),
                     ),
-                    const SizedBox(height: 12),
-                    // Filter Categories
-                    Container(
-                      height: 40,
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            _buildFilterChip(l10n.filterAll),
-                            _buildFilterChip('Pending'),
-                            _buildFilterChip('Check-in'),
-                            _buildFilterChip('Check-out'),
-                            _buildFilterChip('Selesai'),
-                            _buildFilterChip('Ditolak'),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: BlocBuilder<AuthBloc, AuthState>(
-                    builder: (context, authState) {
-                      if (authState is AuthAuthenticated) {
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: BlocBuilder<AuthBloc, AuthState>(
+                  builder: (context, authState) {
+                    if (authState is AuthAuthenticated) {
                         return BlocBuilder<ScheduleBloc, ScheduleState>(
-                          builder: (context, state) {
+                        builder: (context, state) {
                             if (_selectedDateRange != null) {
                               // Mode filter range date
                               if (state is ScheduleLoading && _currentFilterPage == 1) {
-                                return const ShimmerScheduleListLoading();
+                            return const ShimmerScheduleListLoading();
                               }
-                              
+
                               if (_filteredRangeSchedules.isEmpty) {
-                                return _buildEmptyState();
-                              }
-                              
-                              return RefreshIndicator(
-                                onRefresh: () async {
+                              return _buildEmptyState();
+                            }
+
+                            return RefreshIndicator(
+                              onRefresh: () async {
                                   // Reset pagination state
-                                  setState(() {
+                                setState(() {
                                     _filteredRangeSchedules = [];
                                     _currentFilterPage = 1;
                                     _hasMoreFilterData = true;
@@ -514,7 +514,7 @@ Page: 1
                                   
                                   // Request data baru
                                   if (mounted) {
-                                    context.read<ScheduleBloc>().add(
+                                context.read<ScheduleBloc>().add(
                                       GetSchedulesByRangeDateEvent(
                                         userId: authState.user.idUser,
                                         rangeDate: _formatRangeDate(_selectedDateRange!),
@@ -522,43 +522,43 @@ Page: 1
                                       ),
                                     );
                                   }
-                                },
-                                child: ListView.builder(
-                                  controller: _scrollController,
-                                  physics: const AlwaysScrollableScrollPhysics(),
+                              },
+                              child: ListView.builder(
+                                controller: _scrollController,
+                                physics: const AlwaysScrollableScrollPhysics(),
                                   itemCount: _filteredRangeSchedules.length + (_hasMoreFilterData ? 1 : 0),
-                                  itemBuilder: (context, index) {
+                                itemBuilder: (context, index) {
                                     if (index < _filteredRangeSchedules.length) {
-                                      return _buildScheduleCard(
+                                    return _buildScheduleCard(
                                         context, 
                                         _filteredRangeSchedules[index],
                                       );
                                     } else if (_isLoadingMoreFilter) {
-                                      return const Center(
-                                        child: Padding(
-                                          padding: EdgeInsets.all(8.0),
-                                          child: CircularProgressIndicator(),
-                                        ),
-                                      );
+                                    return const Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8.0),
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    );
                                     } else {
                                       return const SizedBox.shrink();
-                                    }
-                                  },
-                                ),
-                              );
+                                  }
+                                },
+                              ),
+                            );
                             } else {
                               // Mode default
                               return _buildDefaultScheduleList(state, authState);
-                            }
-                          },
-                        );
-                      }
-                      return const SizedBox();
-                    },
-                  ),
+                          }
+                        },
+                      );
+                    }
+                    return const SizedBox();
+                  },
                 ),
               ),
-            ],
+            ),
+          ],
           ),
         ),
       ),

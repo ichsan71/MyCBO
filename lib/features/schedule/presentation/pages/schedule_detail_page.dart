@@ -37,6 +37,8 @@ class ScheduleDetailPage extends StatefulWidget {
 }
 
 class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   DateTime? _parseDate(String dateStr) {
     try {
       // Format yang diharapkan: MM/dd/yyyy
@@ -75,7 +77,6 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
   @override
   void initState() {
     super.initState();
-    // Refresh schedule data when page is opened
     _refreshSchedule();
   }
 
@@ -85,25 +86,30 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
         );
   }
 
-  // Loading dialog widget
-  Widget _buildLoadingDialog(String message) {
-    return Dialog(
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(20.0)),
-      ),
-      elevation: 8,
-      child: Container(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 24),
-            Text(message),
-          ],
+  void _showMessage(BuildContext context, String message, {bool isError = false}) {
+    if (!mounted) return;
+    
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    scaffoldMessenger.clearSnackBars();
+    
+    if (isError) {
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
         ),
-      ),
-    );
+      );
+    } else {
+      SuccessMessage.show(
+        context: context,
+        message: message,
+        onDismissed: () {
+          if (mounted) {
+            _refreshSchedule();
+          }
+        },
+      );
+    }
   }
 
   Future<String?> _compressImage(String imagePath) async {
@@ -154,36 +160,26 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
     if (!mounted) return;
 
     try {
+      // Simpan navigator sebelum operasi asynchronous
+      final navigator = Navigator.of(context);
+
       context.read<ScheduleBloc>().add(
             CheckInEvent(request: request),
           );
 
-      // Store context for later use
-      final navigator = Navigator.of(context);
-
+      // Tunggu sebentar untuk memastikan state sudah terupdate
       await Future.delayed(const Duration(seconds: 2));
 
       if (!mounted) return;
 
-      SuccessMessage.show(
-        context: context,
-        message: 'Check-in berhasil!',
-        onDismissed: () {
-          if (mounted) {
-            navigator.pop(); // Close bottom sheet
-            _refreshSchedule();
-          }
-        },
-      );
+      // Tutup bottom sheet menggunakan navigator yang disimpan
+      navigator.pop();
+      
+      // Refresh jadwal
+      _refreshSchedule();
     } catch (e) {
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Terjadi kesalahan: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showMessage(context, 'Terjadi kesalahan: ${e.toString()}', isError: true);
     }
   }
 
@@ -199,33 +195,19 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
             ),
           );
 
-      // Store context for later use
-      final navigator = Navigator.of(context);
-
+      // Tunggu sebentar untuk memastikan state sudah terupdate
       await Future.delayed(const Duration(seconds: 2));
 
       if (!mounted) return;
 
-      SuccessMessage.show(
-        context: context,
-        message: 'Check-out berhasil!',
-        onDismissed: () {
-          if (mounted) {
-            // Close bottom sheet and navigate to schedule list
-            navigator.popUntil((route) => route.isFirst);
-            _refreshSchedule();
-          }
-        },
-      );
+      // Kembali ke halaman utama
+      Navigator.popUntil(context, (route) => route.isFirst);
+      
+      // Refresh jadwal
+      _refreshSchedule();
     } catch (e) {
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Terjadi kesalahan: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showMessage(context, 'Terjadi kesalahan: ${e.toString()}', isError: true);
     }
   }
 
@@ -262,9 +244,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                 child: CheckinForm(
                   scheduleId: widget.schedule.id,
                   userId: widget.userId,
-                  onSubmit: (request) {
-                    _handleCheckin(builderContext, request);
-                  },
+                  onSubmit: (request) => _handleCheckin(builderContext, request),
                 ),
               ),
             ),
@@ -277,12 +257,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
     }).catchError((error) {
       if (!mounted) return;
       Logger.error('ScheduleDetailPage', 'Error on check-in form: $error');
-      ScaffoldMessenger.of(currentContext).showSnackBar(
-        SnackBar(
-          content: Text('Terjadi kesalahan: ${error.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showMessage(context, 'Terjadi kesalahan: ${error.toString()}', isError: true);
     });
   }
 
@@ -356,6 +331,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
         return true;
       },
       child: Scaffold(
+        key: _scaffoldKey,
         backgroundColor: Theme.of(context).colorScheme.background,
         appBar: PreferredSize(
           preferredSize: const Size.fromHeight(80),
@@ -417,25 +393,27 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
         ),
         body: BlocConsumer<ScheduleBloc, ScheduleState>(
           listener: (context, state) {
-            if (state is CheckInSuccess || state is CheckOutSuccess) {
-              SuccessMessage.show(
-                context: context,
-                message: state is CheckInSuccess
-                    ? 'Check-in berhasil!'
-                    : 'Check-out berhasil!',
-                onDismissed: () {
-                  if (mounted) {
-                    _refreshSchedule();
-                  }
-                },
-              );
+            if (!mounted) return;
+
+            if (state is CheckInSuccess) {
+              // Gunakan Future.microtask untuk menghindari setState atau rebuild saat widget di-dispose
+              Future.microtask(() {
+                if (mounted) {
+                  _showMessage(context, 'Check-in berhasil!');
+                }
+              });
+            } else if (state is CheckOutSuccess) {
+              Future.microtask(() {
+                if (mounted) {
+                  _showMessage(context, 'Check-out berhasil!');
+                }
+              });
             } else if (state is ScheduleError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.red,
-                ),
-              );
+              Future.microtask(() {
+                if (mounted) {
+                  _showMessage(context, state.message, isError: true);
+                }
+              });
             }
           },
           builder: (context, state) {

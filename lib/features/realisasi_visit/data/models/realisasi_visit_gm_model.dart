@@ -6,37 +6,30 @@ import '../../../../core/error/exceptions.dart';
 
 class RealisasiVisitGMModel extends RealisasiVisitGM {
   const RealisasiVisitGMModel({
-    required int idBawahan,
-    required String namaBawahan,
-    required String kodeRayon,
-    required String roleUsers,
-    required List<JumlahDataModel> jumlah,
-    required List<RealisasiVisitDetailModel> details,
-  }) : super(
-          idBawahan: idBawahan,
-          namaBawahan: namaBawahan,
-          kodeRayon: kodeRayon,
-          roleUsers: roleUsers,
-          jumlah: jumlah,
-          details: details,
-        );
+    required super.id,
+    required super.name,
+    required super.kodeRayon,
+    required super.roleUsers,
+    required super.jumlah,
+    required super.details,
+  });
 
   factory RealisasiVisitGMModel.fromJson(Map<String, dynamic> json) {
     try {
       Logger.info('realisasi visit gm', 'RealisasiVisitGMModel.fromJson input: $json');
 
       // Parsing jumlah data
-      List<JumlahDataModel> jumlahList = [];
+      List<JumlahGMModel> jumlahList = [];
       if (json['jumlah'] != null) {
         if (json['jumlah'] is List) {
-          jumlahList = List<JumlahDataModel>.from(
+          jumlahList = List<JumlahGMModel>.from(
             (json['jumlah'] as List).map(
-              (x) => JumlahDataModel.fromJson(x),
+              (x) => JumlahGMModel.fromJson(x),
             ),
           );
         } else if (json['jumlah'] is Map) {
           // Jika jumlah berupa objek, konversi ke list dengan satu item
-          jumlahList = [JumlahDataModel.fromJson(json['jumlah'])];
+          jumlahList = [JumlahGMModel.fromJson(json['jumlah'])];
         }
       }
 
@@ -67,8 +60,8 @@ class RealisasiVisitGMModel extends RealisasiVisitGM {
       }
 
       final result = RealisasiVisitGMModel(
-        idBawahan: json['id'] ?? 0,
-        namaBawahan: json['name'] ?? '',
+        id: json['id'] ?? 0,
+        name: json['name'] ?? '',
         kodeRayon: json['kode_rayon'] ?? '',
         roleUsers: json['role_users'] ?? '',
         jumlah: jumlahList,
@@ -88,16 +81,13 @@ class RealisasiVisitGMModel extends RealisasiVisitGM {
   }
 }
 
-class JumlahDataModel extends JumlahData {
-  const JumlahDataModel({
-    required int total,
-    required String realisasi,
-  }) : super(
-          total: total,
-          realisasi: realisasi,
-        );
+class JumlahGMModel extends JumlahGM {
+  const JumlahGMModel({
+    required super.total,
+    required super.realisasi,
+  });
 
-  factory JumlahDataModel.fromJson(Map<String, dynamic> json) {
+  factory JumlahGMModel.fromJson(Map<String, dynamic> json) {
     try {
       // Menangani berbagai format nilai total
       final totalValue = json.containsKey('total')
@@ -113,16 +103,16 @@ class JumlahDataModel extends JumlahData {
               ? json['terrealisasi'].toString()
               : '0';
 
-      return JumlahDataModel(
+      return JumlahGMModel(
         total: totalValue,
         realisasi: realisasiValue,
       );
     } catch (e) {
-      Logger.error('realisasi_visit', 'Error parsing JumlahDataModel: $e');
+      Logger.error('realisasi_visit', 'Error parsing JumlahGMModel: $e');
       Logger.info('realisasi_visit', 'JSON data: $json');
       if (e is ServerException) rethrow;
       throw ServerException(
-          message: 'Error parsing JumlahDataModel: ${e.toString()}');
+          message: 'Error parsing JumlahGMModel: ${e.toString()}');
     }
   }
 }

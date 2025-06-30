@@ -2,7 +2,6 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../entities/realisasi_visit.dart';
 import '../entities/realisasi_visit_gm.dart';
-import '../entities/realisasi_visit_response.dart';
 
 abstract class RealisasiVisitRepository {
   /// Mendapatkan data realisasi visit
@@ -10,18 +9,23 @@ abstract class RealisasiVisitRepository {
       int idAtasan);
 
   /// Menyetujui realisasi visit
-  Future<Either<Failure, RealisasiVisitResponse>> approveRealisasiVisit(
-      int idAtasan, List<String> idSchedule);
+  Future<Either<Failure, String>> approveRealisasiVisit({
+    required int idRealisasiVisit,
+    required int idUser,
+  });
 
   /// Menolak realisasi visit
-  Future<Either<Failure, RealisasiVisitResponse>> rejectRealisasiVisit(
-      int idAtasan, List<String> idSchedule);
+  Future<Either<Failure, String>> rejectRealisasiVisit({
+    required int idRealisasiVisit,
+    required int idUser,
+    required String reason,
+  });
 
   /// Mendapatkan data realisasi visit khusus GM
   Future<Either<Failure, List<RealisasiVisitGM>>> getRealisasiVisitsGM(
       int idAtasan);
 
-  /// Menyetujui realisasi visit khusus GM
-  Future<Either<Failure, RealisasiVisitResponse>> approveRealisasiVisitGM(
-      int idAtasan, List<String> idSchedule);
+  /// Mendapatkan detail data realisasi visit GM untuk BCO tertentu
+  Future<Either<Failure, List<RealisasiVisitGM>>> getRealisasiVisitsGMDetails(
+      int idBCO);
 }

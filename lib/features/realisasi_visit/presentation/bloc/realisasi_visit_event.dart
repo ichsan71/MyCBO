@@ -4,7 +4,7 @@ abstract class RealisasiVisitEvent extends Equatable {
   const RealisasiVisitEvent();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 class GetRealisasiVisitsEvent extends RealisasiVisitEvent {
@@ -13,7 +13,7 @@ class GetRealisasiVisitsEvent extends RealisasiVisitEvent {
   const GetRealisasiVisitsEvent({required this.idAtasan});
 
   @override
-  List<Object> get props => [idAtasan];
+  List<Object?> get props => [idAtasan];
 }
 
 class GetRealisasiVisitsGMEvent extends RealisasiVisitEvent {
@@ -22,20 +22,33 @@ class GetRealisasiVisitsGMEvent extends RealisasiVisitEvent {
   const GetRealisasiVisitsGMEvent({required this.idAtasan});
 
   @override
-  List<Object> get props => [idAtasan];
+  List<Object?> get props => [idAtasan];
 }
 
-class ApproveRealisasiVisitEvent extends RealisasiVisitEvent {
+class GetRealisasiVisitsGMDetailsEvent extends RealisasiVisitEvent {
+  final int idBCO;
   final int idAtasan;
-  final List<String> idSchedule;
 
-  const ApproveRealisasiVisitEvent({
+  const GetRealisasiVisitsGMDetailsEvent({
+    required this.idBCO,
     required this.idAtasan,
-    required this.idSchedule,
   });
 
   @override
-  List<Object> get props => [idAtasan, idSchedule];
+  List<Object?> get props => [idBCO, idAtasan];
+}
+
+class ApproveRealisasiVisitEvent extends RealisasiVisitEvent {
+  final int idRealisasiVisit;
+  final int idUser;
+
+  const ApproveRealisasiVisitEvent({
+    required this.idRealisasiVisit,
+    required this.idUser,
+  });
+
+  @override
+  List<Object?> get props => [idRealisasiVisit, idUser];
 }
 
 class ApproveRealisasiVisitGMEvent extends RealisasiVisitEvent {
@@ -48,18 +61,20 @@ class ApproveRealisasiVisitGMEvent extends RealisasiVisitEvent {
   });
 
   @override
-  List<Object> get props => [idAtasan, idSchedule];
+  List<Object?> get props => [idAtasan, idSchedule];
 }
 
 class RejectRealisasiVisitEvent extends RealisasiVisitEvent {
-  final int idAtasan;
-  final List<String> idSchedule;
+  final int idRealisasiVisit;
+  final int idUser;
+  final String reason;
 
   const RejectRealisasiVisitEvent({
-    required this.idAtasan,
-    required this.idSchedule,
+    required this.idRealisasiVisit,
+    required this.idUser,
+    required this.reason,
   });
 
   @override
-  List<Object> get props => [idAtasan, idSchedule];
+  List<Object?> get props => [idRealisasiVisit, idUser, reason];
 }

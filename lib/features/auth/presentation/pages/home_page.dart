@@ -165,14 +165,17 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
         role == 'BCO' ||
         role == 'RSM' ||
         role == 'DM' ||
-        role == 'GM';
+        role == 'GM' ||
+        role == 'CEO';
     final hasRealisasiVisitAccess = role == 'ADMIN' ||
         role == 'GM' ||
+        role == 'CEO' ||
         role == 'BCO' ||
         role == 'RSM' ||
         role == 'DM' ||
         role == 'AM';
-    final hasKpiAccess = role != 'PS';
+    final hasKpiAccess = role != 'PS' && role != 'GM' && role != 'CEO';
+    final isGmOrCeo = role == 'GM' || role == 'CEO';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SafeArea(
@@ -314,10 +317,9 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
                                   const SizedBox(height: 16),
                                   ElevatedButton.icon(
                                     onPressed: () => _refreshKpiData(isForceRefresh: true),
-                                    icon: const Icon(Icons.refresh),
                                     label: Text(
                                       'Coba Lagi',
-                                      style: GoogleFonts.poppins(),
+                                      style: GoogleFonts.poppins(), 
                                     ),
                                   ),
                                 ],
@@ -369,7 +371,7 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
                             mainAxisSpacing: 16,
                             childAspectRatio: 1.1,
                             children: [
-                              if (hasKpiAccess)
+                              if (hasKpiAccess && !isGmOrCeo)
                               _buildMenuCard(
                                 context: context,
                                 title: l10n.report,
@@ -377,6 +379,7 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
                                 color: Colors.blue[600]!,
                                   onTap: () => Navigator.pushNamed(context, '/kpi_member'),
                               ),
+                              if (!isGmOrCeo)
                               _buildMenuCard(
                                 context: context,
                                 title: l10n.addSchedule,

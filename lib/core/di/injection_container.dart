@@ -39,6 +39,15 @@ import '../../features/kpi/data/datasources/kpi_member_remote_data_source.dart';
 import '../../features/kpi/data/repositories/kpi_member_repository_impl.dart';
 import '../../features/kpi/domain/repositories/kpi_member_repository.dart';
 import '../../features/kpi/domain/usecases/get_kpi_member_data_usecase.dart';
+import '../../features/realisasi_visit/data/datasources/realisasi_visit_remote_data_source.dart';
+import '../../features/realisasi_visit/data/repositories/realisasi_visit_repository_impl.dart';
+import '../../features/realisasi_visit/domain/repositories/realisasi_visit_repository.dart';
+import '../../features/realisasi_visit/domain/usecases/get_realisasi_visits.dart';
+import '../../features/realisasi_visit/domain/usecases/get_realisasi_visits_gm.dart';
+import '../../features/realisasi_visit/domain/usecases/get_realisasi_visits_gm_details.dart';
+import '../../features/realisasi_visit/domain/usecases/approve_realisasi_visit.dart';
+import '../../features/realisasi_visit/domain/usecases/reject_realisasi_visit.dart';
+import '../../features/realisasi_visit/presentation/bloc/realisasi_visit_bloc.dart';
 
 /// Service locator instance
 final sl = GetIt.instance;
@@ -65,6 +74,10 @@ Future<void> _initExternalDependencies() async {
   sl.registerLazySingleton(() => http.Client());
   sl.registerLazySingleton(() => DioConfig.createDio());
   sl.registerLazySingleton(() => InternetConnectionChecker());
+  sl.registerLazySingleton<String>(
+    () => 'https://dev-bco.businesscorporateofficer.com/api',
+    instanceName: 'baseUrl',
+  );
 }
 
 /// Initialize core dependencies
@@ -93,7 +106,7 @@ Future<void> _initFeatureDependencies() async {
   await initApprovalDependencies();
 
   // Realisasi Visit feature
-  await initRealisasiVisitDependencies();
+  await _initRealisasiVisitDependencies();
 
   // Notification feature
   _initNotificationDependencies();
@@ -209,6 +222,44 @@ void _initKpiDependencies() {
   sl.registerLazySingleton<KpiRepository>(
     () => KpiRepositoryImpl(
       client: sl(),
+      sharedPreferences: sl(),
+    ),
+  );
+}
+
+/// Initialize Realisasi Visit dependencies
+Future<void> _initRealisasiVisitDependencies() async {
+  // Bloc
+  sl.registerFactory(
+    () => RealisasiVisitBloc(
+      getRealisasiVisits: sl(),
+      getRealisasiVisitsGM: sl(),
+      getRealisasiVisitsGMDetails: sl(),
+      approveRealisasiVisit: sl(),
+      rejectRealisasiVisit: sl(),
+    ),
+  );
+
+  // Use cases
+  sl.registerLazySingleton(() => GetRealisasiVisits(sl()));
+  sl.registerLazySingleton(() => GetRealisasiVisitsGM(sl()));
+  sl.registerLazySingleton(() => GetRealisasiVisitsGMDetails(sl()));
+  sl.registerLazySingleton(() => ApproveRealisasiVisit(sl()));
+  sl.registerLazySingleton(() => RejectRealisasiVisit(sl()));
+
+  // Repository
+  sl.registerLazySingleton<RealisasiVisitRepository>(
+    () => RealisasiVisitRepositoryImpl(
+      remoteDataSource: sl(),
+      networkInfo: sl(),
+    ),
+  );
+
+  // Data sources
+  sl.registerLazySingleton<RealisasiVisitRemoteDataSource>(
+    () => RealisasiVisitRemoteDataSourceImpl(
+      client: sl(),
+      baseUrl: sl<String>(instanceName: 'baseUrl'),
       sharedPreferences: sl(),
     ),
   );

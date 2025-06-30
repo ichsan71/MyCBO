@@ -141,56 +141,57 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
               },
             ),
             // Test buttons
-            _buildTestButton(
-              context,
-              title: 'Test Notifikasi Checkout',
-              subtitle: 'Klik untuk test notifikasi checkout',
-              icon: Icons.notifications_active,
-              onTap: () async {
-                try {
-                  final notificationService = di.sl<LocalNotificationService>();
-                  await notificationService.showTestCheckoutNotification(state.userName);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Test notifikasi checkout berhasil!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-            ),
-            _buildTestButton(
-              context,
-              title: 'Test Notifikasi Sapaan',
-              subtitle: 'Klik untuk test notifikasi sapaan pagi',
-              icon: Icons.wb_sunny,
-              onTap: () async {
-                try {
-                  final notificationService = di.sl<LocalNotificationService>();
-                  await notificationService.showTestDailyGreeting(state.userName);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Test notifikasi sapaan berhasil!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-            ),
+            // _buildTestButton(
+            //   context,
+            //   title: 'Test Notifikasi Checkout',
+            //   subtitle: 'Klik untuk test notifikasi checkout',
+            //   icon: Icons.notifications_active,
+            //   onTap: () async {
+            //     try {
+            //       final notificationService = di.sl<LocalNotificationService>();
+            //       await notificationService.showTestCheckoutNotification(state.userName);
+            //       ScaffoldMessenger.of(context).showSnackBar(
+            //         const SnackBar(
+            //           content: Text('Test notifikasi checkout berhasil!'),
+            //           backgroundColor: Colors.green,
+            //         ),
+            //       );
+            //     } catch (e) {
+            //       ScaffoldMessenger.of(context).showSnackBar(
+            //         SnackBar(
+            //           content: Text('Error: $e'),
+            //           backgroundColor: Colors.red,
+            //         ),
+            //       );
+            //     }
+            //   },
+            // ),
+            // _buildTestButton(
+            //   context,
+            //   title: 'Test Notifikasi Sapaan',
+            //   subtitle: 'Klik untuk test notifikasi sapaan pagi',
+            //   icon: Icons.wb_sunny,
+            //   onTap: () async {
+            //     try {
+            //       final notificationService = di.sl<LocalNotificationService>();
+            //       await notificationService.showTestDailyGreeting(state.userName);
+            //       ScaffoldMessenger.of(context).showSnackBar(
+            //         const SnackBar(
+            //           content: Text('Test notifikasi sapaan berhasil!'),
+            //           backgroundColor: Colors.green,
+            //         ),
+            //       );
+            //     } catch (e) {
+            //       ScaffoldMessenger.of(context).showSnackBar(
+            //         SnackBar(
+            //           content: Text('Error: $e'),
+            //           backgroundColor: Colors.red,
+            //         ),
+            //       );
+            //     }
+            //   },
+            // ),
+          
           ],
         ),
         const SizedBox(height: 16),
@@ -221,7 +222,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                 color: Theme.of(context).primaryColor,
               ),
             ),
-            _buildLanguageSelector(context, l10n),
+            // _buildLanguageSelector(context, l10n),
           ],
         ),
       ],

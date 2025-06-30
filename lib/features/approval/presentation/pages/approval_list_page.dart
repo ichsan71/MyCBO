@@ -172,7 +172,7 @@ class _ApprovalListViewState extends State<ApprovalListView>
                   onChanged: _onSearchChanged,
                   style: GoogleFonts.poppins(),
                   decoration: InputDecoration(
-                    hintText: 'Cari nama bawahan...',
+                    hintText: 'Cari nama Anggota...',
                     hintStyle: GoogleFonts.poppins(
                       color: Colors.grey[600],
                     ),

@@ -13,24 +13,28 @@ abstract class RealisasiVisitRemoteDataSource {
   /// Throws [ServerException] jika terjadi error pada server
   Future<List<RealisasiVisitModel>> getRealisasiVisits(int idAtasan);
 
-  /// Menyetujui realisasi visit
-  /// Throws [ServerException] jika terjadi error pada server
-  Future<RealisasiVisitResponseModel> approveRealisasiVisit(
-      int idAtasan, List<String> idSchedule);
-
-  /// Menolak realisasi visit
-  /// Throws [ServerException] jika terjadi error pada server
-  Future<RealisasiVisitResponseModel> rejectRealisasiVisit(
-      int idAtasan, List<String> idSchedule);
-
   /// Mengambil daftar realisasi visit khusus GM
   /// Throws [ServerException] jika terjadi error pada server
   Future<List<RealisasiVisitGMModel>> getRealisasiVisitsGM(int idAtasan);
 
-  /// Menyetujui realisasi visit khusus GM
+  /// Mengambil detail realisasi visit GM untuk BCO tertentu
   /// Throws [ServerException] jika terjadi error pada server
-  Future<RealisasiVisitResponseModel> approveRealisasiVisitGM(
-      int idAtasan, List<String> idSchedule);
+  Future<List<RealisasiVisitGMModel>> getRealisasiVisitsGMDetails(int idBCO);
+
+  /// Menyetujui realisasi visit
+  /// Throws [ServerException] jika terjadi error pada server
+  Future<String> approveRealisasiVisit({
+    required int idRealisasiVisit,
+    required int idUser,
+  });
+
+  /// Menolak realisasi visit
+  /// Throws [ServerException] jika terjadi error pada server
+  Future<String> rejectRealisasiVisit({
+    required int idRealisasiVisit,
+    required int idUser,
+    required String reason,
+  });
 }
 
 class RealisasiVisitRemoteDataSourceImpl
@@ -198,8 +202,85 @@ class RealisasiVisitRemoteDataSourceImpl
   }
 
   @override
-  Future<RealisasiVisitResponseModel> approveRealisasiVisit(
-      int idAtasan, List<String> idSchedule) async {
+  Future<List<RealisasiVisitGMModel>> getRealisasiVisitsGMDetails(int idBCO) async {
+    try {
+      final token = sharedPreferences.getString(Constants.tokenKey);
+      if (token == null) {
+        Logger.error(_tag, 'Token tidak ditemukan');
+        throw UnauthorizedException(message: 'Token tidak ditemukan');
+      }
+
+      final uri = Uri.parse(baseUrl).replace(
+        path: '${Uri.parse(baseUrl).path}/list-approval-gm-all/$idBCO',
+      );
+
+      Logger.info(
+          _tag, 'Mengambil detail realisasi visit GM untuk id_bco: $idBCO');
+      Logger.info(_tag, 'URL: $uri');
+
+      final response = await client.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      Logger.info(_tag, 'Status Code: ${response.statusCode}');
+      Logger.info(_tag, 'Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        Logger.info(_tag, 'Data GM parsed: $data');
+        Logger.info(_tag, 'Success flag: ${data['success']}');
+        Logger.info(_tag, 'Has data: ${data['data'] != null}');
+
+        if (data['data'] != null) {
+          try {
+            final List<RealisasiVisitGMModel> result = (data['data'] as List)
+                .map((item) => RealisasiVisitGMModel.fromJson(item))
+                .toList();
+            Logger.info(_tag,
+                'Berhasil parse ${result.length} item realisasi visit GM');
+            return result;
+          } catch (parseError) {
+            Logger.error(_tag, 'Error saat parsing data GM: $parseError');
+            throw ServerException(
+              message: 'Gagal memproses data GM dari server: $parseError',
+            );
+          }
+        } else {
+          Logger.error(_tag,
+              'Respons GM berhasil tapi tidak ada data. Message: ${data['message'] ?? 'Tidak ada pesan'}');
+          throw ServerException(
+            message: data['message'] ?? 'Tidak ada data realisasi visit GM',
+          );
+        }
+      } else if (response.statusCode == 401) {
+        Logger.error(_tag, 'Unauthorized: 401');
+        throw UnauthorizedException(message: 'Unauthorized');
+      } else {
+        Logger.error(_tag, 'Server error: ${response.statusCode}');
+        throw ServerException(
+          message: 'Server error dengan kode: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      Logger.error(_tag, 'Error umum GM: $e');
+      if (e is ServerException || e is UnauthorizedException) {
+        rethrow;
+      }
+      Logger.error(_tag, 'Error: $e');
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<String> approveRealisasiVisit({
+    required int idRealisasiVisit,
+    required int idUser,
+  }) async {
     try {
       final token = sharedPreferences.getString(Constants.tokenKey);
       if (token == null) {
@@ -212,13 +293,12 @@ class RealisasiVisitRemoteDataSourceImpl
       );
 
       Logger.info(_tag,
-          'Menyetujui realisasi visit - idAtasan: $idAtasan, idSchedule: $idSchedule');
+          'Menyetujui realisasi visit - idRealisasiVisit: $idRealisasiVisit, idUser: $idUser');
       Logger.info(_tag, 'URL: $uri');
 
       final formData = {
-        'id_atasan': idAtasan.toString(),
-        'id_schedule':
-            idSchedule.map((id) => id.toString()).toList().toString(),
+        'id_realisasi_visit': idRealisasiVisit.toString(),
+        'id_user': idUser.toString(),
       };
 
       Logger.info(_tag, 'Form Data: $formData');
@@ -237,7 +317,7 @@ class RealisasiVisitRemoteDataSourceImpl
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         Logger.info(_tag, 'Approve response data: $data');
-        return RealisasiVisitResponseModel.fromJson(data);
+        return data['message'] ?? 'Realisasi visit berhasil disetujui';
       } else if (response.statusCode == 401) {
         Logger.error(_tag, 'Unauthorized: 401');
         throw UnauthorizedException(message: 'Unauthorized');
@@ -258,66 +338,15 @@ class RealisasiVisitRemoteDataSourceImpl
   }
 
   @override
-  Future<RealisasiVisitResponseModel> approveRealisasiVisitGM(
-      int idAtasan, List<String> idSchedule) async {
+  Future<String> rejectRealisasiVisit({
+    required int idRealisasiVisit,
+    required int idUser,
+    required String reason,
+  }) async {
     try {
       final token = sharedPreferences.getString(Constants.tokenKey);
       if (token == null) {
-        throw UnauthorizedException(message: 'Token tidak ditemukan');
-      }
-
-      final uri = Uri.parse(baseUrl).replace(
-        path: '${Uri.parse(baseUrl).path}/approved-realisasi-visit-gm',
-      );
-
-      Logger.info(_tag,
-          'Menyetujui realisasi visit GM - idAtasan: $idAtasan, idSchedule: $idSchedule');
-      Logger.info(_tag, 'URL: $uri');
-
-      final formData = {
-        'id_atasan': idAtasan.toString(),
-        'id_schedule':
-            idSchedule.map((id) => id.toString()).toList().toString(),
-      };
-
-      Logger.info(_tag, 'Form Data: $formData');
-
-      final response = await client.post(
-        uri,
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-        body: formData,
-      );
-
-      Logger.info(_tag, 'Status Code: ${response.statusCode}');
-      Logger.info(_tag, 'Response Body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return RealisasiVisitResponseModel.fromJson(data);
-      } else if (response.statusCode == 401) {
-        throw UnauthorizedException(message: 'Unauthorized');
-      } else {
-        throw ServerException(
-          message: 'Server error dengan kode: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      if (e is ServerException || e is UnauthorizedException) {
-        rethrow;
-      }
-      Logger.error(_tag, 'Error: $e');
-      throw ServerException(message: e.toString());
-    }
-  }
-
-  @override
-  Future<RealisasiVisitResponseModel> rejectRealisasiVisit(
-      int idAtasan, List<String> idSchedule) async {
-    try {
-      final token = sharedPreferences.getString(Constants.tokenKey);
-      if (token == null) {
+        Logger.error(_tag, 'Token tidak ditemukan');
         throw UnauthorizedException(message: 'Token tidak ditemukan');
       }
 
@@ -326,13 +355,13 @@ class RealisasiVisitRemoteDataSourceImpl
       );
 
       Logger.info(_tag,
-          'Menolak realisasi visit - idAtasan: $idAtasan, idSchedule: $idSchedule');
+          'Menolak realisasi visit - idRealisasiVisit: $idRealisasiVisit, idUser: $idUser, reason: $reason');
       Logger.info(_tag, 'URL: $uri');
 
       final formData = {
-        'id_atasan': idAtasan.toString(),
-        'id_schedule':
-            idSchedule.map((id) => id.toString()).toList().toString(),
+        'id_realisasi_visit': idRealisasiVisit.toString(),
+        'id_user': idUser.toString(),
+        'reason': reason,
       };
 
       Logger.info(_tag, 'Form Data: $formData');
@@ -350,15 +379,18 @@ class RealisasiVisitRemoteDataSourceImpl
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return RealisasiVisitResponseModel.fromJson(data);
+        return data['message'] ?? 'Realisasi visit berhasil ditolak';
       } else if (response.statusCode == 401) {
+        Logger.error(_tag, 'Unauthorized: 401');
         throw UnauthorizedException(message: 'Unauthorized');
       } else {
+        Logger.error(_tag, 'Server error: ${response.statusCode}');
         throw ServerException(
           message: 'Server error dengan kode: ${response.statusCode}',
         );
       }
     } catch (e) {
+      Logger.error(_tag, 'Error reject realisasi visit: $e');
       if (e is ServerException || e is UnauthorizedException) {
         rethrow;
       }

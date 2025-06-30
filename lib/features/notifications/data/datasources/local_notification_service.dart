@@ -263,8 +263,8 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
       final now = DateTime.now();
       logger.d('Current time: $now');
 
-      // Check if we're in the greeting window (14:53 - 14:56)
-      if (now.hour == 9 && now.minute >= 0 && now.minute < 3) {
+      // Check if we're in the greeting window (10:00 - 10:03)
+      if (now.hour == 10 && now.minute >= 0 && now.minute < 3) {
         logger.d('Within greeting time window, showing immediate notification');
         
         // Show immediate notification
@@ -278,7 +278,7 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
       }
 
       // Schedule daily notification
-      final scheduledTime = DateTime(now.year, now.month, now.day, 9, 0);
+      final scheduledTime = DateTime(now.year, now.month, now.day, 10, 0);
       final scheduledTimeString = '${scheduledTime.hour}:${scheduledTime.minute}';
       logger.d('Attempting to schedule daily notification for $scheduledTimeString');
 

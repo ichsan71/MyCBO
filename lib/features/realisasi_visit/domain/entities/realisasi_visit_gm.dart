@@ -2,16 +2,16 @@ import 'package:equatable/equatable.dart';
 import 'realisasi_visit.dart';
 
 class RealisasiVisitGM extends Equatable {
-  final int idBawahan;
-  final String namaBawahan;
+  final int id;
+  final String name;
   final String kodeRayon;
   final String roleUsers;
-  final List<JumlahData> jumlah;
+  final List<JumlahGM> jumlah;
   final List<RealisasiVisitDetail> details;
 
   const RealisasiVisitGM({
-    required this.idBawahan,
-    required this.namaBawahan,
+    required this.id,
+    required this.name,
     required this.kodeRayon,
     required this.roleUsers,
     required this.jumlah,
@@ -20,8 +20,8 @@ class RealisasiVisitGM extends Equatable {
 
   @override
   List<Object?> get props => [
-        idBawahan,
-        namaBawahan,
+        id,
+        name,
         kodeRayon,
         roleUsers,
         jumlah,
@@ -29,11 +29,11 @@ class RealisasiVisitGM extends Equatable {
       ];
 }
 
-class JumlahData extends Equatable {
+class JumlahGM extends Equatable {
   final int total;
   final String realisasi;
 
-  const JumlahData({
+  const JumlahGM({
     required this.total,
     required this.realisasi,
   });

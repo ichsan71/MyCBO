@@ -4,7 +4,6 @@ import '../../../../core/error/failures.dart';
 import '../../../../core/network/network_info.dart';
 import '../../domain/entities/realisasi_visit.dart';
 import '../../domain/entities/realisasi_visit_gm.dart';
-import '../../domain/entities/realisasi_visit_response.dart';
 import '../../domain/repositories/realisasi_visit_repository.dart';
 import '../datasources/realisasi_visit_remote_data_source.dart';
 
@@ -12,7 +11,7 @@ class RealisasiVisitRepositoryImpl implements RealisasiVisitRepository {
   final RealisasiVisitRemoteDataSource remoteDataSource;
   final NetworkInfo networkInfo;
 
-  RealisasiVisitRepositoryImpl({
+  const RealisasiVisitRepositoryImpl({
     required this.remoteDataSource,
     required this.networkInfo,
   });
@@ -42,9 +41,9 @@ class RealisasiVisitRepositoryImpl implements RealisasiVisitRepository {
       int idAtasan) async {
     if (await networkInfo.isConnected) {
       try {
-        final remoteRealisasiVisits =
+        final remoteRealisasiVisitsGM =
             await remoteDataSource.getRealisasiVisitsGM(idAtasan);
-        return Right(remoteRealisasiVisits);
+        return Right(remoteRealisasiVisitsGM);
       } on ServerException catch (e) {
         return Left(ServerFailure(message: e.message));
       } on UnauthorizedException catch (e) {
@@ -58,13 +57,13 @@ class RealisasiVisitRepositoryImpl implements RealisasiVisitRepository {
   }
 
   @override
-  Future<Either<Failure, RealisasiVisitResponse>> approveRealisasiVisit(
-      int idAtasan, List<String> idSchedule) async {
+  Future<Either<Failure, List<RealisasiVisitGM>>> getRealisasiVisitsGMDetails(
+      int idBCO) async {
     if (await networkInfo.isConnected) {
       try {
-        final response =
-            await remoteDataSource.approveRealisasiVisit(idAtasan, idSchedule);
-        return Right(response);
+        final remoteRealisasiVisitsGMDetails =
+            await remoteDataSource.getRealisasiVisitsGMDetails(idBCO);
+        return Right(remoteRealisasiVisitsGMDetails);
       } on ServerException catch (e) {
         return Left(ServerFailure(message: e.message));
       } on UnauthorizedException catch (e) {
@@ -78,13 +77,17 @@ class RealisasiVisitRepositoryImpl implements RealisasiVisitRepository {
   }
 
   @override
-  Future<Either<Failure, RealisasiVisitResponse>> approveRealisasiVisitGM(
-      int idAtasan, List<String> idSchedule) async {
+  Future<Either<Failure, String>> approveRealisasiVisit({
+    required int idRealisasiVisit,
+    required int idUser,
+  }) async {
     if (await networkInfo.isConnected) {
       try {
-        final response = await remoteDataSource.approveRealisasiVisitGM(
-            idAtasan, idSchedule);
-        return Right(response);
+        final result = await remoteDataSource.approveRealisasiVisit(
+          idRealisasiVisit: idRealisasiVisit,
+          idUser: idUser,
+        );
+        return Right(result);
       } on ServerException catch (e) {
         return Left(ServerFailure(message: e.message));
       } on UnauthorizedException catch (e) {
@@ -98,13 +101,19 @@ class RealisasiVisitRepositoryImpl implements RealisasiVisitRepository {
   }
 
   @override
-  Future<Either<Failure, RealisasiVisitResponse>> rejectRealisasiVisit(
-      int idAtasan, List<String> idSchedule) async {
+  Future<Either<Failure, String>> rejectRealisasiVisit({
+    required int idRealisasiVisit,
+    required int idUser,
+    required String reason,
+  }) async {
     if (await networkInfo.isConnected) {
       try {
-        final response =
-            await remoteDataSource.rejectRealisasiVisit(idAtasan, idSchedule);
-        return Right(response);
+        final result = await remoteDataSource.rejectRealisasiVisit(
+          idRealisasiVisit: idRealisasiVisit,
+          idUser: idUser,
+          reason: reason,
+        );
+        return Right(result);
       } on ServerException catch (e) {
         return Left(ServerFailure(message: e.message));
       } on UnauthorizedException catch (e) {

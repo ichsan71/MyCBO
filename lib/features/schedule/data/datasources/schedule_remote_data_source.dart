@@ -215,16 +215,16 @@ Data type: ${responseData['data']?.runtimeType}
 ''');
 
         // Case 1: Response format {"status": true, "data": [...]}
-        if (responseData.containsKey('status') && 
+        if (responseData.containsKey('status') &&
             responseData.containsKey('data') && 
             responseData['data'] is List) {
           scheduleData = responseData['data'];
         }
         // Case 2: Response format {"status": true, "data": {"data": [...], "current_page": X, ...}}
         else if (responseData.containsKey('status') && 
-                responseData.containsKey('data') && 
-                responseData['data'] is Map<String, dynamic> &&
-                responseData['data'].containsKey('data')) {
+            responseData.containsKey('data') &&
+            responseData['data'] is Map<String, dynamic> &&
+            responseData['data'].containsKey('data')) {
           scheduleData = responseData['data']['data'];
         }
         // Case 3: Response format {"data": [...]}
@@ -236,8 +236,8 @@ Data type: ${responseData['data']?.runtimeType}
           throw ServerException(message: 'Format response tidak sesuai');
         }
 
-        Logger.info('ScheduleRemoteDataSource', 
-          'Successfully processed ${scheduleData.length} schedules');
+          Logger.info('ScheduleRemoteDataSource',
+              'Successfully processed ${scheduleData.length} schedules');
 
         return scheduleData.map((item) => ScheduleModel.fromJson(item)).toList();
       }
