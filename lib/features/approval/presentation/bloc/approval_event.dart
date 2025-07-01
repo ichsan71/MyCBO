@@ -107,3 +107,20 @@ class BatchApproveRequest extends ApprovalEvent {
   @override
   List<Object?> get props => [scheduleIds, notes, context];
 }
+
+class BatchRejectRequest extends ApprovalEvent {
+  final List<int> scheduleIds;
+  final String comment;
+  final String idRejecter;
+  final BuildContext context;
+
+  const BatchRejectRequest({
+    required this.scheduleIds,
+    required this.comment,
+    required this.idRejecter,
+    required this.context,
+  });
+
+  @override
+  List<Object?> get props => [scheduleIds, comment, idRejecter, context];
+}

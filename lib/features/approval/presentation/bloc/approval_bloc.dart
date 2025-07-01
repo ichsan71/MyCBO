@@ -21,6 +21,7 @@ class ApprovalBloc extends Bloc<ApprovalEvent, ApprovalState> {
     on<RejectRequest>(_onRejectRequest);
     on<SendApproval>(_onSendApproval);
     on<BatchApproveRequest>(_onBatchApproveRequest);
+    on<BatchRejectRequest>(_onBatchRejectRequest);
   }
 
   Future<void> _onGetApprovals(
@@ -88,7 +89,8 @@ class ApprovalBloc extends Bloc<ApprovalEvent, ApprovalState> {
             if (state is ApprovalLoaded) {
               final currentState = state as ApprovalLoaded;
               if (currentState.approvals.isNotEmpty) {
-                add(GetApprovals(userId: currentState.approvals.first.idBawahan));
+                add(GetApprovals(
+                    userId: currentState.approvals.first.idBawahan));
               }
             }
           },
@@ -166,17 +168,53 @@ class ApprovalBloc extends Bloc<ApprovalEvent, ApprovalState> {
           context: event.context,
           message: 'Persetujuan berhasil dikirim',
           onDismissed: () {
-            if (state is ApprovalLoaded) {
-              final currentState = state as ApprovalLoaded;
-              if (currentState.approvals.isNotEmpty) {
-                add(GetApprovals(userId: currentState.approvals.first.idBawahan));
-              }
-            }
+            // Navigate back to approval list page
+            Navigator.of(event.context).popUntil((route) {
+              return route.settings.name == '/approval_list' || route.isFirst;
+            });
           },
         );
-        // Emit loading state while refreshing
-        emit(ApprovalLoading());
+        // Don't emit loading immediately, let success message handle navigation
+        emit(ApprovalSuccess(message: 'Persetujuan berhasil dikirim'));
       },
     );
+  }
+
+  Future<void> _onBatchRejectRequest(
+    BatchRejectRequest event,
+    Emitter<ApprovalState> emit,
+  ) async {
+    emit(ApprovalLoading());
+
+    // Process each rejection in sequence
+    try {
+      for (final scheduleId in event.scheduleIds) {
+        final result = await repository.rejectRequest(
+          scheduleId.toString(),
+          event.idRejecter,
+          event.comment,
+        );
+
+        result.fold(
+          (failure) => throw Exception(failure.message),
+          (_) {}, // Continue processing
+        );
+      }
+
+      // All rejections successful
+      SuccessMessage.show(
+        context: event.context,
+        message: 'Penolakan berhasil dikirim',
+        onDismissed: () {
+          // Navigate back to approval list page
+          Navigator.of(event.context).popUntil((route) {
+            return route.settings.name == '/approval_list' || route.isFirst;
+          });
+        },
+      );
+      emit(ApprovalSuccess(message: 'Penolakan berhasil dikirim'));
+    } catch (e) {
+      emit(ApprovalError(message: 'Gagal menolak: $e'));
+    }
   }
 }

@@ -22,6 +22,8 @@ class KpiMemberDetailPage extends StatefulWidget {
 }
 
 class _KpiMemberDetailPageState extends State<KpiMemberDetailPage> {
+  final GlobalKey _chartSectionKey = GlobalKey();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -123,8 +125,7 @@ class _KpiMemberDetailPageState extends State<KpiMemberDetailPage> {
                 icon: Icons.calendar_today,
                 label: 'Periode',
                 value: DateFormat('MMMM yyyy', 'id_ID').format(
-                  DateTime(int.parse(widget.year), int.parse(widget.month))
-                ),
+                    DateTime(int.parse(widget.year), int.parse(widget.month))),
               ),
             ],
           ),
@@ -204,8 +205,9 @@ class _KpiMemberDetailPageState extends State<KpiMemberDetailPage> {
 
   Widget _buildSummaryGrid() {
     final totalAchievement = _calculateTotalAchievement();
-    final averageAchievement = totalAchievement / widget.kpiMember.grafik.length;
-    
+    final averageAchievement =
+        totalAchievement / widget.kpiMember.grafik.length;
+
     return Row(
       children: [
         Expanded(
@@ -277,6 +279,7 @@ class _KpiMemberDetailPageState extends State<KpiMemberDetailPage> {
 
   Widget _buildChartSection() {
     return Container(
+      key: _chartSectionKey,
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
@@ -299,6 +302,22 @@ class _KpiMemberDetailPageState extends State<KpiMemberDetailPage> {
         currentYear: widget.year,
         currentMonth: widget.month,
         isFilterEnabled: false,
+        onExpansionChanged: (isExpanded) {
+          // Auto scroll ketika expansion tile dibuka di detail page
+          if (isExpanded) {
+            Future.delayed(const Duration(milliseconds: 300), () {
+              final context = _chartSectionKey.currentContext;
+              if (context != null) {
+                Scrollable.ensureVisible(
+                  context,
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeInOut,
+                  alignment: 0.0, // Scroll ke bagian atas chart
+                );
+              }
+            });
+          }
+        },
       ),
     );
   }
@@ -322,4 +341,4 @@ class _KpiMemberDetailPageState extends State<KpiMemberDetailPage> {
       return Colors.red;
     }
   }
-} 
+}

@@ -40,6 +40,14 @@ abstract class ApprovalRepository {
   Future<Either<Failure, List<RejectedSchedule>>> getRejectedSchedules(
       int userId);
 
+  /// Mengambil detail persetujuan bulanan untuk GM
+  Future<Either<Failure, dynamic>> getMonthlyApprovalDetailGM(
+      int userId, int year, int month);
+
+  /// Mengambil detail persetujuan dadakan untuk GM
+  Future<Either<Failure, dynamic>> getSuddenlyApprovalDetailGM(
+      int userId, int year, int month);
+
   /// Menyetujui beberapa permintaan sekaligus
   Future<Either<Failure, void>> batchApproveRequest(
       List<int> scheduleIds, String notes);

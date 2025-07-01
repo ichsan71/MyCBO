@@ -25,18 +25,28 @@ class MonthlyApprovalModel extends MonthlyApproval {
         );
 
   factory MonthlyApprovalModel.fromJson(Map<String, dynamic> json) {
+    // Helper function untuk parse integer dengan null safety
+    int parseIntSafely(dynamic value, {int defaultValue = 0}) {
+      if (value == null) return defaultValue;
+      if (value is int) return value;
+      return int.tryParse(value.toString()) ?? defaultValue;
+    }
+
     return MonthlyApprovalModel(
-      idBawahan: json['id_bawahan'],
-      namaBawahan: json['nama_bawahan'],
-      totalSchedule: json['total_schedule'],
-      year: json['year'],
-      month: json['month'],
-      jumlahDokter: json['jumlah_dokter'],
-      jumlahKlinik: json['jumlah_klinik'],
-      approved: json['approved'],
-      details: (json['details'] as List)
-          .map((detail) => MonthlyScheduleDetailModel.fromJson(detail))
-          .toList(),
+      // Support both GM format (id_user, nama) and regular format (id_bawahan, nama_bawahan)
+      idBawahan: parseIntSafely(json['id_bawahan'] ?? json['id_user']),
+      namaBawahan:
+          json['nama_bawahan']?.toString() ?? json['nama']?.toString() ?? '',
+      totalSchedule: parseIntSafely(json['total_schedule']),
+      year: parseIntSafely(json['year']),
+      month: parseIntSafely(json['month']),
+      jumlahDokter: json['jumlah_dokter']?.toString() ?? '0',
+      jumlahKlinik: json['jumlah_klinik']?.toString() ?? '0',
+      approved: parseIntSafely(json['approved']),
+      details: (json['details'] as List?)
+              ?.map((detail) => MonthlyScheduleDetailModel.fromJson(detail))
+              .toList() ??
+          [],
     );
   }
 
@@ -81,19 +91,68 @@ class MonthlyScheduleDetailModel extends MonthlyScheduleDetail {
         );
 
   factory MonthlyScheduleDetailModel.fromJson(Map<String, dynamic> json) {
+    // Helper function to parse product data safely
+    List<ProductDataModel> parseProductData() {
+      if (json.containsKey('product_data') && json['product_data'] is List) {
+        // Standard format
+        return (json['product_data'] as List)
+            .map((product) => ProductDataModel.fromJson(product))
+            .toList();
+      } else if (json.containsKey('nama_product')) {
+        // GM format - single product name
+        return [
+          ProductDataModel(
+            idProduct: 0, // Default value for GM format
+            namaProduct: json['nama_product']?.toString() ?? '',
+          )
+        ];
+      }
+      return [];
+    }
+
+    // Helper function to parse tujuan data safely
+    TujuanDataModel parseTujuanData() {
+      if (json.containsKey('tujuan_data') && json['tujuan_data'] is Map) {
+        // Standard format
+        return TujuanDataModel.fromJson(json['tujuan_data']);
+      } else if (json.containsKey('nama_tujuan')) {
+        // GM format
+        return TujuanDataModel(
+          idDokter: 0, // Default value for GM format
+          namaDokter: json['nama_tujuan']?.toString() ?? '',
+        );
+      }
+      return const TujuanDataModel(idDokter: 0, namaDokter: '');
+    }
+
+    // Helper function to parse product list safely
+    List<String> parseProductList() {
+      if (json.containsKey('product') && json['product'] is String) {
+        try {
+          return List<String>.from(jsonDecode(json['product']));
+        } catch (e) {
+          return [json['product']?.toString() ?? ''];
+        }
+      } else if (json.containsKey('nama_product')) {
+        return [json['nama_product']?.toString() ?? ''];
+      }
+      return [];
+    }
+
     return MonthlyScheduleDetailModel(
-      id: json['id'],
-      typeSchedule: json['type_schedule'],
-      tujuan: json['tujuan'],
-      idTujuan: json['id_tujuan'],
-      tglVisit: json['tgl_visit'],
-      product: List<String>.from(jsonDecode(json['product'])),
-      note: json['note'],
-      shift: json['shift'],
-      productData: (json['product_data'] as List)
-          .map((product) => ProductDataModel.fromJson(product))
-          .toList(),
-      tujuanData: TujuanDataModel.fromJson(json['tujuan_data']),
+      id: json['id'] ?? 0,
+      typeSchedule: json['type_schedule']?.toString() ??
+          json['tipe_schedule']?.toString() ??
+          '',
+      tujuan: json['tujuan']?.toString() ?? '',
+      idTujuan: json['id_tujuan'] ?? 0,
+      tglVisit: json['tgl_visit']?.toString() ?? '',
+      product: parseProductList(),
+      note: json['note']?.toString() ?? '',
+      shift: json['shift']?.toString() ??
+          'Full Day', // Default value for GM format
+      productData: parseProductData(),
+      tujuanData: parseTujuanData(),
     );
   }
 

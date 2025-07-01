@@ -1,16 +1,22 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/presentation/theme/app_theme.dart';
+import '../../../../core/utils/constants.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../schedule/domain/entities/tipe_schedule.dart';
 import '../../../schedule/presentation/bloc/tipe_schedule_bloc.dart';
 import '../../domain/entities/approval.dart' as approval;
 import '../../domain/entities/monthly_approval.dart' as monthly;
 import '../../domain/entities/schedule.dart' as schedule;
+import '../../domain/repositories/approval_repository.dart';
+import '../../data/models/approval_model.dart';
+import '../../data/models/monthly_approval_model.dart';
 import '../bloc/approval_bloc.dart';
 import '../bloc/monthly_approval_bloc.dart';
 import '../widgets/schedule_card.dart';
@@ -140,14 +146,39 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
   final Set<String> _joinVisitScheduleIds = {};
   final TextEditingController _notesController = TextEditingController();
   bool _isLoading = false;
+  bool _isLoadingDetails = false;
+  dynamic _enhancedApproval; // Store approval with fetched details
 
   @override
   bool get wantKeepAlive => true;
+
+  /// Helper method to check if current user is GM
+  bool _isCurrentUserGM() {
+    try {
+      final userDataString =
+          sl<SharedPreferences>().getString(Constants.userDataKey);
+      if (userDataString == null) {
+        Logger.info('ApprovalDetailView', 'User data is null');
+        return false;
+      }
+
+      final userData = json.decode(userDataString);
+      final role = userData['role']?.toString().toUpperCase() ?? '';
+      Logger.info('ApprovalDetailView',
+          'Current user role: $role, isGM: ${role == 'GM'}');
+      return role == 'GM';
+    } catch (e) {
+      Logger.error('ApprovalDetailView', 'Error checking user role: $e');
+      return false;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     Logger.info('ApprovalDetailView', 'initState dipanggil');
+    _enhancedApproval = widget.approval; // Initialize with passed approval
+
     if (kDebugMode) {
       print('🔄 ApprovalDetailView initState');
       print('🔄 Approval details: ${widget.approval.details.length} items');
@@ -157,6 +188,196 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
             '🔄 First detail - typeSchedule: ${firstDetail.typeSchedule}, tujuan: ${firstDetail.tujuan}');
       }
     }
+
+    // Load details if current approval has empty details (likely GM case)
+    if (widget.approval.details.isEmpty) {
+      _loadDetailApproval();
+    }
+  }
+
+  /// Load detailed approval data for GM users
+  Future<void> _loadDetailApproval() async {
+    setState(() {
+      _isLoadingDetails = true;
+    });
+
+    try {
+      Logger.info('ApprovalDetailView', 'Loading detailed approval data...');
+
+      if (widget.isMonthlyTab) {
+        await _loadMonthlyApprovalDetail();
+      } else {
+        await _loadSuddenlyApprovalDetail();
+      }
+    } catch (e) {
+      Logger.error('ApprovalDetailView', 'Error loading approval details: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memuat detail: $e'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingDetails = false;
+        });
+      }
+    }
+  }
+
+  /// Load monthly approval detail via GM endpoint
+  Future<void> _loadMonthlyApprovalDetail() async {
+    final approval = widget.approval as monthly.MonthlyApproval;
+    Logger.info('ApprovalDetailView',
+        'Loading monthly detail for GM: userId=${approval.idBawahan}, year=${approval.year}, month=${approval.month}');
+
+    final result = await sl<ApprovalRepository>().getMonthlyApprovalDetailGM(
+      approval.idBawahan,
+      approval.year,
+      approval.month,
+    );
+
+    result.fold(
+      (failure) {
+        Logger.error('ApprovalDetailView',
+            'Failed to load monthly GM details: ${failure.message}');
+        throw Exception('Gagal memuat detail bulanan: ${failure.message}');
+      },
+      (detailData) {
+        Logger.info(
+            'ApprovalDetailView', 'Successfully loaded monthly GM details');
+        Logger.info('ApprovalDetailView', 'Detail data structure: $detailData');
+
+        if (detailData != null) {
+          // Parse the detail response - GM API returns List directly, not wrapped in 'details'
+          List<dynamic> detailsList;
+
+          if (detailData is List) {
+            // Direct list response from GM API
+            detailsList = detailData;
+          } else if (detailData is Map<String, dynamic> &&
+              detailData.containsKey('details')) {
+            // Wrapped in 'details' field
+            detailsList = detailData['details'] as List;
+          } else {
+            Logger.warning('ApprovalDetailView',
+                'Unexpected response format: $detailData');
+            return;
+          }
+
+          if (detailsList.isNotEmpty) {
+            Logger.info('ApprovalDetailView',
+                'Found ${detailsList.length} detail items');
+
+            final parsedDetails = detailsList
+                .map((detail) => MonthlyScheduleDetailModel.fromJson(detail))
+                .toList();
+
+            setState(() {
+              _enhancedApproval = MonthlyApprovalModel(
+                idBawahan: approval.idBawahan,
+                namaBawahan: approval.namaBawahan,
+                totalSchedule: parsedDetails.length, // Update with actual count
+                year: approval.year,
+                month: approval.month,
+                jumlahDokter: approval.jumlahDokter,
+                jumlahKlinik: approval.jumlahKlinik,
+                approved: approval.approved,
+                details: parsedDetails,
+              );
+            });
+
+            Logger.success('ApprovalDetailView',
+                'Monthly approval enhanced with ${parsedDetails.length} details');
+          } else {
+            Logger.warning(
+                'ApprovalDetailView', 'No details found in response');
+          }
+        }
+      },
+    );
+  }
+
+  /// Load suddenly approval detail via GM endpoint
+  Future<void> _loadSuddenlyApprovalDetail() async {
+    final suddenApproval = widget.approval as approval.Approval;
+    Logger.info('ApprovalDetailView',
+        'Loading suddenly detail for GM: userId=${suddenApproval.idBawahan}, year=${suddenApproval.year}, month=${suddenApproval.month}');
+
+    final result = await sl<ApprovalRepository>().getSuddenlyApprovalDetailGM(
+      suddenApproval.idBawahan,
+      suddenApproval.year,
+      suddenApproval.month,
+    );
+
+    result.fold(
+      (failure) {
+        Logger.error('ApprovalDetailView',
+            'Failed to load suddenly GM details: ${failure.message}');
+        throw Exception('Gagal memuat detail dadakan: ${failure.message}');
+      },
+      (detailData) {
+        Logger.info(
+            'ApprovalDetailView', 'Successfully loaded suddenly GM details');
+        Logger.info('ApprovalDetailView', 'Detail data structure: $detailData');
+
+        if (detailData != null) {
+          // Parse the detail response - GM API returns List directly, not wrapped in 'details'
+          List<dynamic> detailsList;
+
+          if (detailData is List) {
+            // Direct list response from GM API
+            detailsList = detailData;
+          } else if (detailData is Map<String, dynamic> &&
+              detailData.containsKey('details')) {
+            // Wrapped in 'details' field
+            detailsList = detailData['details'] as List;
+          } else {
+            Logger.warning('ApprovalDetailView',
+                'Unexpected response format: $detailData');
+            return;
+          }
+
+          if (detailsList.isNotEmpty) {
+            Logger.info('ApprovalDetailView',
+                'Found ${detailsList.length} detail items');
+
+            final parsedDetails = detailsList
+                .map((detail) => DetailModel.fromJson(detail))
+                .toList();
+
+            setState(() {
+              _enhancedApproval = ApprovalModel(
+                id: suddenApproval.id,
+                userId: suddenApproval.userId,
+                namaBawahan: suddenApproval.namaBawahan,
+                tglVisit: suddenApproval.tglVisit,
+                tujuan: suddenApproval.tujuan,
+                note: suddenApproval.note,
+                isApproved: suddenApproval.isApproved,
+                approved: suddenApproval.approved,
+                idBawahan: suddenApproval.idBawahan,
+                month: suddenApproval.month,
+                year: suddenApproval.year,
+                totalSchedule: parsedDetails.length, // Update with actual count
+                jumlahDokter: suddenApproval.jumlahDokter,
+                jumlahKlinik: suddenApproval.jumlahKlinik,
+                details: parsedDetails,
+              );
+            });
+
+            Logger.success('ApprovalDetailView',
+                'Suddenly approval enhanced with ${parsedDetails.length} details');
+          } else {
+            Logger.warning(
+                'ApprovalDetailView', 'No details found in response');
+          }
+        }
+      },
+    );
   }
 
   @override
@@ -379,14 +600,28 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
   }
 
   Widget _buildScheduleListSliver() {
+    // Use enhanced approval if available, otherwise use original
+    final currentApproval = _enhancedApproval ?? widget.approval;
     final List<dynamic> details = widget.isMonthlyTab
-        ? (widget.approval as monthly.MonthlyApproval).details
-        : (widget.approval as approval.Approval).details;
+        ? (currentApproval as monthly.MonthlyApproval).details
+        : (currentApproval as approval.Approval).details;
 
-    if (_isLoading) {
-      return const SliverFillRemaining(
+    if (_isLoading || _isLoadingDetails) {
+      return SliverFillRemaining(
         child: Center(
-          child: CircularProgressIndicator(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(
+                _isLoadingDetails
+                    ? 'Memuat detail persetujuan...'
+                    : 'Memuat...',
+                style: GoogleFonts.poppins(color: Colors.grey[600]),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -436,7 +671,9 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
                 _selectedScheduleIds.contains(schedule.idSchedule);
             final isJoinVisit =
                 _joinVisitScheduleIds.contains(schedule.idSchedule.toString());
-            final canJoinVisit = widget.isMonthlyTab && isSelected;
+            // Enable join visit for monthly tab when selected, but disable for GM users
+            final canJoinVisit =
+                widget.isMonthlyTab && isSelected && !_isCurrentUserGM();
 
             return ScheduleCard(
               schedule: schedule,
@@ -474,7 +711,8 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
       if (!mounted) return;
 
       if (widget.isMonthlyTab) {
-        final monthlyApproval = widget.approval as monthly.MonthlyApproval;
+        final monthlyApproval =
+            (_enhancedApproval ?? widget.approval) as monthly.MonthlyApproval;
         context.read<MonthlyApprovalBloc>().add(
               SendMonthlyApproval(
                 scheduleIds: _selectedScheduleIds.toList(),
@@ -485,7 +723,8 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
               ),
             );
       } else {
-        final immediateApproval = widget.approval as approval.Approval;
+        final immediateApproval =
+            (_enhancedApproval ?? widget.approval) as approval.Approval;
         // Get all selected schedules
         final selectedSchedules = immediateApproval.details
             .where((detail) => _selectedScheduleIds.contains(detail.id))
@@ -533,7 +772,8 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
 
       if (widget.isMonthlyTab) {
         Logger.info('ApprovalDetailView', 'Processing monthly tab rejection');
-        final monthlyApproval = widget.approval as monthly.MonthlyApproval;
+        final monthlyApproval =
+            (_enhancedApproval ?? widget.approval) as monthly.MonthlyApproval;
         Logger.info('ApprovalDetailView',
             'Monthly approval - User ID: ${monthlyApproval.idBawahan}');
         Logger.info('ApprovalDetailView',
@@ -552,30 +792,22 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
             );
       } else {
         Logger.info('ApprovalDetailView', 'Processing extra tab rejection');
-        final immediateApproval = widget.approval as approval.Approval;
+        final immediateApproval =
+            (_enhancedApproval ?? widget.approval) as approval.Approval;
         Logger.info('ApprovalDetailView',
             'Extra approval - User ID: ${immediateApproval.userId}');
         Logger.info('ApprovalDetailView',
             'Number of schedules to reject: ${_selectedScheduleIds.length}');
 
-        // Handle batch rejection for extra tab
-        for (var scheduleId in _selectedScheduleIds) {
-          Logger.info(
-              'ApprovalDetailView', 'Rejecting schedule ID: $scheduleId');
-          try {
-            context.read<ApprovalBloc>().add(
-                  RejectRequest(
-                    idSchedule: scheduleId.toString(),
-                    idRejecter: widget.userId,
-                    comment: result,
-                    context: context,
-                  ),
-                );
-          } catch (e) {
-            Logger.error('ApprovalDetailView',
-                'Error rejecting schedule $scheduleId: $e');
-          }
-        }
+        // Use batch reject for extra tab
+        context.read<ApprovalBloc>().add(
+              BatchRejectRequest(
+                scheduleIds: _selectedScheduleIds.toList(),
+                comment: result,
+                idRejecter: widget.userId,
+                context: context,
+              ),
+            );
       }
     } else {
       Logger.info('ApprovalDetailView', 'Rejection cancelled by user');

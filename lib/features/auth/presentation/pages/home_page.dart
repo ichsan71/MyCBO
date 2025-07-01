@@ -17,6 +17,7 @@ import 'package:provider/provider.dart';
 import 'package:test_cbo/core/presentation/theme/theme_provider.dart';
 import 'package:test_cbo/features/kpi/presentation/bloc/kpi_bloc.dart';
 import 'package:test_cbo/features/kpi/presentation/widgets/kpi_chart_shimmer.dart';
+import 'package:test_cbo/features/kpi/data/models/kpi_model.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -46,7 +47,8 @@ class _HomeContent extends StatefulWidget {
   State<_HomeContent> createState() => _HomeContentState();
 }
 
-class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver {
+class _HomeContentState extends State<_HomeContent>
+    with WidgetsBindingObserver {
   String? _currentUserId;
   bool _isFirstLoad = true;
   bool _mounted = true;
@@ -59,12 +61,12 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _currentUserId = widget.user.user.idUser.toString();
-    
+
     // Set default year and month to current date
     final now = DateTime.now();
     _currentYear = now.year.toString();
     _currentMonth = now.month.toString().padLeft(2, '0');
-    
+
     // Delay the first load slightly to ensure proper initialization
     Future.microtask(() {
       if (_mounted) {
@@ -91,14 +93,14 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
   void didUpdateWidget(covariant _HomeContent oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!_mounted) return;
-    
+
     final newUserId = widget.user.user.idUser.toString();
-    
+
     // Always refresh on user change
     if (_currentUserId != newUserId) {
       _currentUserId = newUserId;
       _isFirstLoad = true; // Reset first load flag for new user
-      
+
       // Ensure widget is mounted and use force refresh
       if (_mounted) {
         _refreshKpiData(isForceRefresh: true);
@@ -108,14 +110,15 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
 
   void _refreshKpiData({bool isForceRefresh = false}) {
     if (!_mounted) return;
-    
+
     final bloc = context.read<KpiBloc>();
-    
+
     if (isForceRefresh) {
       // Update to current date only if it's a manual refresh (from refresh button)
       if (_isManualRefresh) {
         final now = DateTime.now();
-        debugPrint('Manual refresh - Updating to current date: ${now.year}-${now.month}');
+        debugPrint(
+            'Manual refresh - Updating to current date: ${now.year}-${now.month}');
         setState(() {
           _currentYear = now.year.toString();
           _currentMonth = now.month.toString().padLeft(2, '0');
@@ -125,13 +128,17 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
         debugPrint('First load - Using current date');
         _isFirstLoad = false;
       } else {
-        debugPrint('Force refresh - Using selected date: $_currentYear-$_currentMonth');
+        debugPrint(
+            'Force refresh - Using selected date: $_currentYear-$_currentMonth');
       }
-      
-      bloc.add(ResetAndRefreshKpiDataEvent(_currentUserId ?? '', _currentYear, _currentMonth));
+
+      bloc.add(ResetAndRefreshKpiDataEvent(
+          _currentUserId ?? '', _currentYear, _currentMonth));
     } else {
-      debugPrint('Normal refresh - Using selected date: $_currentYear-$_currentMonth');
-      bloc.add(GetKpiDataEvent(_currentUserId ?? '', _currentYear, _currentMonth));
+      debugPrint(
+          'Normal refresh - Using selected date: $_currentYear-$_currentMonth');
+      bloc.add(
+          GetKpiDataEvent(_currentUserId ?? '', _currentYear, _currentMonth));
     }
   }
 
@@ -142,7 +149,7 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
       _currentMonth = month;
       _isManualRefresh = false;
     });
-    
+
     // Use GetKpiDataEvent for filter changes to preserve selected date
     final bloc = context.read<KpiBloc>();
     bloc.add(GetKpiDataEvent(_currentUserId ?? '', year, month));
@@ -293,40 +300,44 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
                         builder: (context, state) {
                           if (state is KpiLoading) {
                             return const KpiChartShimmer();
-                          } else if (state is KpiLoaded && state.kpiData.dataKpiAtasan.isNotEmpty) {
+                          } else if (state is KpiLoaded) {
+                            // Tampilkan KpiChartNew bahkan jika data kosong
+                            // KpiChartNew sudah menangani kasus data kosong dengan baik
+                            final grafik =
+                                state.kpiData.dataKpiAtasan.isNotEmpty
+                                    ? state.kpiData.dataKpiAtasan.first.grafik
+                                    : <KpiGrafik>[];
+
                             return KpiChartNew(
-                              kpiData: state.kpiData.dataKpiAtasan.first.grafik,
-                              onRefresh: () => _refreshKpiData(isForceRefresh: true),
+                              kpiData: grafik,
+                              onRefresh: () =>
+                                  _refreshKpiData(isForceRefresh: true),
                               onFilterChanged: _handleFilterChanged,
                               currentYear: _currentYear,
                               currentMonth: _currentMonth,
                             );
                           } else if (state is KpiError) {
-                            return Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    state.message,
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.red,
-                                      fontSize: 14,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  ElevatedButton.icon(
-                                    onPressed: () => _refreshKpiData(isForceRefresh: true),
-                                    label: Text(
-                                      'Coba Lagi',
-                                      style: GoogleFonts.poppins(), 
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            // Untuk error, tetap tampilkan filter bulan dengan data kosong
+                            return KpiChartNew(
+                              kpiData: const <KpiGrafik>[],
+                              onRefresh: () =>
+                                  _refreshKpiData(isForceRefresh: true),
+                              onFilterChanged: _handleFilterChanged,
+                              currentYear: _currentYear,
+                              currentMonth: _currentMonth,
+                              isFilterEnabled: true,
                             );
                           }
-                          return const SizedBox.shrink();
+                          // State initial - tampilkan dengan data kosong
+                          return KpiChartNew(
+                            kpiData: const <KpiGrafik>[],
+                            onRefresh: () =>
+                                _refreshKpiData(isForceRefresh: true),
+                            onFilterChanged: _handleFilterChanged,
+                            currentYear: _currentYear,
+                            currentMonth: _currentMonth,
+                            isFilterEnabled: true,
+                          );
                         },
                       ),
                     ],
@@ -372,22 +383,23 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
                             childAspectRatio: 1.1,
                             children: [
                               if (hasKpiAccess && !isGmOrCeo)
-                              _buildMenuCard(
-                                context: context,
-                                title: l10n.report,
-                                icon: Icons.bar_chart,
-                                color: Colors.blue[600]!,
-                                  onTap: () => Navigator.pushNamed(context, '/kpi_member'),
-                              ),
+                                _buildMenuCard(
+                                  context: context,
+                                  title: l10n.report,
+                                  icon: Icons.bar_chart,
+                                  color: Colors.blue[600]!,
+                                  onTap: () => Navigator.pushNamed(
+                                      context, '/kpi_member'),
+                                ),
                               if (!isGmOrCeo)
-                              _buildMenuCard(
-                                context: context,
-                                title: l10n.addSchedule,
-                                icon: Icons.add_circle,
-                                color: Colors.green[600]!,
-                                onTap: () =>
-                                    Navigator.pushNamed(context, '/add_schedule'),
-                              ),
+                                _buildMenuCard(
+                                  context: context,
+                                  title: l10n.addSchedule,
+                                  icon: Icons.add_circle,
+                                  color: Colors.green[600]!,
+                                  onTap: () => Navigator.pushNamed(
+                                      context, '/add_schedule'),
+                                ),
                               if (hasApprovalAccess)
                                 _buildMenuCard(
                                   context: context,
@@ -397,8 +409,10 @@ class _HomeContentState extends State<_HomeContent> with WidgetsBindingObserver 
                                   onTap: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => const ApprovalListPage(),
-                                      settings: const RouteSettings(name: ApprovalListPage.routeName),
+                                      builder: (context) =>
+                                          const ApprovalListPage(),
+                                      settings: const RouteSettings(
+                                          name: ApprovalListPage.routeName),
                                     ),
                                   ),
                                 ),

@@ -49,10 +49,12 @@ class ApprovalModel extends Approval {
       }
 
       // Parse all integer fields
-      final id = parseIntField(json['id'], 'id');
-      final userId = parseIntField(json['user_id'], 'user_id');
+      final id = parseIntField(json['id'] ?? json['id_user'], 'id');
+      final userId =
+          parseIntField(json['user_id'] ?? json['id_user'], 'user_id');
       final approved = parseIntField(json['approved'], 'approved');
-      final idBawahan = parseIntField(json['id_bawahan'], 'id_bawahan');
+      final idBawahan =
+          parseIntField(json['id_bawahan'] ?? json['id_user'], 'id_bawahan');
       final month = parseIntField(json['month'], 'month');
       final year = parseIntField(json['year'], 'year');
       final totalSchedule =
@@ -61,40 +63,53 @@ class ApprovalModel extends Approval {
       // Parse details list with null safety
       List<Detail> detailsList = [];
       Logger.info('ApprovalModel', 'Parsing details: ${json['details']}');
-      if (json['details'] != null) {
-        if (json['details'] is List) {
-          Logger.info('ApprovalModel',
-              'Details is a List with ${(json['details'] as List).length} items');
-          detailsList = (json['details'] as List)
-              .where((detail) => detail != null)
-              .map((detail) {
-            try {
-              if (detail is Map<String, dynamic>) {
-                Logger.info('ApprovalModel', 'Processing detail item: $detail');
-                return DetailModel.fromJson(detail);
-              }
-              Logger.error('ApprovalModel',
-                  'Invalid detail format: $detail (type: ${detail.runtimeType})');
-              throw ServerException(
-                  message: 'Invalid detail format in approval data');
-            } catch (e, stackTrace) {
-              Logger.error('ApprovalModel',
-                  'Error parsing detail: $e\nStack trace: $stackTrace');
-              rethrow;
-            }
-          }).toList();
+
+      try {
+        if (json['details'] != null) {
+          if (json['details'] is List) {
+            Logger.info('ApprovalModel',
+                'Details is a List with ${(json['details'] as List).length} items');
+
+            detailsList = (json['details'] as List)
+                .where((detail) => detail != null)
+                .map((detail) {
+                  try {
+                    if (detail is Map<String, dynamic>) {
+                      Logger.info(
+                          'ApprovalModel', 'Processing detail item: $detail');
+                      return DetailModel.fromJson(detail);
+                    }
+                    Logger.warning('ApprovalModel',
+                        'Skipping invalid detail format: $detail (type: ${detail.runtimeType})');
+                    return null;
+                  } catch (e, stackTrace) {
+                    Logger.warning('ApprovalModel',
+                        'Error parsing detail item: $e\nStack trace: $stackTrace');
+                    return null;
+                  }
+                })
+                .where((detail) => detail != null)
+                .cast<Detail>()
+                .toList();
+
+            Logger.info('ApprovalModel',
+                'Successfully parsed ${detailsList.length} details');
+          } else {
+            Logger.warning('ApprovalModel',
+                'Details is not a List: ${json['details'].runtimeType}');
+          }
         } else {
-          Logger.error('ApprovalModel',
-              'Details is not a List: ${json['details'].runtimeType}');
+          Logger.info('ApprovalModel', 'Details is null, using empty list');
         }
-      } else {
-        Logger.info('ApprovalModel', 'Details is null');
+      } catch (e, stackTrace) {
+        Logger.error('ApprovalModel',
+            'Error parsing details list: $e\nStack trace: $stackTrace');
       }
 
       return ApprovalModel(
         id: id,
         userId: userId,
-        namaBawahan: (json['nama_bawahan'] ?? '').toString(),
+        namaBawahan: (json['nama_bawahan'] ?? json['nama'] ?? '').toString(),
         tglVisit: (json['tgl_visit'] ?? '').toString(),
         tujuan: (json['tujuan'] ?? '').toString(),
         note: (json['note'] ?? '').toString(),
@@ -208,6 +223,16 @@ class DetailModel extends Detail {
           Logger.error('DetailModel',
               'product_data is not a List: ${json['product_data'].runtimeType}');
         }
+      } else if (json.containsKey('nama_product')) {
+        // GM format - single product name
+        Logger.info('DetailModel',
+            'Processing GM format product: ${json['nama_product']}');
+        productDataList = [
+          ProductDataModel(
+            idProduct: 0, // Default value for GM format
+            namaProduct: json['nama_product']?.toString() ?? '',
+          )
+        ];
       }
 
       // Memastikan bahwa tujuan_data adalah object yang valid
@@ -218,6 +243,15 @@ class DetailModel extends Detail {
         Logger.info(
             'DetailModel', 'Processing tujuan_data: ${json['tujuan_data']}');
         tujuanDataModel = TujuanDataModel.fromJson(json['tujuan_data']);
+      } else if (json.containsKey('nama_tujuan')) {
+        // GM format
+        Logger.info('DetailModel',
+            'Processing GM format tujuan: ${json['nama_tujuan']}');
+        tujuanDataModel = TujuanDataModel(
+          idDokter: 0, // Default value for GM format
+          namaDokter: json['nama_tujuan']?.toString() ?? '',
+          namaKlinik: '',
+        );
       } else {
         Logger.info('DetailModel',
             'Creating default tujuan_data with id_tujuan: ${json['id_tujuan']}');
@@ -255,13 +289,15 @@ class DetailModel extends Detail {
 
       return DetailModel(
         id: id,
-        typeSchedule: (json['type_schedule'] ?? '').toString(),
+        typeSchedule:
+            (json['type_schedule'] ?? json['tipe_schedule'] ?? '').toString(),
         tujuan: (json['tujuan'] ?? '').toString(),
         idTujuan: idTujuan,
         tglVisit: (json['tgl_visit'] ?? '').toString(),
         product: productStr,
         note: (json['note'] ?? '').toString(),
-        shift: (json['shift'] ?? '').toString(),
+        shift: (json['shift'] ?? 'Full Day')
+            .toString(), // Default shift for GM format
         productData: productDataList,
         tujuanData: tujuanDataModel,
         approved: approved,

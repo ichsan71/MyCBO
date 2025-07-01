@@ -63,7 +63,8 @@ class KpiMemberLoaded extends KpiMemberState {
   });
 
   @override
-  List<Object?> get props => [kpiMembers, currentYear, currentMonth, searchQuery];
+  List<Object?> get props =>
+      [kpiMembers, currentYear, currentMonth, searchQuery];
 }
 
 class KpiMemberError extends KpiMemberState {
@@ -91,7 +92,8 @@ class KpiMemberBloc extends Bloc<KpiMemberEvent, KpiMemberState> {
     Emitter<KpiMemberState> emit,
   ) async {
     try {
-      debugPrint('KPI Member Bloc: Loading data for ${event.year}-${event.month}');
+      debugPrint(
+          'KPI Member Bloc: Loading data for ${event.year}-${event.month}');
       emit(KpiMemberLoading());
 
       final result = await getKpiMemberDataUseCase(
@@ -108,11 +110,21 @@ class KpiMemberBloc extends Bloc<KpiMemberEvent, KpiMemberState> {
         },
         (data) async {
           debugPrint('KPI Member Bloc: Loaded ${data.length} KPI members');
-          final filteredData = event.searchQuery != null && event.searchQuery!.isNotEmpty
-              ? data.where((kpiMember) => 
-                  kpiMember.kodeRayon.toLowerCase().contains(event.searchQuery!.toLowerCase())
-                ).toList()
-              : data;
+          var filteredData =
+              event.searchQuery != null && event.searchQuery!.isNotEmpty
+                  ? data
+                      .where((kpiMember) => kpiMember.kodeRayon
+                          .toLowerCase()
+                          .contains(event.searchQuery!.toLowerCase()))
+                      .toList()
+                  : data;
+
+          // Sort berdasarkan total nilai tertinggi
+          filteredData.sort((a, b) {
+            final totalNilaiA = _calculateTotalNilai(a.grafik);
+            final totalNilaiB = _calculateTotalNilai(b.grafik);
+            return totalNilaiB.compareTo(totalNilaiA); // Descending order
+          });
 
           emit(KpiMemberLoaded(
             kpiMembers: filteredData,
@@ -144,4 +156,12 @@ class KpiMemberBloc extends Bloc<KpiMemberEvent, KpiMemberState> {
       ));
     }
   }
-} 
+
+  double _calculateTotalNilai(List<KpiGrafik> grafik) {
+    double total = 0;
+    for (var item in grafik) {
+      total += double.tryParse(item.data.nilai) ?? 0.0;
+    }
+    return total;
+  }
+}

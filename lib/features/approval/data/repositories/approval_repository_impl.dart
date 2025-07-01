@@ -200,6 +200,48 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
   }
 
   @override
+  Future<Either<Failure, dynamic>> getMonthlyApprovalDetailGM(
+      int userId, int year, int month) async {
+    if (await networkInfo.isConnected) {
+      try {
+        Logger.api('GET', '/approval-gm/monthly/detail/$userId/$year/$month');
+        final detail = await remoteDataSource.getMonthlyApprovalDetailGM(
+            userId, year, month);
+        Logger.api('GET', '/approval-gm/monthly/detail/$userId/$year/$month',
+            response: detail);
+        return Right(detail);
+      } catch (e) {
+        Logger.error('ApprovalRepository',
+            'Error getting GM monthly approval detail: $e');
+        return Left(ServerFailure(message: e.toString()));
+      }
+    } else {
+      return Left(const NetworkFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, dynamic>> getSuddenlyApprovalDetailGM(
+      int userId, int year, int month) async {
+    if (await networkInfo.isConnected) {
+      try {
+        Logger.api('GET', '/approval-gm/suddenly/detail/$userId/$year/$month');
+        final detail = await remoteDataSource.getSuddenlyApprovalDetailGM(
+            userId, year, month);
+        Logger.api('GET', '/approval-gm/suddenly/detail/$userId/$year/$month',
+            response: detail);
+        return Right(detail);
+      } catch (e) {
+        Logger.error('ApprovalRepository',
+            'Error getting GM suddenly approval detail: $e');
+        return Left(ServerFailure(message: e.toString()));
+      }
+    } else {
+      return Left(const NetworkFailure());
+    }
+  }
+
+  @override
   Future<Either<Failure, String>> sendMonthlyApproval({
     required List<int> scheduleIds,
     required List<String> scheduleJoinVisitIds,

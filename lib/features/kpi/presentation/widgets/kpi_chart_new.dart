@@ -13,22 +13,25 @@ class KpiChartNew extends StatefulWidget {
   final String currentYear;
   final String currentMonth;
   final bool isFilterEnabled;
+  final Function(bool)? onExpansionChanged;
 
   const KpiChartNew({
-    Key? key, 
+    Key? key,
     required this.kpiData,
     required this.onRefresh,
     required this.onFilterChanged,
     required this.currentYear,
     required this.currentMonth,
     this.isFilterEnabled = true,
+    this.onExpansionChanged,
   }) : super(key: key);
 
   @override
   State<KpiChartNew> createState() => _KpiChartNewState();
 }
 
-class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStateMixin {
+class _KpiChartNewState extends State<KpiChartNew>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _rotationAnimation;
   late Animation<double> _scaleAnimation;
@@ -37,15 +40,17 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
   bool _isExpanded = false;
   late String _selectedYear;
   late String _selectedMonth;
+  final GlobalKey _expandableDetailKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
-    
-    debugPrint('KpiChartNew - Initializing with year: ${widget.currentYear}, month: ${widget.currentMonth}');
+
+    debugPrint(
+        'KpiChartNew - Initializing with year: ${widget.currentYear}, month: ${widget.currentMonth}');
     _selectedYear = widget.currentYear;
     _selectedMonth = widget.currentMonth;
-    
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
@@ -58,20 +63,21 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
   @override
   void didUpdateWidget(KpiChartNew oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // Update selected values if they changed from parent
-    if (oldWidget.currentYear != widget.currentYear || 
+    if (oldWidget.currentYear != widget.currentYear ||
         oldWidget.currentMonth != widget.currentMonth) {
-      debugPrint('KpiChartNew - Updating to year: ${widget.currentYear}, month: ${widget.currentMonth}');
-      
+      debugPrint(
+          'KpiChartNew - Updating to year: ${widget.currentYear}, month: ${widget.currentMonth}');
+
       // Reset animations for new data
       _animationController.reset();
-      
+
       setState(() {
         _selectedYear = widget.currentYear;
         _selectedMonth = widget.currentMonth;
       });
-      
+
       // Start animations
       _animationController.forward();
     }
@@ -115,27 +121,6 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
     ));
   }
 
-  void _refreshToCurrentDate() {
-    final now = DateTime.now();
-    final currentYear = now.year.toString();
-    final currentMonth = now.month.toString().padLeft(2, '0');
-    
-    debugPrint('KpiChartNew - Refreshing to current date: $currentYear-$currentMonth');
-    
-    // Reset animations
-    _animationController.reset();
-    
-    // Update state and trigger refresh
-    setState(() {
-      _selectedYear = currentYear;
-      _selectedMonth = currentMonth;
-    });
-    
-    // Notify parent of date change
-    widget.onFilterChanged(currentYear, currentMonth);
-    widget.onRefresh();
-  }
-
   @override
   void dispose() {
     _animationController.dispose();
@@ -177,15 +162,6 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: _refreshToCurrentDate,
-              icon: const Icon(Icons.refresh),
-              label: Text(
-                'Kembali ke Bulan Ini',
-                style: GoogleFonts.poppins(),
-              ),
-            ),
           ],
         ),
       );
@@ -225,32 +201,34 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
           Expanded(
             child: widget.isFilterEnabled
                 ? InkWell(
-              onTap: () => _showMonthYearPicker(),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      DateFormat('MMMM yyyy', 'id_ID').format(
-                        DateTime(
-                          int.parse(_selectedYear),
-                          int.parse(_selectedMonth),
-                        ),
+                    onTap: () => _showMonthYearPicker(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      style: GoogleFonts.poppins(fontSize: 14),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            DateFormat('MMMM yyyy', 'id_ID').format(
+                              DateTime(
+                                int.parse(_selectedYear),
+                                int.parse(_selectedMonth),
+                              ),
+                            ),
+                            style: GoogleFonts.poppins(fontSize: 14),
+                          ),
+                          const Icon(Icons.calendar_today, size: 18),
+                        ],
+                      ),
                     ),
-                    const Icon(Icons.calendar_today, size: 18),
-                  ],
-                ),
-              ),
                   )
                 : Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.grey[300]!),
                       borderRadius: BorderRadius.circular(8),
@@ -265,12 +243,14 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
                               int.parse(_selectedMonth),
                             ),
                           ),
-                          style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600]),
+                          style: GoogleFonts.poppins(
+                              fontSize: 14, color: Colors.grey[600]),
                         ),
-                        const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
+                        const Icon(Icons.calendar_today,
+                            size: 18, color: Colors.grey),
                       ],
                     ),
-            ),
+                  ),
           ),
         ],
       ),
@@ -290,19 +270,20 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
     );
 
     if (selected != null) {
-      debugPrint('KpiChartNew - Month/Year picked: ${selected.year}-${selected.month.toString().padLeft(2, '0')}');
-      
+      debugPrint(
+          'KpiChartNew - Month/Year picked: ${selected.year}-${selected.month.toString().padLeft(2, '0')}');
+
       // Reset animations for new data
       _animationController.reset();
-      
+
       setState(() {
         _selectedYear = selected.year.toString();
         _selectedMonth = selected.month.toString().padLeft(2, '0');
       });
-      
+
       // Notify parent of date change
       widget.onFilterChanged(_selectedYear, _selectedMonth);
-      
+
       // Start animations
       _animationController.forward();
     }
@@ -319,6 +300,7 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
 
   Widget _buildExpandableDetail() {
     return Container(
+      key: _expandableDetailKey,
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
@@ -338,6 +320,27 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
             setState(() {
               _isExpanded = expanded;
             });
+
+            // Panggil callback eksternal jika ada (untuk detail page)
+            if (widget.onExpansionChanged != null) {
+              widget.onExpansionChanged!(expanded);
+            } else {
+              // Auto scroll internal hanya jika tidak ada callback eksternal
+              if (expanded) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  final context = _expandableDetailKey.currentContext;
+                  if (context != null) {
+                    Scrollable.ensureVisible(
+                      context,
+                      duration: const Duration(milliseconds: 500),
+                      curve: Curves.easeInOut,
+                      alignment:
+                          0.1, // Scroll sedikit dari atas agar tidak terpotong
+                    );
+                  }
+                });
+              }
+            }
           },
           title: Text(
             'Detail Kinerja',
@@ -380,10 +383,11 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
             final delay = index * 0.1;
             final scale = _isExpanded
                 ? (_animationController.value > delay
-                    ? (((_animationController.value - delay) / 0.2).clamp(0.0, 1.0))
+                    ? (((_animationController.value - delay) / 0.2)
+                        .clamp(0.0, 1.0))
                     : 0.0)
                 : 1.0;
-            
+
             return _buildKpiCard(index, scale);
           },
         );
@@ -394,7 +398,8 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
   Widget _buildKpiCard(int index, double scale) {
     final item = widget.kpiData[index];
     final achievement = double.tryParse(item.data.ach) ?? 0.0;
-    final color = Color(int.parse(item.backgroundColor.replaceAll('#', '0xFF')));
+    final color =
+        Color(int.parse(item.backgroundColor.replaceAll('#', '0xFF')));
 
     return Transform.scale(
       scale: scale,
@@ -457,7 +462,8 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
                   _buildMetricRow(
                     label: 'Achievement',
                     value: '${item.data.ach}%',
-                    valueColor: _getAchievementColor(double.parse(item.data.ach)),
+                    valueColor:
+                        _getAchievementColor(double.parse(item.data.ach)),
                     context: context,
                   ),
                   _buildMetricRow(
@@ -516,13 +522,17 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
                         child: PieChart(
                           PieChartData(
                             sections: widget.kpiData.map((item) {
-                              final achievement = double.tryParse(item.data.ach) ?? 0.0;
-                              final color = Color(int.parse(item.backgroundColor.replaceAll('#', '0xFF')));
-                              
+                              final achievement =
+                                  double.tryParse(item.data.ach) ?? 0.0;
+                              final color = Color(int.parse(item.backgroundColor
+                                  .replaceAll('#', '0xFF')));
+
                               return PieChartSectionData(
                                 color: color,
                                 value: achievement,
-                                title: achievement > 5 ? '${achievement.toStringAsFixed(0)}%' : '',
+                                title: achievement > 5
+                                    ? '${achievement.toStringAsFixed(0)}%'
+                                    : '',
                                 titleStyle: GoogleFonts.poppins(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
@@ -624,13 +634,11 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
                 ),
                 const SizedBox(height: 8),
                 Expanded(
-                  child: ListView(
-                    shrinkWrap: true,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.zero,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: widget.kpiData.map((item) {
                       debugPrint('Building legend item: ${item.label}');
-                      
+
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Row(
@@ -641,7 +649,8 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
                               width: 8,
                               height: 8,
                               decoration: BoxDecoration(
-                                color: Color(int.parse(item.backgroundColor.replaceAll('#', '0xFF'))),
+                                color: Color(int.parse(item.backgroundColor
+                                    .replaceAll('#', '0xFF'))),
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -770,14 +779,10 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
       margin: const EdgeInsets.only(right: 12, bottom: 4, top: 4),
       width: 90,
       decoration: BoxDecoration(
-        color: isActive 
-            ? color.withOpacity(0.18) 
-            : color.withOpacity(0.05),
+        color: isActive ? color.withOpacity(0.18) : color.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isActive 
-              ? color 
-              : color.withOpacity(0.2),
+          color: isActive ? color : color.withOpacity(0.2),
           width: isActive ? 2 : 1,
         ),
         boxShadow: isActive
@@ -824,16 +829,21 @@ class _KpiChartNewState extends State<KpiChartNew> with SingleTickerProviderStat
 
   List<Widget> _buildCategoryCards(double currentValue) {
     final categories = [
-      CategoryData('Sangat Buruk', '0-50', Colors.red, 0, 50, Icons.sentiment_very_dissatisfied),
-      CategoryData('Buruk', '51-65', Colors.orange, 51, 65, Icons.sentiment_dissatisfied),
-      CategoryData('Cukup', '66-75', Colors.yellow.shade700, 66, 75, Icons.sentiment_neutral),
-      CategoryData('Baik', '76-90', Colors.blue, 76, 90, Icons.sentiment_satisfied),
-      CategoryData('Sangat Baik', '91-100', Colors.green, 91, 100, Icons.sentiment_very_satisfied),
+      CategoryData('Sangat Buruk', '0-50', Colors.red, 0, 50,
+          Icons.sentiment_very_dissatisfied),
+      CategoryData('Buruk', '51-65', Colors.orange, 51, 65,
+          Icons.sentiment_dissatisfied),
+      CategoryData('Cukup', '66-75', Colors.yellow.shade700, 66, 75,
+          Icons.sentiment_neutral),
+      CategoryData(
+          'Baik', '76-90', Colors.blue, 76, 90, Icons.sentiment_satisfied),
+      CategoryData('Sangat Baik', '91-100', Colors.green, 91, 100,
+          Icons.sentiment_very_satisfied),
     ];
 
     return categories.map((category) {
-      final isActive = currentValue >= category.minValue && 
-                      currentValue <= category.maxValue;
+      final isActive = currentValue >= category.minValue &&
+          currentValue <= category.maxValue;
       return _buildCategoryCard(
         category.label,
         category.range,
@@ -965,4 +975,4 @@ class CategoryData {
     this.maxValue,
     this.icon,
   );
-} 
+}
