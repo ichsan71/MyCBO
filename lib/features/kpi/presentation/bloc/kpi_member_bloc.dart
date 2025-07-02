@@ -117,7 +117,7 @@ class KpiMemberBloc extends Bloc<KpiMemberEvent, KpiMemberState> {
                           .toLowerCase()
                           .contains(event.searchQuery!.toLowerCase()))
                       .toList()
-                  : data;
+              : data;
 
           // Sort berdasarkan total nilai tertinggi
           filteredData.sort((a, b) {

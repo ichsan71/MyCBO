@@ -207,7 +207,7 @@ class _KpiMemberDetailPageState extends State<KpiMemberDetailPage> {
     final totalAchievement = _calculateTotalAchievement();
     final averageAchievement =
         totalAchievement / widget.kpiMember.grafik.length;
-
+    
     return Row(
       children: [
         Expanded(
@@ -341,4 +341,4 @@ class _KpiMemberDetailPageState extends State<KpiMemberDetailPage> {
       return Colors.red;
     }
   }
-}
+} 

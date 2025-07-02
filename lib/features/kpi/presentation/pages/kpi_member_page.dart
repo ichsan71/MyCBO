@@ -28,16 +28,17 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
     final now = DateTime.now();
     _currentYear = now.year.toString();
     _currentMonth = now.month.toString().padLeft(2, '0');
-    
+
     _loadData();
   }
 
   void _loadData() {
     context.read<KpiMemberBloc>().add(LoadKpiMemberData(
-      year: _currentYear,
-      month: _currentMonth,
-      searchQuery: _searchController.text.isEmpty ? null : _searchController.text,
-    ));
+          year: _currentYear,
+          month: _currentMonth,
+          searchQuery:
+              _searchController.text.isEmpty ? null : _searchController.text,
+        ));
   }
 
   Future<void> _showMonthYearPicker() async {
@@ -93,7 +94,7 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
                     ),
                   );
                 }
-                
+
                 if (state is KpiMemberError) {
                   return Center(
                     child: Column(
@@ -146,9 +147,7 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'untuk periode ${DateFormat('MMMM yyyy', 'id_ID').format(
-                              DateTime(int.parse(_currentYear), int.parse(_currentMonth))
-                            )}',
+                            'untuk periode ${DateFormat('MMMM yyyy', 'id_ID').format(DateTime(int.parse(_currentYear), int.parse(_currentMonth)))}',
                             style: GoogleFonts.poppins(
                               fontSize: 14,
                               color: Colors.grey[500],
@@ -179,7 +178,7 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
   }
 
   Widget _buildKodeRayonCard(KpiMember kpiMember) {
-    final achievement = _calculateAverageAchievement(kpiMember.grafik);
+    final totalNilai = _calculateTotalNilai(kpiMember.grafik);
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
@@ -201,7 +200,8 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withOpacity(0.1),
+                          color:
+                              Theme.of(context).primaryColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -249,9 +249,8 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
                       _buildInfoItem(
                         icon: Icons.calendar_today,
                         label: 'Periode',
-                        value: DateFormat('MMM yyyy', 'id_ID').format(
-                          DateTime(int.parse(_currentYear), int.parse(_currentMonth))
-                        ),
+                        value: DateFormat('MMM yyyy', 'id_ID').format(DateTime(
+                            int.parse(_currentYear), int.parse(_currentMonth))),
                       ),
                     ],
                   ),
@@ -261,7 +260,8 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
                       _buildInfoItem(
                         icon: Icons.star,
                         label: 'Total Nilai',
-                        value: _calculateTotalNilai(kpiMember.grafik).toStringAsFixed(1),
+                        value: _calculateTotalNilai(kpiMember.grafik)
+                            .toStringAsFixed(1),
                       ),
                     ],
                   ),
@@ -271,7 +271,7 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
             Positioned(
               top: 12,
               right: 12,
-              child: _buildCategoryBadge(achievement),
+              child: _buildCategoryBadge(totalNilai),
             ),
           ],
         ),
@@ -477,4 +477,4 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
     _searchController.dispose();
     super.dispose();
   }
-} 
+}

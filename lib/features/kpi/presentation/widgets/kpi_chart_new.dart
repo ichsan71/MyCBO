@@ -854,7 +854,7 @@ class _KpiChartNewState extends State<KpiChartNew>
     }).toList();
   }
 
-  Widget _buildPerformanceCategory(double totalAchievement) {
+  Widget _buildPerformanceCategory(double totalNilai) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -890,14 +890,14 @@ class _KpiChartNewState extends State<KpiChartNew>
                         ),
                       ),
                       const Spacer(),
-                      _buildCurrentCategoryBadge(totalAchievement),
+                      _buildCurrentCategoryBadge(totalNilai),
                     ],
                   ),
                   const SizedBox(height: 16),
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      children: _buildCategoryCards(totalAchievement),
+                      children: _buildCategoryCards(totalNilai),
                     ),
                   ),
                 ],
@@ -909,7 +909,7 @@ class _KpiChartNewState extends State<KpiChartNew>
     );
   }
 
-  Widget _buildCurrentCategoryBadge(double totalAchievement) {
+  Widget _buildCurrentCategoryBadge(double totalNilai) {
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0.8, end: 1),
       duration: const Duration(milliseconds: 800),
@@ -923,11 +923,11 @@ class _KpiChartNewState extends State<KpiChartNew>
               vertical: 6,
             ),
             decoration: BoxDecoration(
-              color: _getCategoryColor(totalAchievement),
+              color: _getCategoryColor(totalNilai),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: _getCategoryColor(totalAchievement).withOpacity(0.3),
+                  color: _getCategoryColor(totalNilai).withOpacity(0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -937,13 +937,13 @@ class _KpiChartNewState extends State<KpiChartNew>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  _getCategoryIcon(totalAchievement),
+                  _getCategoryIcon(totalNilai),
                   color: Colors.white,
                   size: 16,
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  _getCategoryLabel(totalAchievement),
+                  _getCategoryLabel(totalNilai),
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
