@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test_cbo/core/utils/logger.dart';
@@ -8,7 +7,6 @@ import '../../../../core/error/exceptions.dart';
 import '../../../../core/utils/constants.dart';
 import '../../domain/entities/schedule.dart';
 import '../models/schedule_model.dart';
-import '../models/schedule_response_model.dart';
 import '../models/edit_schedule_data_model.dart';
 import '../models/edit/edit_schedule_response_model.dart';
 import '../models/update_schedule_request_model.dart';

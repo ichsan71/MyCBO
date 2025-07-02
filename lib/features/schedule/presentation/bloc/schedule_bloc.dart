@@ -11,13 +11,6 @@ import '../../domain/usecases/get_schedules_by_range_date_usecase.dart'
     as range_date_usecase;
 import '../../domain/usecases/get_edit_schedule_usecase.dart';
 import '../../domain/usecases/update_schedule_usecase.dart';
-import '../../data/models/edit_schedule_data_model.dart';
-import '../../data/models/update_schedule_request_model.dart';
-import '../../domain/usecases/get_schedules_usecase.dart';
-import '../../domain/usecases/get_schedules_by_range_date_usecase.dart';
-import '../../domain/usecases/get_schedules_by_range_date_usecase.dart';
-import '../../domain/usecases/get_schedules_usecase.dart';
-import '../../domain/usecases/get_schedules_by_range_date_usecase.dart';
 import 'package:test_cbo/core/utils/logger.dart';
 import '../../../check_in/domain/repositories/check_in_repository.dart';
 

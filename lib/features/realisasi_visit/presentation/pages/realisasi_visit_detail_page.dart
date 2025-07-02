@@ -3,15 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:test_cbo/core/utils/logger.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/presentation/widgets/app_bar_widget.dart';
 import '../../../../core/presentation/widgets/app_button.dart';
 import '../../../../core/presentation/widgets/app_card.dart';
 import '../../../../core/presentation/theme/app_theme.dart';
 import '../../../../core/utils/constants.dart';
-import '../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../domain/entities/realisasi_visit.dart';
 import '../bloc/realisasi_visit_bloc.dart';
 
@@ -206,7 +203,8 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                                   color: AppTheme.primaryColor.withValues(
                                     alpha: (255 * 0.1),
                                     red: AppTheme.primaryColor.red.toDouble(),
-                                    green: AppTheme.primaryColor.green.toDouble(),
+                                    green:
+                                        AppTheme.primaryColor.green.toDouble(),
                                     blue: AppTheme.primaryColor.blue.toDouble(),
                                   ),
                                   shape: BoxShape.circle,
@@ -857,8 +855,10 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
     bool canApprove, {
     VoidCallback? onToggleSelection,
   }) {
-    final DateTime visitDate = DateTime.parse(schedule.tglVisit);
-    final String formattedDate = DateFormat('dd MMM yyyy').format(visitDate);
+    final DateTime? visitDate = _parseVisitDate(schedule.tglVisit);
+    final String formattedDate = visitDate != null
+        ? DateFormat('dd MMM yyyy').format(visitDate)
+        : schedule.tglVisit; // Fallback to original string if parsing fails
     final bool isDone = schedule.statusTerrealisasi == 'Done';
 
     return AnimatedContainer(
@@ -1253,33 +1253,36 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
           children: [
             ClipRRect(
               borderRadius: AppTheme.borderRadiusSmall,
-              child: CachedNetworkImage(
-                imageUrl: imageUrl,
-                fit: BoxFit.contain,
-                width: double.infinity,
-                height: double.infinity,
-                placeholder: (context, url) => Center(
-                  child: CircularProgressIndicator(
-                    color: AppTheme.primaryColor,
+              child: Hero(
+                tag: imageUrl,
+                child: CachedNetworkImage(
+                  imageUrl: imageUrl,
+                  fit: BoxFit.contain,
+                  width: double.infinity,
+                  height: double.infinity,
+                  placeholder: (context, url) => Center(
+                    child: CircularProgressIndicator(
+                      color: AppTheme.primaryColor,
+                    ),
                   ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: Colors.grey[100],
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.error_outline,
-                            size: 30, color: AppTheme.errorColor),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Gagal memuat gambar',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: Colors.grey[700],
+                  errorWidget: (context, url, error) => Container(
+                    color: Colors.grey[100],
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error_outline,
+                              size: 30, color: AppTheme.errorColor),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Gagal memuat gambar',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.grey[700],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -1323,55 +1326,14 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
   void _showFullScreenImage(BuildContext context, String imageUrl) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          backgroundColor: Colors.black,
-          appBar: AppBar(
-            backgroundColor: Colors.black,
-            iconTheme: const IconThemeData(color: Colors.white),
-            title: Text(
-              'Foto Detail',
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontWeight: FontWeight.w500,
-                fontSize: 18,
-              ),
-            ),
-          ),
-          body: Center(
-            child: InteractiveViewer(
-              panEnabled: true,
-              boundaryMargin: const EdgeInsets.all(20),
-              minScale: 0.5,
-              maxScale: 4,
-              child: Hero(
-                tag: imageUrl,
-                child: CachedNetworkImage(
-                  imageUrl: imageUrl,
-                  fit: BoxFit.contain,
-                  placeholder: (context, url) => const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  ),
-                  errorWidget: (context, url, error) => Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline,
-                          size: 60, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Gagal memuat gambar',
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            _FullScreenImageViewer(imageUrl: imageUrl),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+        reverseTransitionDuration: const Duration(milliseconds: 300),
       ),
     );
   }
@@ -1380,25 +1342,25 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-          Icon(icon, size: 14, color: AppTheme.primaryColor),
-          const SizedBox(width: 4),
+        Icon(icon, size: 14, color: AppTheme.primaryColor),
+        const SizedBox(width: 4),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-        Text(
-                '$label:',
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            color: Colors.grey[600],
-          ),
-        ),
               Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+                '$label:',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
                 overflow: TextOverflow.visible,
               ),
             ],
@@ -1474,17 +1436,95 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
     }
 
     // Jika status terealisasi adalah "not done", tidak bisa disetujui
-    if (schedule.statusTerrealisasi.toLowerCase() == 'not done') {
+    final status = schedule.statusTerrealisasi.toLowerCase().trim();
+    if (status == 'not done' || status == 'notdone' || status == 'not_done') {
       return false;
     }
 
-    // Cek apakah jadwal masih dalam batas waktu (sebelum jam 12 siang)
-    final DateTime now = DateTime.now();
-    final DateTime visitDate = DateTime.parse(schedule.tglVisit);
-    final DateTime nextDay =
-        DateTime(visitDate.year, visitDate.month, visitDate.day + 1, 12, 0);
+    // Cek apakah jadwal masih dalam batas waktu (sebelum jam 12 siang HARI INI)
+    try {
+      final DateTime now = DateTime.now();
+      final DateTime? visitDate = _parseVisitDate(schedule.tglVisit);
 
-    return now.isBefore(nextDay);
+      if (visitDate == null) {
+        // Jika parsing tanggal gagal, tidak bisa approve untuk keamanan
+        return false;
+      }
+
+      // Deadline adalah jam 12 siang HARI INI, bukan hari visit
+      final DateTime deadline = DateTime(now.year, now.month, now.day, 12, 0);
+      return now.isBefore(deadline);
+    } catch (e) {
+      // Jika terjadi error parsing tanggal, return false untuk keamanan
+      return false;
+    }
+  }
+
+  DateTime? _parseVisitDate(String dateStr) {
+    try {
+      // Remove any leading/trailing whitespace
+      dateStr = dateStr.trim();
+
+      // Try ISO format first (yyyy-MM-dd)
+      if (dateStr.contains('-') && dateStr.split('-').length == 3) {
+        try {
+          return DateTime.parse(dateStr);
+        } catch (_) {
+          // Continue to other formats if ISO parsing fails
+        }
+      }
+
+      // Try MM/dd/yyyy format
+      if (dateStr.contains('/')) {
+        final parts = dateStr.split('/');
+        if (parts.length == 3) {
+          try {
+            final month = int.parse(parts[0]);
+            final day = int.parse(parts[1]);
+            final year = int.parse(parts[2]);
+            return DateTime(year, month, day);
+          } catch (_) {
+            // Continue to other formats
+          }
+        }
+      }
+
+      // Try dd MMM yyyy format (e.g., "01 Jul 2025")
+      try {
+        final ddMMMyyyyFormat = DateFormat('dd MMM yyyy', 'en_US');
+        return ddMMMyyyyFormat.parse(dateStr);
+      } catch (_) {
+        // Continue to other formats
+      }
+
+      // Try dd/MM/yyyy format
+      try {
+        final ddMMyyyyFormat = DateFormat('dd/MM/yyyy');
+        return ddMMyyyyFormat.parse(dateStr);
+      } catch (_) {
+        // Continue to other formats
+      }
+
+      // Try dd-MM-yyyy format
+      try {
+        final ddMMyyyyDashFormat = DateFormat('dd/MM/yyyy');
+        return ddMMyyyyDashFormat.parse(dateStr.replaceAll('-', '/'));
+      } catch (_) {
+        // Continue to other formats
+      }
+
+      // Try yyyy-MM-dd format with different separators
+      try {
+        final yyyyMMddFormat = DateFormat('yyyy-MM-dd');
+        return yyyyMMddFormat.parse(dateStr);
+      } catch (_) {
+        // Continue to other formats
+      }
+
+      return null;
+    } catch (e) {
+      return null;
+    }
   }
 
   void _showApprovalDialog(bool isApprove) {
@@ -1599,19 +1639,19 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
           shape: RoundedRectangleBorder(
             borderRadius: AppTheme.borderRadiusSmall,
           ),
-              ),
-            );
+        ),
+      );
       return;
     }
 
     setState(() => _isProcessing = true);
-        context.read<RealisasiVisitBloc>().add(
-              ApproveRealisasiVisitEvent(
+    context.read<RealisasiVisitBloc>().add(
+          ApproveRealisasiVisitEvent(
             idRealisasiVisit: int.parse(_selectedScheduleIds.first),
             idUser: widget.userId,
-              ),
-            );
-      }
+          ),
+        );
+  }
 
   void _handleRejectSelected() {
     if (_selectedScheduleIds.isEmpty) {
@@ -1629,13 +1669,13 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
     }
 
     setState(() => _isProcessing = true);
-      context.read<RealisasiVisitBloc>().add(
+    context.read<RealisasiVisitBloc>().add(
           RejectRealisasiVisitEvent(
             idRealisasiVisit: int.parse(_selectedScheduleIds.first),
             idUser: widget.userId,
             reason: 'Ditolak oleh atasan', // Add default reason
-            ),
-          );
+          ),
+        );
   }
 
   bool _filterSchedule(RealisasiVisitDetail schedule) {
@@ -1645,9 +1685,10 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
 
     final String query = _searchQuery.toLowerCase();
     final String doctorName = schedule.tujuanData.namaDokter.toLowerCase();
-    final DateTime visitDate = DateTime.parse(schedule.tglVisit);
-    final String formattedDate =
-        DateFormat('dd MMM yyyy').format(visitDate).toLowerCase();
+    final DateTime? visitDate = _parseVisitDate(schedule.tglVisit);
+    final String formattedDate = visitDate != null
+        ? DateFormat('dd MMM yyyy').format(visitDate).toLowerCase()
+        : schedule.tglVisit.toLowerCase(); // Fallback to original string
     final String status = schedule.statusTerrealisasi.toLowerCase();
     final String shift = schedule.shift.toLowerCase();
     final String jenis = schedule.jenis.toLowerCase();
@@ -1672,5 +1713,189 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
             jenis.contains(query) ||
             products.contains(query);
     }
+  }
+}
+
+class _FullScreenImageViewer extends StatefulWidget {
+  final String imageUrl;
+
+  const _FullScreenImageViewer({
+    Key? key,
+    required this.imageUrl,
+  }) : super(key: key);
+
+  @override
+  State<_FullScreenImageViewer> createState() => _FullScreenImageViewerState();
+}
+
+class _FullScreenImageViewerState extends State<_FullScreenImageViewer>
+    with SingleTickerProviderStateMixin {
+  late TransformationController _transformationController;
+  late AnimationController _animationController;
+  Animation<Matrix4>? _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _transformationController = TransformationController();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+  }
+
+  @override
+  void dispose() {
+    _transformationController.dispose();
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _onDoubleTap() {
+    Matrix4 endMatrix;
+    if (_transformationController.value != Matrix4.identity()) {
+      endMatrix = Matrix4.identity();
+    } else {
+      endMatrix = Matrix4.identity()..scale(2.0);
+    }
+
+    _animation = Matrix4Tween(
+      begin: _transformationController.value,
+      end: endMatrix,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+
+    _animationController.forward(from: 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          'Foto Detail',
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+            fontSize: 18,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.zoom_in, color: Colors.white),
+            onPressed: _onDoubleTap,
+            tooltip: 'Zoom In/Out',
+          ),
+        ],
+      ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        child: GestureDetector(
+          onDoubleTap: _onDoubleTap,
+          child: AnimatedBuilder(
+            animation: _animationController,
+            builder: (context, child) {
+              if (_animation != null) {
+                _transformationController.value = _animation!.value;
+              }
+              return InteractiveViewer(
+                transformationController: _transformationController,
+                panEnabled: true,
+                scaleEnabled: true,
+                boundaryMargin: const EdgeInsets.all(0),
+                minScale: 0.5,
+                maxScale: 5.0,
+                child: Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  child: Hero(
+                    tag: widget.imageUrl,
+                    child: CachedNetworkImage(
+                      imageUrl: widget.imageUrl,
+                      fit: BoxFit.contain,
+                      width: double.infinity,
+                      height: double.infinity,
+                      placeholder: (context, url) => Container(
+                        color: Colors.black,
+                        child: const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                'Memuat gambar...',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.black,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                size: 60,
+                                color: Colors.red,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Gagal memuat gambar',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Periksa koneksi internet Anda',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    // Trigger rebuild to retry loading
+                                  });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.black,
+                                ),
+                                child: const Text('Coba Lagi'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
   }
 }

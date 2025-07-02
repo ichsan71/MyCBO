@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/presentation/widgets/shimmer_schedule_list_loading.dart';
-import '../../../schedule/presentation/utils/schedule_status_helper.dart';
 import '../../../schedule/domain/entities/schedule.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_state.dart';

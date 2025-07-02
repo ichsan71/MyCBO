@@ -6,7 +6,6 @@ import '../../../../core/utils/constants.dart';
 import '../../../../core/utils/logger.dart';
 import '../models/realisasi_visit_model.dart';
 import '../models/realisasi_visit_gm_model.dart';
-import '../models/realisasi_visit_response_model.dart';
 
 abstract class RealisasiVisitRemoteDataSource {
   /// Mengambil daftar realisasi visit

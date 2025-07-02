@@ -5,8 +5,6 @@ import 'package:test_cbo/core/network/network_info.dart';
 import 'package:test_cbo/core/utils/logger.dart';
 import 'package:test_cbo/features/schedule/data/datasources/add_schedule_remote_data_source.dart';
 import 'package:test_cbo/features/schedule/data/datasources/local/add_schedule_local_data_source.dart';
-import 'package:test_cbo/features/schedule/data/models/doctor_clinic_model.dart';
-import 'package:test_cbo/features/schedule/data/models/doctor_model.dart';
 import 'package:test_cbo/features/schedule/data/models/responses/doctor_response.dart';
 import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic_base.dart';
 import 'package:test_cbo/features/schedule/domain/entities/product.dart';

@@ -1,4 +1,3 @@
-import 'package:test_cbo/features/schedule/data/models/doctor_clinic_model.dart';
 import 'package:test_cbo/features/schedule/data/models/product_model.dart';
 import 'package:test_cbo/features/schedule/data/models/schedule_type_model.dart';
 import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic_base.dart';

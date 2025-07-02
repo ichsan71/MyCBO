@@ -9,8 +9,6 @@ import 'package:test_cbo/features/notifications/presentation/bloc/notification_s
 import 'package:test_cbo/core/presentation/widgets/app_bar_widget.dart';
 import 'package:test_cbo/core/utils/logger.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:test_cbo/core/di/injection_container.dart' as di;
-import 'package:test_cbo/features/notifications/data/datasources/local_notification_service.dart';
 import 'package:shimmer/shimmer.dart';
 
 class NotificationSettingsPage extends StatefulWidget {

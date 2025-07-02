@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../../../auth/domain/repositories/auth_repository.dart';
-import '../../../schedule/domain/entities/schedule.dart';
 import '../../../schedule/domain/repositories/schedule_repository.dart';
 import '../../domain/entities/notification_settings.dart';
 import '../../domain/repositories/notification_repository.dart';

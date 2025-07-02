@@ -73,15 +73,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     CheckAuthStatusEvent event,
     Emitter<AuthState> emit,
   ) async {
+    logger.i('🔐 Checking auth status...');
     emit(const AuthLoading());
 
-    final result = await getCurrentUserUseCase(NoParams());
+    try {
+      final result = await getCurrentUserUseCase(NoParams());
 
-    await result.fold(
-      (failure) async => emit(const AuthUnauthenticated()),
-      (user) async {
-        emit(AuthAuthenticated(user));
-      },
-    );
+      await result.fold(
+        (failure) async {
+          logger.w('🔐 Auth check failed: ${failure.toString()}');
+          emit(const AuthUnauthenticated());
+        },
+        (user) async {
+          logger.i('🔐 User authenticated: ${user.name}');
+          emit(AuthAuthenticated(user));
+        },
+      );
+    } catch (e) {
+      logger.e('🔐 Error during auth check: $e');
+      emit(const AuthUnauthenticated());
+    }
   }
 }

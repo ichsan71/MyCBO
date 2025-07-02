@@ -6,15 +6,7 @@ import '../../../realisasi_visit/presentation/pages/realisasi_visit_list_page.da
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:test_cbo/features/schedule/presentation/pages/add_schedule_page.dart';
-import 'package:test_cbo/core/presentation/widgets/shimmer_home_loading.dart';
-import 'package:test_cbo/features/schedule/presentation/bloc/schedule_bloc.dart';
-import 'package:test_cbo/features/schedule/presentation/bloc/schedule_event.dart';
-import '../widgets/menu_card.dart';
 import 'package:test_cbo/features/kpi/presentation/widgets/kpi_chart_new.dart';
-import 'package:test_cbo/core/presentation/theme/app_theme.dart';
-import 'package:provider/provider.dart';
-import 'package:test_cbo/core/presentation/theme/theme_provider.dart';
 import 'package:test_cbo/features/kpi/presentation/bloc/kpi_bloc.dart';
 import 'package:test_cbo/features/kpi/presentation/widgets/kpi_chart_shimmer.dart';
 import 'package:test_cbo/features/kpi/data/models/kpi_model.dart';
@@ -172,6 +164,7 @@ class _HomeContentState extends State<_HomeContent>
         role == 'BCO' ||
         role == 'RSM' ||
         role == 'DM' ||
+        role == 'AM' ||
         role == 'GM' ||
         role == 'CEO';
     final hasRealisasiVisitAccess = role == 'ADMIN' ||
@@ -181,7 +174,8 @@ class _HomeContentState extends State<_HomeContent>
         role == 'RSM' ||
         role == 'DM' ||
         role == 'AM';
-    final hasKpiAccess = role != 'PS' && role != 'GM' && role != 'CEO';
+    final hasKpiAccess =
+        role != 'PS' && role != 'GM' && role != 'CEO' && role != 'AE';
     final isGmOrCeo = role == 'GM' || role == 'CEO';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 

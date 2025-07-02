@@ -6,7 +6,6 @@ import '../../../../core/network/network_info.dart';
 import '../../domain/repositories/kpi_member_repository.dart';
 import '../../domain/entities/kpi_member.dart';
 import '../datasources/kpi_member_remote_data_source.dart';
-import '../models/kpi_model.dart';
 
 class KpiMemberRepositoryImpl implements KpiMemberRepository {
   final KpiMemberRemoteDataSource remoteDataSource;

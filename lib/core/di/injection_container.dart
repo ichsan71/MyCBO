@@ -6,12 +6,10 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:test_cbo/core/database/app_database.dart';
 import 'package:test_cbo/core/network/network_info.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/tipe_schedule_bloc.dart';
-import 'package:dio/dio.dart';
 
 import '../../features/auth/di/auth_injection.dart';
 import '../../features/schedule/di/schedule_injection.dart';
 import '../../features/approval/di/approval_injection.dart';
-import '../../features/realisasi_visit/di/realisasi_visit_injection.dart';
 import '../../features/schedule/data/datasources/tipe_schedule_remote_data_source.dart';
 import '../../features/schedule/data/repositories/tipe_schedule_repository_impl.dart';
 import '../../features/schedule/domain/repositories/tipe_schedule_repository.dart';
@@ -52,70 +50,74 @@ import '../../features/realisasi_visit/presentation/bloc/realisasi_visit_bloc.da
 /// Service locator instance
 final sl = GetIt.instance;
 
-/// Initialize all dependencies
+/// Initialize all dependencies with optimization for startup performance
 Future<void> init() async {
-  // External dependencies
-  await _initExternalDependencies();
+  // Initialize only critical dependencies first
+  await _initCriticalDependencies();
 
-  // Core dependencies
-  _initCoreDependencies();
-
-  // Feature dependencies
-  await _initFeatureDependencies();
+  // Initialize non-critical dependencies lazily
+  await _initNonCriticalDependencies();
 }
 
-/// Initialize external dependencies
-Future<void> _initExternalDependencies() async {
-  // Shared Preferences
+/// Initialize critical dependencies needed for app startup
+Future<void> _initCriticalDependencies() async {
+  // External dependencies (critical)
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
 
-  // HTTP Clients
-  sl.registerLazySingleton(() => http.Client());
+  // Core HTTP client (critical for auth)
   sl.registerLazySingleton(() => DioConfig.createDio());
   sl.registerLazySingleton(() => InternetConnectionChecker());
   sl.registerLazySingleton<String>(
     () => 'https://dev-bco.businesscorporateofficer.com/api',
     instanceName: 'baseUrl',
   );
-}
 
-/// Initialize core dependencies
-void _initCoreDependencies() {
-  // Network info
+  // Network info (critical)
   sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));
 
-  // Database
-  sl.registerLazySingleton(() => AppDatabase.instance);
-
-  // Notifications
-  sl.registerLazySingleton(() => FlutterLocalNotificationsPlugin());
+  // Auth feature (critical for startup)
+  await initAuthDependencies();
 }
 
-/// Initialize feature dependencies
-Future<void> _initFeatureDependencies() async {
-  // Auth feature
-  await initAuthDependencies();
+/// Initialize non-critical dependencies that can be loaded lazily
+Future<void> _initNonCriticalDependencies() async {
+  // Register remaining external dependencies lazily
+  sl.registerLazySingleton(() => http.Client());
+  sl.registerLazySingleton(() => FlutterLocalNotificationsPlugin());
 
-  // Schedule feature
+  // Database (lazy - will be initialized when first accessed)
+  sl.registerLazySingleton(() => AppDatabase.instance);
+
+  // Schedule feature dependencies (lazy)
   await initScheduleDependencies();
   _initTipeScheduleDependencies();
   _initEditScheduleDependencies();
 
-  // Approval feature
+  // Other feature dependencies (lazy)
   await initApprovalDependencies();
-
-  // Realisasi Visit feature
   await _initRealisasiVisitDependencies();
-
-  // Notification feature
   _initNotificationDependencies();
-
-  // Check-in feature
   _initCheckInDependencies();
-
-  // KPI feature
   _initKpiDependencies();
+}
+
+/// Initialize external dependencies
+Future<void> _initExternalDependencies() async {
+  // This method is now split into critical and non-critical
+  // Keep for backward compatibility if needed
+}
+
+/// Initialize core dependencies
+void _initCoreDependencies() {
+  // This method is now handled in _initCriticalDependencies and _initNonCriticalDependencies
+  // Keep for backward compatibility if needed
+}
+
+/// Initialize feature dependencies
+Future<void> _initFeatureDependencies() async {
+  // This method is now handled in _initCriticalDependencies and _initNonCriticalDependencies
+  // Keep for backward compatibility if needed
 }
 
 /// Initialize Tipe Schedule dependencies
@@ -136,16 +138,16 @@ void _initTipeScheduleDependencies() {
     ),
   );
 
-  // Bloc
-  sl.registerLazySingleton(() => TipeScheduleBloc(getTipeSchedules: sl()));
+  // Bloc (lazy factory)
+  sl.registerFactory(() => TipeScheduleBloc(getTipeSchedules: sl()));
 }
 
 /// Initialize Edit Schedule dependencies
 void _initEditScheduleDependencies() {
-  // Bloc
+  // Bloc (factory for multiple instances)
   sl.registerFactory(() => EditScheduleBloc(getEditScheduleData: sl()));
 
-  // Use cases
+  // Use cases (lazy singletons)
   sl.registerLazySingleton(() => GetEditScheduleData(sl()));
   sl.registerLazySingleton(() => GetSchedules(sl()));
   sl.registerLazySingleton(() => GetSchedulesByRangeDate(sl()));
@@ -155,7 +157,7 @@ void _initEditScheduleDependencies() {
 
 /// Initialize Notification dependencies
 void _initNotificationDependencies() {
-  // Service
+  // Service (lazy singleton)
   sl.registerLazySingleton<LocalNotificationService>(
     () => LocalNotificationServiceImpl(
       flutterLocalNotificationsPlugin: sl(),
@@ -165,7 +167,7 @@ void _initNotificationDependencies() {
     ),
   );
 
-  // Repository
+  // Repository (lazy singleton)
   sl.registerLazySingleton<NotificationRepository>(
     () => NotificationRepositoryImpl(
       localNotificationService: sl(),
@@ -175,13 +177,13 @@ void _initNotificationDependencies() {
     ),
   );
 
-  // Bloc
-  sl.registerLazySingleton(() => NotificationBloc(repository: sl()));
+  // Bloc (factory for better performance)
+  sl.registerFactory(() => NotificationBloc(repository: sl()));
 }
 
 /// Initialize Check-in dependencies
 void _initCheckInDependencies() {
-  // Data sources
+  // Data sources (lazy)
   sl.registerLazySingleton<CheckInRemoteDataSource>(
     () => CheckInRemoteDataSourceImpl(
       dio: sl(),

@@ -1,4 +1,4 @@
-import 'package:equatable/equatable.dart';
+
 import 'doctor_clinic_base.dart';
 
 class DoctorClinic extends DoctorClinicBase {

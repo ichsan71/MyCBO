@@ -16,15 +16,8 @@ import 'package:test_cbo/features/schedule/domain/entities/schedule_type.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_bloc.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_event.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_state.dart';
-import 'package:test_cbo/core/di/injection_container.dart' as di;
 import 'package:test_cbo/core/utils/logger.dart';
-import 'package:test_cbo/features/schedule/data/models/doctor_clinic_model.dart'
-    as model;
-import 'package:test_cbo/features/schedule/data/models/doctor_model.dart';
-import 'package:test_cbo/features/schedule/data/models/responses/doctor_response.dart';
 import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic_base.dart';
-import 'package:test_cbo/features/schedule/presentation/bloc/schedule_bloc.dart';
-import 'package:test_cbo/core/presentation/theme/app_theme.dart';
 import 'package:test_cbo/core/presentation/widgets/custom_snackbar.dart';
 import 'package:test_cbo/core/presentation/widgets/success_message.dart';
 import 'dart:convert';

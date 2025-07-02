@@ -4,7 +4,6 @@ import '../../../../core/error/exceptions.dart';
 import '../../domain/entities/tipe_schedule.dart';
 import '../../domain/repositories/tipe_schedule_repository.dart';
 import '../datasources/tipe_schedule_remote_data_source.dart';
-import '../models/tipe_schedule_model.dart';
 
 class TipeScheduleRepositoryImpl implements TipeScheduleRepository {
   final TipeScheduleRemoteDataSource remoteDataSource;

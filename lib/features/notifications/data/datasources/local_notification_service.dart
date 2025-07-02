@@ -1,7 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tz;
 import '../../domain/entities/notification_settings.dart';
 import 'dart:io' show Platform;
 import 'package:logger/logger.dart';
@@ -59,19 +58,20 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
     try {
       logger.i('Starting notification service initialization...');
 
-      // Initialize timezone with explicit local timezone
+      // Don't initialize timezone here as it's already done in main()
+      // Just set the local timezone
       try {
-        tz.initializeTimeZones();
         final jakarta = tz.getLocation('Asia/Jakarta');
         tz.setLocalLocation(jakarta);
-        logger.i('Timezone initialized successfully to Asia/Jakarta');
+        logger.i('Local timezone set to Asia/Jakarta successfully');
       } catch (e) {
-        logger.e('Failed to initialize timezone: $e');
-        throw Exception('Failed to initialize timezone: $e');
+        logger.w('Failed to set local timezone, using default: $e');
+        // Don't throw - use default timezone
       }
 
       // Initialize Android settings with specific icon
-      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const androidSettings =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
       logger.d('Android settings initialized with icon: @mipmap/ic_launcher');
 
       // Initialize settings for all platforms
@@ -90,8 +90,9 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
       );
 
       if (initialized != true) {
-        logger.e('Failed to initialize notification plugin');
-        throw Exception('Failed to initialize notification plugin');
+        logger.w(
+            'Notification plugin initialization returned false, but continuing...');
+        // Don't throw - some devices may return false but still work
       }
 
       logger.i('Notification plugin initialized successfully');
@@ -126,11 +127,13 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
         logger.e('Failed to get current user for checkout notification');
         return;
       }
-      final user = userResult.getOrElse(() => throw Exception('User not found'));
+      final user =
+          userResult.getOrElse(() => throw Exception('User not found'));
       logger.d('Got current user for checkout: ${user.name}');
 
       // Get schedules for current user
-      final schedulesResult = await scheduleRepository.getSchedules(user.idUser);
+      final schedulesResult =
+          await scheduleRepository.getSchedules(user.idUser);
       if (schedulesResult.isLeft()) {
         logger.e('Failed to get schedules for checkout notification');
         return;
@@ -146,8 +149,10 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
       logger.d('Found ${pendingCheckouts.length} pending checkouts');
 
       // Cancel any existing notifications first
-      await flutterLocalNotificationsPlugin.cancel(1); // Immediate notification ID
-      await flutterLocalNotificationsPlugin.cancel(3); // Periodic notification ID
+      await flutterLocalNotificationsPlugin
+          .cancel(1); // Immediate notification ID
+      await flutterLocalNotificationsPlugin
+          .cancel(3); // Periodic notification ID
       logger.d('Cancelled existing checkout notifications');
 
       if (pendingCheckouts.isNotEmpty) {
@@ -236,7 +241,8 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
         logger.e('Failed to get current user for daily greeting');
         return;
       }
-      final user = userResult.getOrElse(() => throw Exception('User not found'));
+      final user =
+          userResult.getOrElse(() => throw Exception('User not found'));
       logger.d('Got current user for greeting: ${user.name}');
 
       // Create Android-specific notification details
@@ -266,7 +272,7 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
       // Check if we're in the greeting window (10:00 - 10:03)
       if (now.hour == 10 && now.minute >= 0 && now.minute < 3) {
         logger.d('Within greeting time window, showing immediate notification');
-        
+
         // Show immediate notification
         await flutterLocalNotificationsPlugin.show(
           2,
@@ -279,8 +285,10 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
 
       // Schedule daily notification
       final scheduledTime = DateTime(now.year, now.month, now.day, 10, 0);
-      final scheduledTimeString = '${scheduledTime.hour}:${scheduledTime.minute}';
-      logger.d('Attempting to schedule daily notification for $scheduledTimeString');
+      final scheduledTimeString =
+          '${scheduledTime.hour}:${scheduledTime.minute}';
+      logger.d(
+          'Attempting to schedule daily notification for $scheduledTimeString');
 
       // Schedule periodic notification
       await flutterLocalNotificationsPlugin.periodicallyShow(

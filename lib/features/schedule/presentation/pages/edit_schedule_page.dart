@@ -9,7 +9,6 @@ import 'package:test_cbo/core/di/injection_container.dart' as di;
 import 'package:test_cbo/core/utils/logger.dart';
 import 'package:test_cbo/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:test_cbo/features/auth/presentation/bloc/auth_state.dart';
-import 'package:test_cbo/features/schedule/data/models/doctor_clinic_model.dart';
 import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic_base.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_bloc.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_event.dart';

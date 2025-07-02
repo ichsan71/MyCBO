@@ -1,25 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 import 'package:test_cbo/core/utils/logger.dart';
 import 'dart:io';
 import 'dart:async';
-import 'dart:convert';
 import 'package:image/image.dart' as img;
-import '../../../../core/di/injection_container.dart';
 import '../../domain/entities/schedule.dart';
 import '../../data/models/checkin_request_model.dart';
 import '../../data/models/checkout_request_model.dart';
 import '../bloc/schedule_bloc.dart';
 import '../bloc/schedule_event.dart';
 import '../bloc/schedule_state.dart';
-import '../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../../auth/presentation/bloc/auth_state.dart';
 import '../widgets/checkin_form.dart';
 import '../widgets/checkout_form.dart';
 import '../../../../core/presentation/widgets/shimmer_schedule_detail_loading.dart';
-import '../../../check_in/presentation/utils/dialog_helper.dart';
 import '../../../../core/presentation/widgets/success_message.dart';
 
 class ScheduleDetailPage extends StatefulWidget {
