@@ -77,7 +77,7 @@ Future<void> _initCriticalDependencies() async {
   sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));
 
   // Auth feature (critical for startup)
-  await initAuthDependencies();
+  injectAuth(sl);
 }
 
 /// Initialize non-critical dependencies that can be loaded lazily

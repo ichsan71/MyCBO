@@ -1,3 +1,4 @@
+import 'package:get_it/get_it.dart';
 import 'package:test_cbo/core/di/injection_container.dart';
 import 'package:test_cbo/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:test_cbo/features/auth/data/repositories/auth_repository_impl.dart';
@@ -6,6 +7,7 @@ import 'package:test_cbo/features/auth/domain/usecases/get_current_user_usecase.
 import 'package:test_cbo/features/auth/domain/usecases/login_usecase.dart';
 import 'package:test_cbo/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:test_cbo/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:test_cbo/features/auth/presentation/bloc/privacy_policy_bloc.dart';
 
 /// Inisialisasi dependency injection untuk fitur authentication
 ///
@@ -14,15 +16,14 @@ import 'package:test_cbo/features/auth/presentation/bloc/auth_bloc.dart';
 /// - Use Cases: Fungsi bisnis seperti login, logout, dan cek status auth
 /// - Repository: Abstraksi untuk akses data
 /// - Data Sources: Implementasi akses data dari remote API
-Future<void> initAuthDependencies() async {
-  // BLoC
-  sl.registerFactory(
-    () => AuthBloc(
-      loginUseCase: sl(),
-      logoutUseCase: sl(),
-      getCurrentUserUseCase: sl(),
-    ),
-  );
+void injectAuth(GetIt sl) {
+  // Bloc
+  sl.registerFactory(() => AuthBloc(
+        loginUseCase: sl(),
+        logoutUseCase: sl(),
+        getCurrentUserUseCase: sl(),
+      ));
+  sl.registerFactory(() => PrivacyPolicyBloc());
 
   // Use cases
   sl.registerLazySingleton(() => LoginUseCase(sl()));
