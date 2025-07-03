@@ -211,7 +211,7 @@ class DetailModel extends Detail {
               }
               Logger.error('DetailModel',
                   'Invalid product format: $product (type: ${product.runtimeType})');
-              return ProductDataModel(idProduct: 0, namaProduct: 'Unknown');
+              return const ProductDataModel(idProduct: 0, namaProduct: 'Unknown');
             } catch (e, stackTrace) {
               Logger.error('DetailModel',
                   'Error parsing product: $e\nStack trace: $stackTrace');

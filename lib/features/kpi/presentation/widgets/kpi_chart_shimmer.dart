@@ -26,10 +26,10 @@ class KpiChartShimmer extends StatelessWidget {
                         baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
                         highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
                         child: Container(
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             shape: BoxShape.circle,
                             color: Colors.white,
-                          ),
+                          ), 
                         ),
                       ),
                       Center(

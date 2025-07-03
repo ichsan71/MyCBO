@@ -52,7 +52,7 @@ class DoctorClinicModel extends DoctorClinicBase {
       if (id == 0) {
         Logger.warning('DoctorClinicModel',
             '⚠️ No valid ID found in data. Raw ID: $rawId');
-        throw FormatException('Invalid doctor data: ID is missing or invalid');
+        throw const FormatException('Invalid doctor data: ID is missing or invalid');
       }
 
       // Parse name - try different possible field names
@@ -74,7 +74,7 @@ class DoctorClinicModel extends DoctorClinicBase {
 
       if (nama.isEmpty) {
         Logger.warning('DoctorClinicModel', '⚠️ No valid name found in data');
-        throw FormatException('Invalid doctor data: Name is missing or empty');
+        throw const FormatException('Invalid doctor data: Name is missing or empty');
       }
 
       // Parse specialist information

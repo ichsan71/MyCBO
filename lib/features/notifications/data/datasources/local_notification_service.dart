@@ -152,7 +152,12 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
       await flutterLocalNotificationsPlugin
           .cancel(1); // Immediate notification ID
       await flutterLocalNotificationsPlugin
-          .cancel(3); // Periodic notification ID
+          .cancel(3); // Old periodic notification ID
+
+      // Cancel all checkout reminder notifications (101-108)
+      for (int i = 1; i <= 8; i++) {
+        await flutterLocalNotificationsPlugin.cancel(100 + i);
+      }
       logger.d('Cancelled existing checkout notifications');
 
       if (pendingCheckouts.isNotEmpty) {
@@ -204,16 +209,23 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
           android: androidDetailsPeriodic,
         );
 
-        // Schedule periodic notification every minute
-        await flutterLocalNotificationsPlugin.periodicallyShow(
-          3,
-          'Pengingat Check-out',
-          'Halo ${user.name}, Anda masih memiliki ${pendingCheckouts.length} checkout yang belum diselesaikan.',
-          RepeatInterval.hourly,
-          notificationDetailsPeriodic,
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        );
-        logger.i('Periodic checkout notification scheduled (every hour)');
+        // Schedule repeated reminders every hour instead of periodic show
+        final now = DateTime.now();
+        for (int i = 1; i <= 8; i++) {
+          // 8 reminders over next 8 hours
+          final reminderTime = now.add(Duration(hours: i));
+          final reminderTZDate = tz.TZDateTime.from(reminderTime, tz.local);
+
+          await flutterLocalNotificationsPlugin.zonedSchedule(
+            100 + i, // Unique IDs for checkout reminders (101-108)
+            'Pengingat Check-out',
+            'Halo ${user.name}, Anda masih memiliki checkout yang belum diselesaikan.',
+            reminderTZDate,
+            notificationDetailsPeriodic,
+            androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          );
+        }
+        logger.i('Checkout reminder notifications scheduled for next 8 hours');
 
         // Save last checkout check time
         await sharedPreferences.setString(
@@ -263,7 +275,9 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
 
       // Cancel any existing daily greeting notification
       await flutterLocalNotificationsPlugin.cancel(2);
-      logger.d('Cancelled existing daily greeting notification');
+      await flutterLocalNotificationsPlugin
+          .cancel(4); // Cancel periodic one too
+      logger.d('Cancelled existing daily greeting notifications');
 
       // Get current time
       final now = DateTime.now();
@@ -283,24 +297,35 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
         logger.i('Immediate daily greeting displayed');
       }
 
-      // Schedule daily notification
-      final scheduledTime = DateTime(now.year, now.month, now.day, 10, 0);
-      final scheduledTimeString =
-          '${scheduledTime.hour}:${scheduledTime.minute}';
-      logger.d(
-          'Attempting to schedule daily notification for $scheduledTimeString');
+      // Schedule daily notification for next occurrence at 10:00 AM
+      DateTime scheduledTime = DateTime(now.year, now.month, now.day, 10, 0);
 
-      // Schedule periodic notification
-      await flutterLocalNotificationsPlugin.periodicallyShow(
-        4, // Different ID for periodic daily greeting
+      // If current time is past 10:00 AM today, schedule for tomorrow
+      if (now.hour >= 10) {
+        scheduledTime = scheduledTime.add(const Duration(days: 1));
+      }
+
+      final scheduledTimeString =
+          '${scheduledTime.day}/${scheduledTime.month} ${scheduledTime.hour}:${scheduledTime.minute.toString().padLeft(2, '0')}';
+      logger.d('Scheduling daily notification for $scheduledTimeString');
+
+      // Convert DateTime to TZDateTime with proper timezone
+      final scheduledTZDate = tz.TZDateTime.from(scheduledTime, tz.local);
+      logger.d('Scheduled TZ time: $scheduledTZDate');
+
+      // Schedule the daily notification using zonedSchedule for precise timing
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        4, // Daily greeting notification ID
         'Selamat Pagi,',
         'Halo ${user.name}, semoga hari Anda menyenangkan!',
-        RepeatInterval.daily,
+        scheduledTZDate,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        matchDateTimeComponents:
+            DateTimeComponents.time, // Repeat daily at the same time
       );
 
-      logger.i('Daily greeting scheduled successfully');
+      logger.i('Daily greeting scheduled successfully for 10:00 AM daily');
 
       // Save last daily greeting time
       await sharedPreferences.setString(
@@ -512,17 +537,25 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
 
       logger.i('Test checkout notification shown successfully');
 
-      // Test periodic notification (every minute)
-      await flutterLocalNotificationsPlugin.periodicallyShow(
-        101,
-        'Test Pengingat Checkout (Periodic)',
-        'Halo $username, ini adalah test notifikasi checkout periodic.',
-        RepeatInterval.hourly,
-        notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      );
+      // Test scheduled notifications (next 3 hours for testing)
+      final now = DateTime.now();
+      for (int i = 1; i <= 3; i++) {
+        final testTime =
+            now.add(Duration(minutes: i * 15)); // Every 15 minutes for testing
+        final testTZDate = tz.TZDateTime.from(testTime, tz.local);
 
-      logger.i('Test periodic checkout notification scheduled (hourly)');
+        await flutterLocalNotificationsPlugin.zonedSchedule(
+          200 + i, // Test checkout reminder IDs (201-203)
+          'Test Pengingat Checkout (Scheduled)',
+          'Halo $username, ini adalah test notifikasi checkout scheduled #$i.',
+          testTZDate,
+          notificationDetails,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        );
+      }
+
+      logger.i(
+          'Test scheduled checkout notifications created (next 3 intervals)');
     } catch (e, stackTrace) {
       logger.e('Error showing test checkout notification: $e\n$stackTrace');
       throw Exception('Failed to show test checkout notification: $e');
@@ -558,17 +591,29 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
 
       logger.i('Test greeting notification shown successfully');
 
-      // Test daily notification
-      await flutterLocalNotificationsPlugin.periodicallyShow(
-        103,
-        'Test Sapaan Pagi (Periodic)',
-        'Halo $username, ini adalah test notifikasi sapaan pagi periodic.',
-        RepeatInterval.daily,
+      // Test daily notification scheduled for next 10:00 AM
+      final now = DateTime.now();
+      DateTime testScheduledTime =
+          DateTime(now.year, now.month, now.day, 10, 0);
+
+      // If past 10 AM today, schedule for tomorrow
+      if (now.hour >= 10) {
+        testScheduledTime = testScheduledTime.add(const Duration(days: 1));
+      }
+
+      final testTZDate = tz.TZDateTime.from(testScheduledTime, tz.local);
+
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        300, // Test daily greeting ID
+        'Test Sapaan Pagi (Scheduled)',
+        'Halo $username, ini adalah test notifikasi sapaan pagi dijadwalkan untuk 10:00 AM.',
+        testTZDate,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
       );
 
-      logger.i('Test periodic greeting notification scheduled');
+      logger.i('Test daily greeting notification scheduled for next 10:00 AM');
     } catch (e, stackTrace) {
       logger.e('Error showing test greeting notification: $e\n$stackTrace');
       throw Exception('Failed to show test greeting notification: $e');

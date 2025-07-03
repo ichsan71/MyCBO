@@ -62,13 +62,54 @@ class AddScheduleFormLoaded extends AddScheduleState {
   final List<DoctorClinicBase> doctorsAndClinics;
   final List<ScheduleType> scheduleTypes;
   final List<Product> products;
+  final bool isSuddenlyLimitReached;
+  final int suddenlyCount;
+  final String selectedDate;
 
   const AddScheduleFormLoaded({
     required this.doctorsAndClinics,
     required this.scheduleTypes,
     required this.products,
+    this.isSuddenlyLimitReached = false,
+    this.suddenlyCount = 0,
+    this.selectedDate = '',
   });
 
+  AddScheduleFormLoaded copyWith({
+    List<DoctorClinicBase>? doctorsAndClinics,
+    List<ScheduleType>? scheduleTypes,
+    List<Product>? products,
+    bool? isSuddenlyLimitReached,
+    int? suddenlyCount,
+    String? selectedDate,
+  }) {
+    return AddScheduleFormLoaded(
+      doctorsAndClinics: doctorsAndClinics ?? this.doctorsAndClinics,
+      scheduleTypes: scheduleTypes ?? this.scheduleTypes,
+      products: products ?? this.products,
+      isSuddenlyLimitReached:
+          isSuddenlyLimitReached ?? this.isSuddenlyLimitReached,
+      suddenlyCount: suddenlyCount ?? this.suddenlyCount,
+      selectedDate: selectedDate ?? this.selectedDate,
+    );
+  }
+
   @override
-  List<Object?> get props => [doctorsAndClinics, scheduleTypes, products];
+  List<Object?> get props => [
+        doctorsAndClinics,
+        scheduleTypes,
+        products,
+        isSuddenlyLimitReached,
+        suddenlyCount,
+        selectedDate
+      ];
+}
+
+class DailyScheduleValidationLoading extends AddScheduleState {
+  final String date;
+
+  const DailyScheduleValidationLoading({required this.date});
+
+  @override
+  List<Object?> get props => [date];
 }

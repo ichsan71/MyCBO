@@ -1,4 +1,3 @@
-
 import 'package:test_cbo/core/di/injection_container.dart';
 import 'package:test_cbo/features/schedule/data/datasources/add_schedule_remote_data_source.dart';
 import 'package:test_cbo/features/schedule/data/datasources/local/add_schedule_local_data_source.dart';
@@ -11,6 +10,7 @@ import 'package:test_cbo/features/schedule/domain/repositories/schedule_reposito
 import 'package:test_cbo/features/schedule/domain/usecases/add_schedule.dart';
 import 'package:test_cbo/features/schedule/domain/usecases/get_doctors.dart';
 import 'package:test_cbo/features/schedule/domain/usecases/get_doctors_and_clinics.dart';
+import 'package:test_cbo/features/schedule/domain/usecases/get_filtered_daily_schedule.dart';
 import 'package:test_cbo/features/schedule/domain/usecases/get_products.dart';
 import 'package:test_cbo/features/schedule/domain/usecases/get_schedule_types.dart';
 import 'package:test_cbo/features/schedule/domain/usecases/get_schedules_usecase.dart';
@@ -48,6 +48,7 @@ Future<void> initScheduleDependencies() async {
       getProducts: sl(),
       getDoctors: sl(),
       addSchedule: sl(),
+      getFilteredDailySchedule: sl(),
     ),
   );
 
@@ -58,6 +59,7 @@ Future<void> initScheduleDependencies() async {
   sl.registerLazySingleton(() => GetProducts(sl()));
   sl.registerLazySingleton(() => GetDoctors(sl()));
   sl.registerLazySingleton(() => AddSchedule(sl()));
+  sl.registerLazySingleton(() => GetFilteredDailySchedule(sl()));
   sl.registerLazySingleton(
       () => range_date_usecase.GetSchedulesByRangeDateUseCase(sl()));
   sl.registerLazySingleton(() => GetEditScheduleUseCase(sl()));

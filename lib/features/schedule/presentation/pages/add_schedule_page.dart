@@ -40,6 +40,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
   // Konstanta untuk validasi catatan
   static const int _minimumNoteCharacters = 10;
   static const int _maximumNoteCharacters = 500;
+  // Konstanta untuk batasan jadwal suddenly
+  static const int _maxSuddenlyPerDay = 4;
   String? _noteError;
 
   // Selected values
@@ -205,6 +207,9 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initValidation();
+    });
     _doctorSearchController.addListener(() {
       setState(() {
         _doctorSearchQuery = _doctorSearchController.text;
@@ -217,6 +222,28 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
     });
   }
 
+  // Fungsi untuk validasi saat inisialisasi
+  void _initValidation() {
+    if (_tanggalController.text.isNotEmpty) {
+      final context = this.context;
+      final authState = context.read<AuthBloc>().state;
+      
+      if (authState is AuthAuthenticated) {
+        // Konversi format tanggal untuk API
+        final inputDate = DateFormat('dd/MM/yyyy').parse(_tanggalController.text);
+        final apiFormattedDate = DateFormat('yyyy-MM-dd').format(inputDate);
+        
+        // Kirim event untuk validasi jadwal pada tanggal yang sudah dipilih
+        context.read<AddScheduleBloc>().add(
+          DateChangedEvent(
+            userId: authState.user.idUser.toString(),
+            date: apiFormattedDate,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _tanggalController.dispose();
@@ -226,105 +253,70 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
     super.dispose();
   }
 
-  Future<void> _selectDate(BuildContext context) async {
+  Future<void> _selectDate(BuildContext context, AuthState authState) async {
+    if (authState is! AuthAuthenticated) return;
+
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      lastDate: DateTime(2101),
     );
+
     if (picked != null) {
+      final formattedDate = DateFormat('dd/MM/yyyy').format(picked);
+      final apiFormattedDate = DateFormat('yyyy-MM-dd').format(picked);
+
       setState(() {
-        _tanggalController.text = DateFormat('dd/MM/yyyy').format(picked);
+        _tanggalController.text = formattedDate;
       });
+
+      // Trigger validasi jadwal suddenly
+      context.read<AddScheduleBloc>().add(
+            DateChangedEvent(
+              userId: authState.user.idUser.toString(),
+              date: apiFormattedDate,
+            ),
+          );
     }
   }
 
-  void _submitForm(int userId) {
-    if (_formKey.currentState?.validate() ?? false) {
-      // Validasi catatan
-      if (_noteController.text.trim().isEmpty) {
-        setState(() {
-          _noteError = 'Catatan wajib diisi';
-        });
+  void _submitForm(AuthState authState) {
+    if (authState is! AuthAuthenticated) return;
+
+    if (_formKey.currentState!.validate()) {
+      if (_selectedDoctor == null) {
         CustomSnackBar.show(
           context: context,
-          message: 'Silakan isi catatan terlebih dahulu',
+          message: 'Pilih dokter atau klinik',
           isError: true,
         );
         return;
       }
 
-      if (_noteController.text.trim().length < _minimumNoteCharacters) {
+      if (_selectedProducts.isEmpty) {
+        CustomSnackBar.show(
+          context: context,
+          message: 'Pilih minimal satu produk',
+          isError: true,
+        );
+        return;
+      }
+
+      final note = _noteController.text;
+      if (note.length < _minimumNoteCharacters) {
         setState(() {
           _noteError = 'Catatan minimal $_minimumNoteCharacters karakter';
         });
-        CustomSnackBar.show(
-          context: context,
-          message: 'Catatan terlalu pendek',
-          isError: true,
-        );
         return;
       }
 
-      if (_noteController.text.trim().length > _maximumNoteCharacters) {
+      if (note.length > _maximumNoteCharacters) {
         setState(() {
           _noteError = 'Catatan maksimal $_maximumNoteCharacters karakter';
         });
-        CustomSnackBar.show(
-          context: context,
-          message: 'Catatan terlalu panjang',
-          isError: true,
-        );
         return;
       }
-
-      if (_selectedDoctor == null) {
-        // Tampilkan pesan error jika dokter belum dipilih
-        CustomSnackBar.show(
-          context: context,
-          message: 'Silakan pilih dokter terlebih dahulu',
-          isError: true,
-        );
-        return;
-      }
-
-      if (_selectedScheduleType == null) {
-        // Tampilkan pesan error jika tipe jadwal belum dipilih
-        CustomSnackBar.show(
-          context: context,
-          message: 'Silakan pilih tipe jadwal terlebih dahulu',
-          isError: true,
-        );
-        return;
-      }
-
-      if (_tanggalController.text.isEmpty) {
-        // Tampilkan pesan error jika tanggal belum dipilih
-        CustomSnackBar.show(
-          context: context,
-          message: 'Silakan pilih tanggal kunjungan',
-          isError: true,
-        );
-        return;
-      }
-
-      // Log debug informasi
-      Logger.debug(_tag, 'Submitting form with data:');
-      Logger.debug(_tag, '- Schedule Type: ${_selectedScheduleType?.nama}');
-      Logger.debug(_tag, '- Doctor: ${_selectedDoctor?.nama}');
-      Logger.debug(_tag, '- Date: ${_tanggalController.text}');
-      Logger.debug(_tag, '- Shift: $_selectedShift');
-      Logger.debug(_tag, '- Jenis: $_selectedJenis');
-      Logger.debug(
-          _tag, '- Products: ${_selectedProducts.map((p) => p.nama).toList()}');
-      Logger.debug(_tag,
-          '- Product IDs: ${_selectedProducts.map((p) => p.id).toList()}');
-      Logger.debug(_tag, '- Divisi IDs: $_selectedProductDivisiIds');
-      Logger.debug(_tag, '- Divisi Names: $_selectedDivisiNames');
-      Logger.debug(_tag, '- Spesialis IDs: $_selectedProductSpesialisIds');
-      Logger.debug(_tag, '- Spesialis Names: $_selectedSpesialisNames');
-      Logger.debug(_tag, '- Notes: ${_noteController.text}');
 
       context.read<AddScheduleBloc>().add(
             SubmitScheduleEvent(
@@ -332,8 +324,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
               tujuan: _selectedDestinationType,
               tglVisit: _tanggalController.text,
               product: _selectedProducts.map((p) => p.id.toString()).toList(),
-              note: _noteController.text.trim(),
-              idUser: userId.toString(),
+              note: note,
+              idUser: authState.user.idUser.toString(),
               dokter: _selectedDoctor!.id!.toString(),
               klinik: _selectedDestinationType == 'klinik'
                   ? _selectedDoctor!.nama
@@ -454,7 +446,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                                   hintText: 'Pilih Tanggal',
                                   labelText: 'Tanggal',
                                   readOnly: true,
-                                  onTap: () => _selectDate(context),
+                                  onTap: () => _selectDate(context, authState),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
                                       return 'Pilih tanggal';
@@ -678,80 +670,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          AppButton(
-                            text: 'Simpan',
-                            onPressed: () {
-                              if (_formKey.currentState!.validate()) {
-                                if (_selectedDoctor == null) {
-                                  CustomSnackBar.show(
-                                    context: context,
-                                    message: 'Pilih dokter atau klinik',
-                                    isError: true,
-                                  );
-                                  return;
-                                }
-
-                                if (_selectedProducts.isEmpty) {
-                                  CustomSnackBar.show(
-                                    context: context,
-                                    message: 'Pilih minimal satu produk',
-                                    isError: true,
-                                  );
-                                  return;
-                                }
-
-                                final note = _noteController.text;
-                                if (note.length < _minimumNoteCharacters) {
-                                  setState(() {
-                                    _noteError =
-                                        'Catatan minimal $_minimumNoteCharacters karakter';
-                                  });
-                                  return;
-                                }
-
-                                if (note.length > _maximumNoteCharacters) {
-                                  setState(() {
-                                    _noteError =
-                                        'Catatan maksimal $_maximumNoteCharacters karakter';
-                                  });
-                                  return;
-                                }
-
-                                context.read<AddScheduleBloc>().add(
-                                      SubmitScheduleEvent(
-                                        typeSchedule: _selectedScheduleType!.id
-                                            .toString(),
-                                        tujuan: _selectedDestinationType,
-                                        tglVisit: _tanggalController.text,
-                                        product: _selectedProducts
-                                            .map((p) => p.id.toString())
-                                            .toList(),
-                                        note: note,
-                                        idUser:
-                                            authState.user.idUser.toString(),
-                                        dokter: _selectedDoctor!.id!.toString(),
-                                        klinik:
-                                            _selectedDestinationType == 'klinik'
-                                                ? _selectedDoctor!.nama
-                                                : '',
-                                        productForIdDivisi:
-                                            _selectedProductDivisiIds
-                                                .map((id) => id.toString())
-                                                .toList(),
-                                        productForIdSpesialis:
-                                            _selectedProductSpesialisIds
-                                                .map((id) => id.toString())
-                                                .toList(),
-                                        shift: _selectedShift,
-                                        jenis: _selectedJenis,
-                                        productNames: _selectedProductNames,
-                                        divisiNames: _selectedDivisiNames,
-                                        spesialisNames: _selectedSpesialisNames,
-                                      ),
-                                    );
-                              }
-                            },
-                          ),
+                          _buildSaveButton(state, authState),
                         ],
                       ),
                     ),
@@ -1248,6 +1167,54 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
               );
             },
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSaveButton(AddScheduleFormLoaded state, AuthState authState) {
+    final bool isButtonDisabled = state.isSuddenlyLimitReached;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (state.isSuddenlyLimitReached) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Colors.amber.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.amber.shade400),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.amber.shade800,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Anda telah mencapai batas jadwal "suddenly" untuk tanggal ini (${state.suddenlyCount}/${_maxSuddenlyPerDay}). '
+                    'Silakan pilih tanggal lain.',
+                    style: TextStyle(
+                      color: Colors.amber.shade900,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        AppButton(
+          text: 'Simpan',
+          onPressed: isButtonDisabled
+              ? null // Tombol akan dinonaktifkan jika batas tercapai
+              : () {
+                  _submitForm(authState);
+                },
         ),
       ],
     );

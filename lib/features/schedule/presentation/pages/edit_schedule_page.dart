@@ -130,10 +130,10 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
             int.parse(parts[1]), // day
           );
         } else {
-          throw FormatException('Invalid date format');
+          throw const FormatException('Invalid date format');
         }
       } else {
-        throw FormatException('Unsupported date format');
+        throw const FormatException('Unsupported date format');
       }
       
       // Format the date as MM/dd/yyyy

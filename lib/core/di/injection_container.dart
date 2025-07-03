@@ -102,23 +102,23 @@ Future<void> _initNonCriticalDependencies() async {
   _initKpiDependencies();
 }
 
-/// Initialize external dependencies
-Future<void> _initExternalDependencies() async {
-  // This method is now split into critical and non-critical
-  // Keep for backward compatibility if needed
-}
+// /// Initialize external dependencies
+// Future<void> _initExternalDependencies() async {
+//   // This method is now split into critical and non-critical
+//   // Keep for backward compatibility if needed
+// }
 
-/// Initialize core dependencies
-void _initCoreDependencies() {
-  // This method is now handled in _initCriticalDependencies and _initNonCriticalDependencies
-  // Keep for backward compatibility if needed
-}
+// /// Initialize core dependencies
+// void _initCoreDependencies() {
+//   // This method is now handled in _initCriticalDependencies and _initNonCriticalDependencies
+//   // Keep for backward compatibility if needed
+// }
 
-/// Initialize feature dependencies
-Future<void> _initFeatureDependencies() async {
-  // This method is now handled in _initCriticalDependencies and _initNonCriticalDependencies
-  // Keep for backward compatibility if needed
-}
+// /// Initialize feature dependencies
+// Future<void> _initFeatureDependencies() async {
+//   // This method is now handled in _initCriticalDependencies and _initNonCriticalDependencies
+//   // Keep for backward compatibility if needed
+// }
 
 /// Initialize Tipe Schedule dependencies
 void _initTipeScheduleDependencies() {

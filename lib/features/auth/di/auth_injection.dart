@@ -1,5 +1,4 @@
 import 'package:get_it/get_it.dart';
-import 'package:test_cbo/core/di/injection_container.dart';
 import 'package:test_cbo/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:test_cbo/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:test_cbo/features/auth/domain/repositories/auth_repository.dart';

@@ -175,7 +175,7 @@ class ApprovalBloc extends Bloc<ApprovalEvent, ApprovalState> {
           },
         );
         // Don't emit loading immediately, let success message handle navigation
-        emit(ApprovalSuccess(message: 'Persetujuan berhasil dikirim'));
+        emit(const ApprovalSuccess(message: 'Persetujuan berhasil dikirim')); 
       },
     );
   }
@@ -212,7 +212,7 @@ class ApprovalBloc extends Bloc<ApprovalEvent, ApprovalState> {
           });
         },
       );
-      emit(ApprovalSuccess(message: 'Penolakan berhasil dikirim'));
+      emit(const ApprovalSuccess(message: 'Penolakan berhasil dikirim')); 
     } catch (e) {
       emit(ApprovalError(message: 'Gagal menolak: $e'));
     }

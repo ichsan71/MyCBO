@@ -8,6 +8,7 @@ import 'package:test_cbo/features/schedule/domain/entities/schedule_type.dart';
 import 'package:test_cbo/features/schedule/domain/usecases/add_schedule.dart';
 import 'package:test_cbo/features/schedule/domain/usecases/get_doctors.dart';
 import 'package:test_cbo/features/schedule/domain/usecases/get_doctors_and_clinics.dart';
+import 'package:test_cbo/features/schedule/domain/usecases/get_filtered_daily_schedule.dart';
 import 'package:test_cbo/features/schedule/domain/usecases/get_products.dart';
 import 'package:test_cbo/features/schedule/domain/usecases/get_schedule_types.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/add_schedule_event.dart';
@@ -19,12 +20,19 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
   final GetProducts getProducts;
   final GetDoctors getDoctors;
   final AddSchedule addSchedule;
+  final GetFilteredDailySchedule getFilteredDailySchedule;
 
   static const String _tag = 'AddScheduleBloc';
+
+  // Constant untuk batasan
+  static const int _maxSuddenlyPerDay = 4;
 
   List<DoctorClinicBase> _doctorsAndClinics = [];
   List<ScheduleType> _scheduleTypes = [];
   List<Product> _products = [];
+  String _currentDate = '';
+  bool _isSuddenlyLimitReached = false;
+  int _suddenlyCount = 0;
 
   AddScheduleBloc({
     required this.getDoctorsAndClinics,
@@ -32,11 +40,14 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
     required this.getProducts,
     required this.getDoctors,
     required this.addSchedule,
+    required this.getFilteredDailySchedule,
   }) : super(const AddScheduleInitial()) {
     on<GetDoctorsAndClinicsEvent>(_onGetDoctorsAndClinics);
     on<GetScheduleTypesEvent>(_onGetScheduleTypes);
     on<GetProductsEvent>(_onGetProducts);
     on<SubmitScheduleEvent>(_onSubmitSchedule);
+    on<CheckDailyScheduleEvent>(_onCheckDailySchedule);
+    on<DateChangedEvent>(_onDateChanged);
   }
 
   Future<void> _onGetDoctorsAndClinics(
@@ -63,7 +74,7 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
       );
     } catch (e) {
       Logger.error(_tag, 'Error tidak tertangani: $e');
-      emit(AddScheduleError(
+      emit(const AddScheduleError(
           message: 'Terjadi kesalahan saat mengambil data dokter'));
       _checkFormDataLoaded(emit);
     }
@@ -92,7 +103,7 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
       );
     } catch (e) {
       Logger.error(_tag, 'Error tidak tertangani: $e');
-      emit(AddScheduleError(
+      emit(const AddScheduleError(
           message: 'Terjadi kesalahan saat mengambil tipe jadwal'));
       _checkFormDataLoaded(emit);
     }
@@ -122,7 +133,7 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
       );
     } catch (e) {
       Logger.error(_tag, 'Error tidak tertangani: $e');
-      emit(AddScheduleError(
+      emit(const AddScheduleError(
           message: 'Terjadi kesalahan saat mengambil data produk'));
       _checkFormDataLoaded(emit);
     }
@@ -141,10 +152,109 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
         doctorsAndClinics: _doctorsAndClinics,
         scheduleTypes: _scheduleTypes,
         products: _products,
+        isSuddenlyLimitReached: _isSuddenlyLimitReached,
+        suddenlyCount: _suddenlyCount,
+        selectedDate: _currentDate,
       ));
     } else {
       Logger.warning(_tag, 'Beberapa data form masih belum dimuat');
     }
+  }
+
+  Future<void> _onCheckDailySchedule(
+    CheckDailyScheduleEvent event,
+    Emitter<AddScheduleState> emit,
+  ) async {
+    _currentDate = event.date;
+
+    emit(DailyScheduleValidationLoading(date: event.date));
+
+    try {
+      final result = await getFilteredDailySchedule(
+        FilterDailyScheduleParams(
+          userId: int.parse(event.userId),
+          date: event.date,
+        ),
+      );
+
+      await result.fold(
+        (failure) async {
+          Logger.error(
+              _tag, 'Gagal mendapatkan jadwal harian: ${failure.message}');
+          _isSuddenlyLimitReached = false;
+          _suddenlyCount = 0;
+
+          if (state is AddScheduleFormLoaded) {
+            final currentState = state as AddScheduleFormLoaded;
+            emit(currentState.copyWith(
+              isSuddenlyLimitReached: false,
+              suddenlyCount: 0,
+              selectedDate: event.date,
+            ));
+          }
+        },
+        (schedules) async {
+          Logger.success(
+              _tag, 'Berhasil mendapatkan ${schedules.length} jadwal harian');
+
+          // Hitung jumlah jadwal dengan jenis "suddenly"
+          final suddenlySchedules = schedules
+              .where((schedule) => schedule.jenis == 'suddenly')
+              .toList();
+          _suddenlyCount = suddenlySchedules.length;
+          _isSuddenlyLimitReached = _suddenlyCount >= _maxSuddenlyPerDay;
+
+          Logger.info(_tag,
+              'Jumlah jadwal suddenly: $_suddenlyCount, limit tercapai: $_isSuddenlyLimitReached');
+
+          if (state is AddScheduleFormLoaded) {
+            final currentState = state as AddScheduleFormLoaded;
+            emit(currentState.copyWith(
+              isSuddenlyLimitReached: _isSuddenlyLimitReached,
+              suddenlyCount: _suddenlyCount,
+              selectedDate: event.date,
+            ));
+          } else if (_doctorsAndClinics.isNotEmpty &&
+              _scheduleTypes.isNotEmpty &&
+              _products.isNotEmpty) {
+            emit(AddScheduleFormLoaded(
+              doctorsAndClinics: _doctorsAndClinics,
+              scheduleTypes: _scheduleTypes,
+              products: _products,
+              isSuddenlyLimitReached: _isSuddenlyLimitReached,
+              suddenlyCount: _suddenlyCount,
+              selectedDate: event.date,
+            ));
+          }
+        },
+      );
+    } catch (e) {
+      Logger.error(_tag, 'Error saat memeriksa jadwal harian: $e');
+      _isSuddenlyLimitReached = false;
+      _suddenlyCount = 0;
+
+      if (state is AddScheduleFormLoaded) {
+        final currentState = state as AddScheduleFormLoaded;
+        emit(currentState.copyWith(
+          isSuddenlyLimitReached: false,
+          suddenlyCount: 0,
+          selectedDate: event.date,
+        ));
+      }
+    }
+  }
+
+  Future<void> _onDateChanged(
+    DateChangedEvent event,
+    Emitter<AddScheduleState> emit,
+  ) async {
+    await _onCheckDailySchedule(
+      CheckDailyScheduleEvent(
+        userId: event.userId,
+        date: event.date,
+      ),
+      emit,
+    );
   }
 
   Future<void> _onSubmitSchedule(
@@ -159,7 +269,7 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
           event.product.isEmpty ||
           event.idUser.isEmpty ||
           event.dokter.isEmpty) {
-        throw FormatException('Semua field wajib harus diisi');
+        throw const FormatException('Semua field wajib harus diisi');
       }
 
       // Parse and format the date
@@ -215,17 +325,13 @@ Data yang akan dikirim:
           emit(const AddScheduleSuccess());
         },
       );
+    } on FormatException catch (e) {
+      Logger.error(_tag, 'Format error: ${e.message}');
+      emit(AddScheduleError(message: e.message));
     } catch (e) {
       Logger.error(_tag, 'Error tidak tertangani: $e');
-      if (e is FormatException) {
-        emit(AddScheduleError(
-            message: e.message == 'Semua field wajib harus diisi'
-                ? e.message
-                : 'Format tanggal tidak valid. Gunakan format DD/MM/YYYY'));
-      } else {
-        emit(AddScheduleError(
-            message: 'Terjadi kesalahan saat menambahkan jadwal'));
-      }
+      emit(const AddScheduleError(
+          message: 'Terjadi kesalahan saat menambahkan jadwal'));
     }
   }
 }

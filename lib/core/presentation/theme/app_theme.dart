@@ -5,55 +5,55 @@ class AppTheme {
   AppTheme._();
 
   // Light Theme Colors
-  static final ThemeColors lightColors = ThemeColors(
-    primary: const Color(0xFF0277BD),
-    secondary: const Color(0xFF00897B),
-    tertiary: const Color(0xFF7B1FA2),
-    success: const Color(0xFF81C784),
-    warning: const Color(0xFFFFA000),
-    error: const Color(0xFFD32F2F),
-    surface: const Color(0xFFF5F5F5),
+  static const ThemeColors lightColors = ThemeColors(
+    primary: Color(0xFF0277BD),
+    secondary: Color(0xFF00897B),
+    tertiary: Color(0xFF7B1FA2),
+    success: Color(0xFF81C784),
+    warning: Color(0xFFFFA000),
+    error: Color(0xFFD32F2F),
+    surface: Color(0xFFF5F5F5),
     cardSurface: Colors.white,
     cardBackground: Colors.white,
-    primaryText: const Color(0xFF212121),
-    secondaryText: const Color(0xFF757575),
-    disabled: const Color(0xFFBDBDBD),
-    scheduleText: const Color(0xFF333333),
-    scheduleIcon: const Color(0xFF1565C0),
-    scheduleHeader: const Color(0xFF1976D2),
-    scheduleSubtext: const Color(0xFF616161),
-    scheduleBackground: const Color(0xFFFAFAFA),
+    primaryText: Color(0xFF212121),
+    secondaryText: Color(0xFF757575),
+    disabled: Color(0xFFBDBDBD),
+    scheduleText: Color(0xFF333333),
+    scheduleIcon: Color(0xFF1565C0),
+    scheduleHeader: Color(0xFF1976D2),
+    scheduleSubtext: Color(0xFF616161),
+    scheduleBackground: Color(0xFFFAFAFA),
     scheduleCard: Colors.white,
-    scheduleSelectedItem: const Color(0xFFE3F2FD),
-    scheduleHighlight: const Color(0xFF2196F3),
-    divider: const Color(0xFFEEEEEE),
-    border: const Color(0xFFE0E0E0),
+    scheduleSelectedItem: Color(0xFFE3F2FD),
+    scheduleHighlight: Color(0xFF2196F3),
+    divider: Color(0xFFEEEEEE),
+    border: Color(0xFFE0E0E0),
   );
 
   // Dark Theme Colors
-  static final ThemeColors darkColors = ThemeColors(
-    primary: const Color(0xFF90CAF9),
-    secondary: const Color(0xFF80CBC4),
-    tertiary: const Color(0xFFCE93D8),
-    success: const Color(0xFFA5D6A7),
-    warning: const Color(0xFFFFB74D),
-    error: const Color(0xFFEF5350),
-    surface: const Color(0xFF121212),
-    cardSurface: const Color(0xFF1F1F1F),
-    cardBackground: const Color(0xFF2C2C2C),
+  static const ThemeColors darkColors = ThemeColors(
+    primary: Color(0xFF90CAF9),
+    secondary: Color(0xFF80CBC4),
+    tertiary: Color(0xFFCE93D8),
+    success: Color(0xFFA5D6A7),
+    warning: Color(0xFFFFB74D),
+    error: Color(0xFFEF5350),
+    surface: Color(0xFF121212),
+    cardSurface: Color(0xFF1F1F1F),
+    cardBackground: Color(0xFF2C2C2C),
     primaryText: Colors.white,
     secondaryText: Colors.white70,
     disabled: Colors.white38,
     scheduleText: Colors.white,
-    scheduleIcon: const Color(0xFF90CAF9),
-    scheduleHeader: const Color(0xFF42A5F5),
+    scheduleIcon: Color(0xFF90CAF9),
+    scheduleHeader: Color(0xFF42A5F5),
     scheduleSubtext: Colors.white70,
-    scheduleBackground: const Color(0xFF121212),
-    scheduleCard: const Color(0xFF2C2C2C),
-    scheduleSelectedItem: const Color(0xFF1565C0),
-    scheduleHighlight: const Color(0xFF90CAF9),
-    divider: const Color(0xFF424242),
-    border: const Color(0xFF424242),
+    scheduleBackground: Color(0xFF121212),
+    scheduleCard: Color(0xFF2C2C2C),
+    scheduleSelectedItem: Color(0xFF1565C0),
+    scheduleHighlight: Color(0xFF90CAF9),
+    divider: Color(0xFF424242),
+    border: Color(0xFF424242),
   );
 
   static ThemeColors get colors {
@@ -100,7 +100,7 @@ class AppTheme {
   static BuildContext? currentContext;
 
   static ThemeData lightTheme() {
-    final colors = lightColors;
+    const colors = lightColors;
 
     final ColorScheme colorScheme = ColorScheme(
       primary: colors.primary,
@@ -125,7 +125,7 @@ class AppTheme {
   }
 
   static ThemeData darkTheme() {
-    final colors = darkColors;
+    const colors = darkColors;
 
     final ColorScheme colorScheme = ColorScheme(
       primary: colors.primary,
@@ -402,7 +402,7 @@ class AppTheme {
         backgroundColor: colors.surface,
         contentTextStyle: TextStyle(
           color: colors.primaryText,
-          ),
+        ),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: borderRadiusMedium,

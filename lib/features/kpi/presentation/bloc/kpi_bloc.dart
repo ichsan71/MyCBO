@@ -65,25 +65,24 @@ class KpiError extends KpiState {
 // BLoC
 class KpiBloc extends Bloc<KpiEvent, KpiState> {
   final GetKpiData getKpiData;
-  String? _lastUserId;
   String? _lastYear;
   String? _lastMonth;
 
   KpiBloc({required this.getKpiData}) : super(KpiInitial()) {
     on<GetKpiDataEvent>((event, emit) async {
       emit(KpiLoading());
-      
+
       final result = await getKpiData(Params(
         userId: event.userId,
         year: event.year,
         month: event.month,
       ));
-      
+
       result.fold(
         (failure) => emit(KpiError('Failed to load KPI data')),
         (data) {
-          debugPrint('KPI Bloc - GetKpiDataEvent - Data received for ${event.year}-${event.month}');
-          _lastUserId = event.userId;
+          debugPrint(
+              'KPI Bloc - GetKpiDataEvent - Data received for ${event.year}-${event.month}');
           _lastYear = event.year;
           _lastMonth = event.month;
           emit(KpiLoaded(data, event.year, event.month));
@@ -93,30 +92,31 @@ class KpiBloc extends Bloc<KpiEvent, KpiState> {
 
     on<ResetAndRefreshKpiDataEvent>((event, emit) async {
       try {
-        debugPrint('KPI Bloc - ResetAndRefreshKpiDataEvent - Starting refresh for ${event.year}-${event.month}');
-        
+        debugPrint(
+            'KPI Bloc - ResetAndRefreshKpiDataEvent - Starting refresh for ${event.year}-${event.month}');
+
         // Reset state
         emit(KpiInitial());
         emit(KpiLoading());
-        
+
         // Get fresh data
         final result = await getKpiData(Params(
           userId: event.userId,
           year: event.year,
           month: event.month,
         ));
-        
+
         if (isClosed) return;
-        
+
         result.fold(
           (failure) => emit(KpiError('Failed to load KPI data')),
           (data) {
-            debugPrint('KPI Bloc - ResetAndRefreshKpiDataEvent - Data received');
+            debugPrint(
+                'KPI Bloc - ResetAndRefreshKpiDataEvent - Data received');
             // Update cache
-            _lastUserId = event.userId;
             _lastYear = event.year;
             _lastMonth = event.month;
-            
+
             // Emit new state
             emit(KpiLoaded(data, event.year, event.month));
           },
@@ -134,4 +134,4 @@ class KpiBloc extends Bloc<KpiEvent, KpiState> {
   Future<void> close() {
     return super.close();
   }
-} 
+}

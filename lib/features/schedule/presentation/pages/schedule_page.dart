@@ -154,10 +154,10 @@ class _SchedulePageState extends State<SchedulePage> {
   }
 
   Widget _buildFilterChips() {
-    return SingleChildScrollView(
+    return const SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: const [
+        children: [
           // Add filter chips here
         ],
       ),

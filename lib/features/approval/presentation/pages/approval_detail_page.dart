@@ -782,7 +782,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
         context.read<MonthlyApprovalBloc>().add(
               SendMonthlyApproval(
                 scheduleIds: _selectedScheduleIds.toList(),
-                scheduleJoinVisitIds: [],
+                scheduleJoinVisitIds: const [],
                 userId: monthlyApproval.idBawahan,
                 userAtasanId: int.parse(widget.userId),
                 isRejected: true,

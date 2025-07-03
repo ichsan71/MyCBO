@@ -97,8 +97,7 @@ class AppButton extends StatelessWidget {
         fgColor = textColor ?? theme.colorScheme.primary;
         break;
       case AppButtonType.text:
-      default:
-        bgColor = Colors.transparent;
+      bgColor = Colors.transparent;
         fgColor = textColor ?? theme.colorScheme.primary;
         break;
     }
@@ -158,8 +157,7 @@ class AppButton extends StatelessWidget {
         );
         break;
       case AppButtonType.text:
-      default:
-        buttonStyle = TextButton.styleFrom(
+      buttonStyle = TextButton.styleFrom(
           foregroundColor: fgColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
@@ -235,8 +233,7 @@ class AppButton extends StatelessWidget {
         );
         break;
       case AppButtonType.text:
-      default:
-        button = TextButton(
+      button = TextButton(
           style: buttonStyle,
           onPressed: isLoading ? null : onPressed,
           child: buttonContent,

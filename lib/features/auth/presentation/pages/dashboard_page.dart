@@ -154,9 +154,9 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => PopScope(
+      builder: (context) => const PopScope(
         canPop: false,
-        child: const Center(
+        child: Center(
           child: CircularProgressIndicator(),
         ),
       ),

@@ -27,6 +27,32 @@ class GetProductsEvent extends AddScheduleEvent {
   List<Object?> get props => [userId];
 }
 
+class CheckDailyScheduleEvent extends AddScheduleEvent {
+  final String userId;
+  final String date;
+
+  const CheckDailyScheduleEvent({
+    required this.userId,
+    required this.date,
+  });
+
+  @override
+  List<Object?> get props => [userId, date];
+}
+
+class DateChangedEvent extends AddScheduleEvent {
+  final String userId;
+  final String date;
+
+  const DateChangedEvent({
+    required this.userId,
+    required this.date,
+  });
+
+  @override
+  List<Object?> get props => [userId, date];
+}
+
 class SubmitScheduleEvent extends AddScheduleEvent {
   final String typeSchedule;
   final String tujuan;

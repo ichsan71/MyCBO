@@ -1,11 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 class Logger {
-  static const String _infoPrefix = '📘 INFO';
   static const String _debugPrefix = '🔍 DEBUG';
-  static const String _warningPrefix = '⚠️ WARNING';
-  static const String _errorPrefix = '❌ ERROR';
-  static const String _successPrefix = '✅ SUCCESS';
   static const String _networkPrefix = '🌐 NETWORK';
 
   static final Logger _instance = Logger._internal();

@@ -32,7 +32,7 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
         return Left(ServerFailure(message: e.toString()));
       }
     } else {
-      return Left(const NetworkFailure());
+      return const Left(NetworkFailure());
     }
   }
 
@@ -51,7 +51,7 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
         return Left(ServerFailure(message: e.toString()));
       }
     } else {
-      return Left(const NetworkFailure());
+      return const Left(NetworkFailure());
     }
   }
 
@@ -69,7 +69,7 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
         return Left(ServerFailure(message: e.toString()));
       }
     } else {
-      return Left(const NetworkFailure());
+      return const Left(NetworkFailure());
     }
   }
 
@@ -95,7 +95,7 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
         return Left(ServerFailure(message: e.toString()));
       }
     } else {
-      return Left(NetworkFailure(message: 'Tidak ada koneksi internet'));
+      return const Left(NetworkFailure(message: 'Tidak ada koneksi internet'));
     }
   }
 
@@ -114,7 +114,7 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
         return Left(ServerFailure(message: e.toString()));
       }
     } else {
-      return Left(const NetworkFailure());
+      return const Left(NetworkFailure());
     }
   }
 
@@ -138,7 +138,7 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
         return Left(ServerFailure(message: e.toString()));
       }
     } else {
-      return Left(const NetworkFailure());
+      return const Left(NetworkFailure());
     }
   }
 
@@ -159,7 +159,7 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
         return Left(ServerFailure(message: e.toString()));
       }
     } else {
-      return Left(const NetworkFailure());
+      return const Left(NetworkFailure());
     }
   }
 
@@ -176,7 +176,7 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
         return Left(ServerFailure(message: e.toString()));
       }
     } else {
-      return Left(const NetworkFailure());
+      return const Left(NetworkFailure());
     }
   }
 
@@ -195,7 +195,7 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
         return Left(ServerFailure(message: e.toString()));
       }
     } else {
-      return Left(const NetworkFailure());
+      return const Left(NetworkFailure());
     }
   }
 
@@ -216,7 +216,7 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
         return Left(ServerFailure(message: e.toString()));
       }
     } else {
-      return Left(const NetworkFailure());
+      return const Left(NetworkFailure());
     }
   }
 
@@ -237,7 +237,7 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
         return Left(ServerFailure(message: e.toString()));
       }
     } else {
-      return Left(const NetworkFailure());
+      return const Left(NetworkFailure());
     }
   }
 
@@ -279,7 +279,7 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
         return Left(ServerFailure(message: e.toString()));
       }
     } else {
-      return Left(const NetworkFailure());
+      return const Left(NetworkFailure());
     }
   }
 }

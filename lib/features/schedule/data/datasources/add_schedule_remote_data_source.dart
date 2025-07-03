@@ -10,12 +10,14 @@ import 'package:test_cbo/features/schedule/data/models/responses/doctor_response
 import 'package:test_cbo/features/schedule/data/models/responses/schedule_type_response.dart';
 import 'package:test_cbo/features/schedule/data/models/schedule_type_model.dart';
 import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic_base.dart';
+import 'package:test_cbo/features/schedule/data/models/schedule_model.dart';
 
 abstract class AddScheduleRemoteDataSource {
   Future<List<DoctorClinicBase>> getDoctorsAndClinics(int userId);
   Future<List<ScheduleTypeModel>> getScheduleTypes();
   Future<List<ProductModel>> getProducts(int userId);
   Future<DoctorResponse> getDoctors();
+  Future<List<ScheduleModel>> getFilteredDailySchedule(int userId, String date);
   Future<bool> addSchedule({
     required int typeSchedule,
     required String tujuan,
@@ -643,6 +645,95 @@ class AddScheduleRemoteDataSourceImpl implements AddScheduleRemoteDataSource {
       Logger.error(
           _tag, '❌ DataSource: Error tidak terduga dalam getDoctors: $e');
       rethrow;
+    }
+  }
+
+  @override
+  Future<List<ScheduleModel>> getFilteredDailySchedule(
+      int userId, String date) async {
+    try {
+      Logger.info(_tag,
+          '🔄 DataSource: Memulai request ke API filter jadwal harian dengan userId: $userId dan tanggal: $date');
+
+      // Ambil token dari SharedPreferences
+      final token = sharedPreferences.getString(Constants.tokenKey);
+
+      if (token == null) {
+        throw ServerException(
+            message: 'Sesi login telah berakhir. Silakan login kembali.');
+      }
+
+      final String url =
+          '${Constants.baseUrl}/filter-daily-schedule/$userId/$date';
+      Logger.info(
+          _tag, '🔄 DataSource: Mencoba mengambil jadwal harian dari: $url');
+
+      final options = Options(
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        sendTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+      );
+
+      final response = await dio.get(url, options: options);
+
+      if (response.statusCode == 200) {
+        Logger.info(
+            _tag, '✅ DataSource: Berhasil mendapatkan response jadwal harian');
+        final responseData = response.data;
+
+        try {
+          if (responseData is Map<String, dynamic> &&
+              responseData.containsKey('data') &&
+              responseData['data'] is Map<String, dynamic> &&
+              responseData['data'].containsKey('data')) {
+            final scheduleItems = responseData['data']['data'] as List<dynamic>;
+            final schedules = scheduleItems
+                .map((item) => ScheduleModel.fromJson(item))
+                .toList();
+
+            Logger.info(_tag,
+                '✅ DataSource: Berhasil parse ${schedules.length} jadwal harian');
+            return schedules;
+          }
+
+          Logger.warning(_tag,
+              '⚠️ DataSource: Format response jadwal harian tidak sesuai');
+          return [];
+        } catch (e, stackTrace) {
+          Logger.error(_tag, '❌ DataSource: Error parsing jadwal harian: $e');
+          Logger.error(_tag, '❌ Stack trace: $stackTrace');
+          throw ServerException(
+              message: 'Format data jadwal harian tidak valid: $e');
+        }
+      } else if (response.statusCode == 401) {
+        throw UnauthorizedException(
+            message: 'Sesi login telah berakhir. Silakan login kembali.');
+      } else {
+        throw ServerException(
+            message:
+                'Gagal mengambil data jadwal harian. Status: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      Logger.error(_tag, '❌ DataSource: DioError: ${e.message}');
+      if (e.response?.statusCode == 401) {
+        throw UnauthorizedException(
+            message: 'Sesi login telah berakhir. Silakan login kembali.');
+      }
+      throw ServerException(
+          message:
+              'Terjadi kesalahan saat mengambil data jadwal harian: ${e.message}');
+    } catch (e) {
+      Logger.error(
+          _tag, '❌ DataSource: Error dalam getFilteredDailySchedule: $e');
+      if (e is ServerException || e is UnauthorizedException) {
+        rethrow;
+      }
+      throw ServerException(
+          message: 'Terjadi kesalahan saat mengambil data jadwal harian');
     }
   }
 

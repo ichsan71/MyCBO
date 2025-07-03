@@ -22,7 +22,7 @@ class KpiRepositoryImpl implements KpiRepository {
       final token = sharedPreferences.getString('token');
       if (token == null) {
         debugPrint('KPI Repository: Token not found in SharedPreferences');
-        return Left(ServerFailure());
+        return const Left(ServerFailure());
       }
 
       final url = 'https://dev-bco.businesscorporateofficer.com/api/my-kpi/$userId/$year/$month';
@@ -56,11 +56,11 @@ class KpiRepositoryImpl implements KpiRepository {
         }
         return Right(KpiResponse.fromJson(jsonData));
       } else {
-        return Left(ServerFailure());
+        return const Left(ServerFailure()); 
       }
     } catch (e) {
       debugPrint('KPI Repository: Error fetching data: $e');
-      return Left(ServerFailure());
+      return const Left(ServerFailure()); 
     }
   }
 } 

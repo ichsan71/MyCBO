@@ -9,6 +9,7 @@ import 'package:test_cbo/features/schedule/data/models/responses/doctor_response
 import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic_base.dart';
 import 'package:test_cbo/features/schedule/domain/entities/product.dart';
 import 'package:test_cbo/features/schedule/domain/entities/schedule_type.dart';
+import 'package:test_cbo/features/schedule/domain/entities/schedule.dart';
 import 'package:test_cbo/features/schedule/domain/repositories/add_schedule_repository.dart';
 
 class AddScheduleRepositoryImpl implements AddScheduleRepository {
@@ -280,6 +281,40 @@ class AddScheduleRepositoryImpl implements AddScheduleRepository {
       }
     } else {
       return const Left(NetworkFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<Schedule>>> getFilteredDailySchedule(
+      int userId, String date) async {
+    Logger.info(
+        _tag, 'Getting filtered daily schedule for user $userId on $date');
+
+    if (await networkInfo.isConnected) {
+      try {
+        final schedules =
+            await remoteDataSource.getFilteredDailySchedule(userId, date);
+        Logger.success(
+            _tag, 'Successfully fetched ${schedules.length} daily schedules');
+        return Right(schedules);
+      } on ServerException catch (e) {
+        Logger.error(
+            _tag, 'Server error when fetching daily schedules: ${e.message}');
+        return Left(ServerFailure(message: e.message));
+      } on UnauthorizedException catch (e) {
+        Logger.error(_tag, 'Authorization error: ${e.message}');
+        return Left(ServerFailure(message: e.message));
+      } catch (e) {
+        Logger.error(
+            _tag, 'Unexpected error when fetching daily schedules: $e');
+        return Left(ServerFailure(
+            message: 'Terjadi kesalahan saat mengambil jadwal harian'));
+      }
+    } else {
+      Logger.warning(_tag, 'No network connection for daily schedule fetch');
+      return const Left(NetworkFailure(
+          message:
+              'Tidak ada koneksi internet. Silakan periksa koneksi Anda dan coba lagi.'));
     }
   }
 }

@@ -33,21 +33,21 @@ class ShimmerScheduleLoading extends StatelessWidget {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Column(
+                    child: const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            const ShimmerContainer(
+                            ShimmerContainer(
                               width: 40,
                               height: 40,
                               borderRadius: 20,
                             ),
-                            const SizedBox(width: 12),
+                            SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
+                                children: [
                                   ShimmerContainer(
                                     width: 150,
                                     height: 16,
@@ -60,19 +60,19 @@ class ShimmerScheduleLoading extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            const ShimmerContainer(
+                            ShimmerContainer(
                               width: 60,
                               height: 24,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        const ShimmerContainer(
+                        SizedBox(height: 16),
+                        ShimmerContainer(
                           height: 14,
                           width: double.infinity,
                         ),
-                        const SizedBox(height: 8),
-                        const ShimmerContainer(
+                        SizedBox(height: 8),
+                        ShimmerContainer(
                           height: 14,
                           width: 200,
                         ),

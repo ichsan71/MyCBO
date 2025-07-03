@@ -157,7 +157,7 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
         return Left(ServerFailure(message: e.message));
       } catch (e) {
         Logger.error('ScheduleRepositoryImpl', 'Unexpected error: $e');
-        return Left(ServerFailure(message: 'An unexpected error occurred'));
+        return const Left(ServerFailure(message: 'An unexpected error occurred'));
       }
     } else {
       Logger.error('ScheduleRepositoryImpl', 'No network connection');
@@ -183,7 +183,7 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
         return Left(ServerFailure(message: e.message));
       } catch (e) {
         Logger.error('ScheduleRepositoryImpl', 'Unexpected error: $e');
-        return Left(ServerFailure(message: 'An unexpected error occurred'));
+        return const Left(ServerFailure(message: 'An unexpected error occurred'));
       }
     } else {
       Logger.error('ScheduleRepositoryImpl', 'No network connection');
@@ -209,7 +209,7 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
         return Left(ServerFailure(message: e.message));
       } catch (e) {
         Logger.error('ScheduleRepositoryImpl', 'Unexpected error: $e');
-        return Left(ServerFailure(message: 'An unexpected error occurred'));
+        return const Left(ServerFailure(message: 'An unexpected error occurred'));
       }
     } else {
       Logger.error('ScheduleRepositoryImpl', 'No network connection');
@@ -234,7 +234,7 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
         return Left(ServerFailure(message: e.message));
       } catch (e) {
         Logger.error('ScheduleRepositoryImpl', 'Unexpected error: $e');
-        return Left(ServerFailure(message: 'An unexpected error occurred'));
+        return const Left(ServerFailure(message: 'An unexpected error occurred'));
       }
     } else {
       Logger.error('ScheduleRepositoryImpl', 'No network connection');

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../schedule/domain/entities/schedule.dart';
+import '../../../../core/utils/logger.dart';
 
 class ScheduleDetailPage extends StatefulWidget {
   final Schedule schedule;
@@ -34,7 +34,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
              scheduleDate.month == now.month &&
              scheduleDate.day == now.day;
     } catch (e) {
-      print('Error parsing schedule date: $e');
+      Logger.error('ScheduleDetailPage', 'Error parsing schedule date: $e');
       return false;
     }
   }
@@ -50,7 +50,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
         int.parse(dateParts[1]), // day
       );
     } catch (e) {
-      print('Error parsing schedule date: $e');
+      Logger.error('ScheduleDetailPage', 'Error parsing schedule date: $e');
       return null;
     }
   }
@@ -67,7 +67,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
       // Format tanggal ke format yang lebih user-friendly (dd/MM/yyyy)
       return '${day.toString().padLeft(2, '0')}/${month.toString().padLeft(2, '0')}/$year';
     } catch (e) {
-      print('Error formatting display date: $e');
+      Logger.error('ScheduleDetailPage', 'Error formatting display date: $e');
       return dateStr;
     }
   }
@@ -87,17 +87,15 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
       if (year < 2000 || year > 2100) return false;
       
       // Coba buat DateTime object untuk validasi lebih lanjut
-      final date = DateTime(year, month, day);
       return true;
     } catch (e) {
-      print('Error validating schedule date: $e');
+      Logger.error('ScheduleDetailPage', 'Error validating schedule date: $e');
       return false;
     }
   }
 
   Widget _buildScheduleActions() {
-    final l10n = AppLocalizations.of(context)!;
-    final scheduleDate = _parseScheduleDate();
+    _parseScheduleDate();
     final isToday = _isScheduleToday();
     final isValidDate = _isScheduleDateValid();
 
@@ -164,7 +162,6 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     
     return Scaffold(
       appBar: AppBar(
