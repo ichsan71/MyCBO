@@ -72,6 +72,10 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
   String _doctorSearchQuery = '';
   String _productSearchQuery = '';
 
+  // Scroll controllers for better scroll indicators
+  final ScrollController _doctorScrollController = ScrollController();
+  final ScrollController _productScrollController = ScrollController();
+
   // Mapping ID spesialis ke nama spesialis
   final Map<int, String> _spesialisNames = {
     1: 'Umum',
@@ -227,19 +231,20 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
     if (_tanggalController.text.isNotEmpty) {
       final context = this.context;
       final authState = context.read<AuthBloc>().state;
-      
+
       if (authState is AuthAuthenticated) {
         // Konversi format tanggal untuk API
-        final inputDate = DateFormat('dd/MM/yyyy').parse(_tanggalController.text);
+        final inputDate =
+            DateFormat('dd/MM/yyyy').parse(_tanggalController.text);
         final apiFormattedDate = DateFormat('yyyy-MM-dd').format(inputDate);
-        
+
         // Kirim event untuk validasi jadwal pada tanggal yang sudah dipilih
         context.read<AddScheduleBloc>().add(
-          DateChangedEvent(
-            userId: authState.user.idUser.toString(),
-            date: apiFormattedDate,
-          ),
-        );
+              DateChangedEvent(
+                userId: authState.user.idUser.toString(),
+                date: apiFormattedDate,
+              ),
+            );
       }
     }
   }
@@ -250,6 +255,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
     _noteController.dispose();
     _doctorSearchController.dispose();
     _productSearchController.dispose();
+    _doctorScrollController.dispose();
+    _productScrollController.dispose();
     super.dispose();
   }
 
@@ -778,127 +785,210 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
       );
     }
 
-    return ConstrainedBox(
+    return Container(
       constraints: const BoxConstraints(maxHeight: 300),
-      child: ListView.builder(
-        shrinkWrap: true,
-        physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: filteredDoctors.length,
-        itemBuilder: (context, index) {
-          final doctor = filteredDoctors[index];
-          final isSelected = _selectedDoctor?.id == doctor.id;
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.grey[600]! : Colors.grey[400]!,
+          width: 1.5,
+        ),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            isDark ? Colors.grey[900]!.withOpacity(0.3) : Colors.grey[50]!,
+            isDark ? Colors.grey[800]!.withOpacity(0.1) : Colors.white,
+          ],
+        ),
+      ),
+      child: Stack(
+        children: [
+          RawScrollbar(
+            controller: _doctorScrollController,
+            thumbVisibility: true,
+            thickness: 10,
+            radius: const Radius.circular(5),
+            thumbColor: isDark
+                ? Colors.cyan.withOpacity(0.8)
+                : Theme.of(context).primaryColor.withOpacity(0.9),
+            trackColor: isDark
+                ? Colors.white.withOpacity(0.1)
+                : Colors.grey.withOpacity(0.3),
+            trackVisibility: true,
+            trackRadius: const Radius.circular(5),
+            crossAxisMargin: 3,
+            mainAxisMargin: 6,
+            child: ListView.builder(
+              controller: _doctorScrollController,
+              shrinkWrap: true,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(12, 8, 16, 8),
+              itemCount: filteredDoctors.length,
+              itemBuilder: (context, index) {
+                final doctor = filteredDoctors[index];
+                final isSelected = _selectedDoctor?.id == doctor.id;
 
-          // Log item build
-          Logger.debug(_tag,
-              'Building doctor item: ${doctor.nama} (selected: $isSelected)');
+                // Log item build
+                Logger.debug(_tag,
+                    'Building doctor item: ${doctor.nama} (selected: $isSelected)');
 
-          return Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? Theme.of(context)
-                      .primaryColor
-                      .withOpacity(isDark ? 0.2 : 0.1)
-                  : Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected
-                    ? isDark
-                        ? Colors.white
-                        : Theme.of(context).primaryColor
-                    : isDark
-                        ? Colors.grey[700]!
-                        : Colors.grey[300]!,
-                width: isSelected ? 2 : 1,
-              ),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  setState(() {
-                    _selectedDoctor = doctor;
-                    Logger.info(_tag,
-                        'Selected doctor: ${doctor.nama} (ID: ${doctor.id})');
-                  });
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .primaryColor
-                              .withOpacity(isDark ? 0.2 : 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.person,
-                          color: isDark
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Theme.of(context)
+                            .primaryColor
+                            .withOpacity(isDark ? 0.2 : 0.1)
+                        : Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected
+                          ? isDark
                               ? Colors.white
-                              : Theme.of(context).primaryColor,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                              : Theme.of(context).primaryColor
+                          : isDark
+                              ? Colors.grey[700]!
+                              : Colors.grey[300]!,
+                      width: isSelected ? 2 : 1,
+                    ),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedDoctor = doctor;
+                          Logger.info(_tag,
+                              'Selected doctor: ${doctor.nama} (ID: ${doctor.id})');
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
                           children: [
-                            Text(
-                              doctor.nama,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white : Colors.black87,
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .primaryColor
+                                    .withOpacity(isDark ? 0.2 : 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.person,
+                                color: isDark
+                                    ? Colors.white
+                                    : Theme.of(context).primaryColor,
+                                size: 20,
                               ),
                             ),
-                            if (doctor.alamat != null &&
-                                doctor.alamat!.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                doctor.alamat!,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color:
-                                      isDark ? Colors.white70 : Colors.black54,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    doctor.nama,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                  if (doctor.alamat != null &&
+                                      doctor.alamat!.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      doctor.alamat!,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isDark
+                                            ? Colors.white70
+                                            : Colors.black54,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                  if (doctor.spesialis.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      doctor.spesialis,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isDark
+                                            ? Colors.white60
+                                            : Colors.black45,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
-                            ],
-                            if (doctor.spesialis.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                doctor.spesialis,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color:
-                                      isDark ? Colors.white60 : Colors.black45,
-                                  fontStyle: FontStyle.italic,
-                                ),
+                            ),
+                            if (isSelected)
+                              Icon(
+                                Icons.check_circle,
+                                color: isDark
+                                    ? Colors.white
+                                    : Theme.of(context).primaryColor,
                               ),
-                            ],
                           ],
                         ),
                       ),
-                      if (isSelected)
-                        Icon(
-                          Icons.check_circle,
-                          color: isDark
-                              ? Colors.white
-                              : Theme.of(context).primaryColor,
-                        ),
-                    ],
+                    ),
                   ),
+                );
+              },
+            ),
+          ),
+          if (filteredDoctors.length > 4)
+            Positioned(
+              bottom: 6,
+              right: 20,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.black.withOpacity(0.7)
+                      : Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.cyan.withOpacity(0.5)
+                        : Theme.of(context).primaryColor.withOpacity(0.5),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.swipe_vertical,
+                      size: 14,
+                      color:
+                          isDark ? Colors.cyan : Theme.of(context).primaryColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Scroll',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark
+                            ? Colors.cyan
+                            : Theme.of(context).primaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          );
-        },
+        ],
       ),
     );
   }
@@ -911,109 +1001,191 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
           (clinic.alamat ?? '').toLowerCase().contains(searchQuery);
     }).toList();
 
-    return ConstrainedBox(
+    return Container(
       constraints: const BoxConstraints(maxHeight: 300),
-      child: ListView.builder(
-        shrinkWrap: true,
-        physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: filteredClinics.length,
-        itemBuilder: (context, index) {
-          final clinic = filteredClinics[index];
-          final isSelected = _selectedDoctor?.id == clinic.id;
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.grey[600]! : Colors.grey[400]!,
+          width: 1.5,
+        ),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            isDark ? Colors.grey[900]!.withOpacity(0.3) : Colors.grey[50]!,
+            isDark ? Colors.grey[800]!.withOpacity(0.1) : Colors.white,
+          ],
+        ),
+      ),
+      child: Stack(
+        children: [
+          RawScrollbar(
+            controller: _doctorScrollController,
+            thumbVisibility: true,
+            thickness: 10,
+            radius: const Radius.circular(5),
+            thumbColor: isDark
+                ? Colors.cyan.withOpacity(0.8)
+                : Theme.of(context).primaryColor.withOpacity(0.9),
+            trackColor: isDark
+                ? Colors.white.withOpacity(0.1)
+                : Colors.grey.withOpacity(0.3),
+            trackVisibility: true,
+            trackRadius: const Radius.circular(5),
+            crossAxisMargin: 3,
+            mainAxisMargin: 6,
+            child: ListView.builder(
+              controller: _doctorScrollController,
+              shrinkWrap: true,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(12, 8, 16, 8),
+              itemCount: filteredClinics.length,
+              itemBuilder: (context, index) {
+                final clinic = filteredClinics[index];
+                final isSelected = _selectedDoctor?.id == clinic.id;
 
-          return Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? Theme.of(context)
-                      .primaryColor
-                      .withOpacity(isDark ? 0.2 : 0.1)
-                  : Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected
-                    ? isDark
-                        ? Colors.white
-                        : Theme.of(context).primaryColor
-                    : isDark
-                        ? Colors.grey[700]!
-                        : Colors.grey[300]!,
-                width: isSelected ? 2 : 1,
-              ),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  setState(() {
-                    _selectedDoctor = clinic;
-                  });
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .primaryColor
-                              .withOpacity(isDark ? 0.2 : 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.local_hospital,
-                          color: isDark
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Theme.of(context)
+                            .primaryColor
+                            .withOpacity(isDark ? 0.2 : 0.1)
+                        : Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected
+                          ? isDark
                               ? Colors.white
-                              : Theme.of(context).primaryColor,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                              : Theme.of(context).primaryColor
+                          : isDark
+                              ? Colors.grey[700]!
+                              : Colors.grey[300]!,
+                      width: isSelected ? 2 : 1,
+                    ),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedDoctor = clinic;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
                           children: [
-                            Text(
-                              clinic.nama,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white : Colors.black87,
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .primaryColor
+                                    .withOpacity(isDark ? 0.2 : 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.local_hospital,
+                                color: isDark
+                                    ? Colors.white
+                                    : Theme.of(context).primaryColor,
+                                size: 20,
                               ),
                             ),
-                            if (clinic.alamat != null &&
-                                clinic.alamat!.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                clinic.alamat!,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color:
-                                      isDark ? Colors.white70 : Colors.black54,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    clinic.nama,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                  if (clinic.alamat != null &&
+                                      clinic.alamat!.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      clinic.alamat!,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isDark
+                                            ? Colors.white70
+                                            : Colors.black54,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ],
                               ),
-                            ],
+                            ),
+                            if (isSelected)
+                              Icon(
+                                Icons.check_circle,
+                                color: isDark
+                                    ? Colors.white
+                                    : Theme.of(context).primaryColor,
+                              ),
                           ],
                         ),
                       ),
-                      if (isSelected)
-                        Icon(
-                          Icons.check_circle,
-                          color: isDark
-                              ? Colors.white
-                              : Theme.of(context).primaryColor,
-                        ),
-                    ],
+                    ),
                   ),
+                );
+              },
+            ),
+          ),
+          if (filteredClinics.length > 4)
+            Positioned(
+              bottom: 6,
+              right: 20,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.black.withOpacity(0.7)
+                      : Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.cyan.withOpacity(0.5)
+                        : Theme.of(context).primaryColor.withOpacity(0.5),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.swipe_vertical,
+                      size: 14,
+                      color:
+                          isDark ? Colors.cyan : Theme.of(context).primaryColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Scroll',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark
+                            ? Colors.cyan
+                            : Theme.of(context).primaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          );
-        },
+        ],
       ),
     );
   }
@@ -1068,104 +1240,187 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
         ],
 
         // Product List
-        ConstrainedBox(
+        Container(
           constraints: const BoxConstraints(maxHeight: 300),
-          child: ListView.builder(
-            shrinkWrap: true,
-            physics: const AlwaysScrollableScrollPhysics(),
-            itemCount: filteredProducts.length,
-            itemBuilder: (context, index) {
-              final product = filteredProducts[index];
-              final isSelected = _selectedProducts.contains(product);
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDark ? Colors.grey[600]! : Colors.grey[400]!,
+              width: 1.5,
+            ),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                isDark ? Colors.grey[900]!.withOpacity(0.3) : Colors.grey[50]!,
+                isDark ? Colors.grey[800]!.withOpacity(0.1) : Colors.white,
+              ],
+            ),
+          ),
+          child: Stack(
+            children: [
+              RawScrollbar(
+                controller: _productScrollController,
+                thumbVisibility: true,
+                thickness: 10,
+                radius: const Radius.circular(5),
+                thumbColor: isDark
+                    ? Colors.cyan.withOpacity(0.8)
+                    : Theme.of(context).primaryColor.withOpacity(0.9),
+                trackColor: isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : Colors.grey.withOpacity(0.3),
+                trackVisibility: true,
+                trackRadius: const Radius.circular(5),
+                crossAxisMargin: 3,
+                mainAxisMargin: 6,
+                child: ListView.builder(
+                  controller: _productScrollController,
+                  shrinkWrap: true,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(12, 8, 16, 8),
+                  itemCount: filteredProducts.length,
+                  itemBuilder: (context, index) {
+                    final product = filteredProducts[index];
+                    final isSelected = _selectedProducts.contains(product);
 
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? Theme.of(context)
-                          .primaryColor
-                          .withOpacity(isDark ? 0.2 : 0.1)
-                      : Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected
-                        ? isDark
-                            ? Colors.white
-                            : Theme.of(context).primaryColor
-                        : isDark
-                            ? Colors.grey[700]!
-                            : Colors.grey[300]!,
-                    width: isSelected ? 2 : 1,
-                  ),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () => _onProductSelected(product),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .primaryColor
-                                  .withOpacity(isDark ? 0.2 : 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.medical_services,
-                              color: isDark
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? Theme.of(context)
+                                .primaryColor
+                                .withOpacity(isDark ? 0.2 : 0.1)
+                            : Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSelected
+                              ? isDark
                                   ? Colors.white
-                                  : Theme.of(context).primaryColor,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                                  : Theme.of(context).primaryColor
+                              : isDark
+                                  ? Colors.grey[700]!
+                                  : Colors.grey[300]!,
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _onProductSelected(product),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
                               children: [
-                                Text(
-                                  product.nama,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color:
-                                        isDark ? Colors.white : Colors.black87,
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .primaryColor
+                                        .withOpacity(isDark ? 0.2 : 0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.medical_services,
+                                    color: isDark
+                                        ? Colors.white
+                                        : Theme.of(context).primaryColor,
+                                    size: 20,
                                   ),
                                 ),
-                                if (product.kode != null) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Kode: ${product.kode}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: isDark
-                                          ? Colors.white70
-                                          : Colors.black54,
-                                    ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        product.nama,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark
+                                              ? Colors.white
+                                              : Colors.black87,
+                                        ),
+                                      ),
+                                      if (product.kode != null) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Kode: ${product.kode}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: isDark
+                                                ? Colors.white70
+                                                : Colors.black54,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
                                   ),
-                                ],
+                                ),
+                                if (isSelected)
+                                  Icon(
+                                    Icons.check_circle,
+                                    color: isDark
+                                        ? Colors.white
+                                        : Theme.of(context).primaryColor,
+                                  ),
                               ],
                             ),
                           ),
-                          if (isSelected)
-                            Icon(
-                              Icons.check_circle,
-                              color: isDark
-                                  ? Colors.white
-                                  : Theme.of(context).primaryColor,
-                            ),
-                        ],
+                        ),
                       ),
+                    );
+                  },
+                ),
+              ),
+              if (filteredProducts.length > 4)
+                Positioned(
+                  bottom: 6,
+                  right: 20,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.black.withOpacity(0.7)
+                          : Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark
+                            ? Colors.cyan.withOpacity(0.5)
+                            : Theme.of(context).primaryColor.withOpacity(0.5),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.swipe_vertical,
+                          size: 14,
+                          color: isDark
+                              ? Colors.cyan
+                              : Theme.of(context).primaryColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Scroll',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark
+                                ? Colors.cyan
+                                : Theme.of(context).primaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              );
-            },
+            ],
           ),
         ),
       ],

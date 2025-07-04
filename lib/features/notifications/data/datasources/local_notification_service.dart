@@ -46,6 +46,24 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
     ),
   );
 
+  // Daftar kata-kata motivasi untuk sapaan pagi
+  final List<String> morningMotivationalQuotes = [
+    "Pagi bukan untuk mengeluh, tapi untuk melangkah lebih jauh. Semangat, pejuang harian!",
+    "Mulai harimu dengan senyuman, biar rezeki datang tanpa undangan!",
+    "Yang penting bukan bangun pagi, tapi bangun dengan niat yang pasti.",
+    "Hari ini adalah peluang baru. Yuk, buat satu langkah lebih dekat ke tujuan!",
+    "Kalau semalam gagal, pagi ini saatnya bangkit. Semangat terus, jangan menyerah!",
+    "Matahari aja selalu terbit, masa semangat kamu enggak ikut bangkit?",
+  ];
+
+  // Get motivational quote based on the day of the week
+  String _getDailyMotivationalQuote() {
+    final now = DateTime.now();
+    // Use the day of the week as index (0-6), modulo the list length to prevent index errors
+    final index = now.weekday % morningMotivationalQuotes.length;
+    return morningMotivationalQuotes[index];
+  }
+
   LocalNotificationServiceImpl({
     required this.flutterLocalNotificationsPlugin,
     required this.sharedPreferences,
@@ -283,6 +301,11 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
       final now = DateTime.now();
       logger.d('Current time: $now');
 
+      // Get motivational quote for today
+      final todaysQuote = _getDailyMotivationalQuote();
+      final greetingMessage = 'Halo ${user.name}, $todaysQuote';
+      logger.d('Today\'s greeting message: $greetingMessage');
+
       // Check if we're in the greeting window (10:00 - 10:03)
       if (now.hour == 10 && now.minute >= 0 && now.minute < 3) {
         logger.d('Within greeting time window, showing immediate notification');
@@ -291,7 +314,7 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
         await flutterLocalNotificationsPlugin.show(
           2,
           'Selamat Pagi,',
-          'Halo ${user.name}, semoga hari Anda menyenangkan!',
+          greetingMessage,
           notificationDetails,
         );
         logger.i('Immediate daily greeting displayed');
@@ -313,11 +336,18 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
       final scheduledTZDate = tz.TZDateTime.from(scheduledTime, tz.local);
       logger.d('Scheduled TZ time: $scheduledTZDate');
 
+      // Get tomorrow's motivational quote for the scheduled notification
+      final tomorrowDate = now.add(const Duration(days: 1));
+      final tomorrowWeekday =
+          tomorrowDate.weekday % morningMotivationalQuotes.length;
+      final tomorrowsQuote = morningMotivationalQuotes[tomorrowWeekday];
+      final scheduledGreetingMessage = 'Halo ${user.name}, $tomorrowsQuote';
+
       // Schedule the daily notification using zonedSchedule for precise timing
       await flutterLocalNotificationsPlugin.zonedSchedule(
         4, // Daily greeting notification ID
         'Selamat Pagi,',
-        'Halo ${user.name}, semoga hari Anda menyenangkan!',
+        scheduledGreetingMessage,
         scheduledTZDate,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
@@ -581,11 +611,15 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
 
       const notificationDetails = NotificationDetails(android: androidDetails);
 
+      // Get today's motivational quote
+      final todaysQuote = _getDailyMotivationalQuote();
+      final greetingMessage = 'Halo $username, $todaysQuote';
+
       // Show immediate test notification
       await flutterLocalNotificationsPlugin.show(
         102,
         'Test Sapaan Pagi',
-        'Halo $username, ini adalah test notifikasi sapaan pagi.',
+        greetingMessage,
         notificationDetails,
       );
 
@@ -603,10 +637,17 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
 
       final testTZDate = tz.TZDateTime.from(testScheduledTime, tz.local);
 
+      // Get tomorrow's motivational quote for scheduled test
+      final tomorrowDate = now.add(const Duration(days: 1));
+      final tomorrowWeekday =
+          tomorrowDate.weekday % morningMotivationalQuotes.length;
+      final tomorrowsQuote = morningMotivationalQuotes[tomorrowWeekday];
+      final scheduledGreetingMessage = 'Halo $username, $tomorrowsQuote';
+
       await flutterLocalNotificationsPlugin.zonedSchedule(
         300, // Test daily greeting ID
         'Test Sapaan Pagi (Scheduled)',
-        'Halo $username, ini adalah test notifikasi sapaan pagi dijadwalkan untuk 10:00 AM.',
+        scheduledGreetingMessage,
         testTZDate,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,

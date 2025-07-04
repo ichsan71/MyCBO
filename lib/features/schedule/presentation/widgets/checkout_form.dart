@@ -38,8 +38,8 @@ class _CheckoutFormState extends State<CheckoutForm> {
   String? _imageError;
 
   // Constants for note validation
-  static const int _minimumNoteCharacters = 200;
-  static const int _maxNoteCharacters = 1000;
+  static const int _minimumNoteCharacters = 100;
+  static const int _maxNoteCharacters = 200;
 
   @override
   void initState() {
