@@ -1474,7 +1474,7 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
       return false;
     }
 
-    // Cek apakah jadwal masih dalam batas waktu dan hanya untuk jadwal hari ini
+    // Cek apakah jadwal bisa di-approve berdasarkan tanggal visit
     try {
       final DateTime now = DateTime.now();
       final DateTime? visitDate = _parseVisitDate(schedule.tglVisit);
@@ -1484,20 +1484,24 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
         return false;
       }
 
-      // Cek apakah visitDate adalah hari ini (hanya jadwal hari ini yang bisa di-approve)
       final DateTime today = DateTime(now.year, now.month, now.day);
+      final DateTime yesterday = today.subtract(const Duration(days: 1));
       final DateTime visitDateOnly =
           DateTime(visitDate.year, visitDate.month, visitDate.day);
 
-      if (!visitDateOnly.isAtSameMomentAs(today)) {
-        // Hanya jadwal hari ini yang dapat di-approve
-        return false;
+      // Case 1: Visit hari ini - bisa approve kapan saja
+      if (visitDateOnly.isAtSameMomentAs(today)) {
+        return true;
       }
 
-      // Deadline adalah jam 12 siang BESOK untuk jadwal hari ini
-      final DateTime deadline =
-          DateTime(now.year, now.month, now.day + 1, 12, 0);
-      return now.isBefore(deadline);
+      // Case 2: Visit kemarin - bisa approve sampai hari ini jam 12 siang
+      if (visitDateOnly.isAtSameMomentAs(yesterday)) {
+        final DateTime deadline = DateTime(now.year, now.month, now.day, 12, 0);
+        return now.isBefore(deadline);
+      }
+
+      // Case 3: Visit selain hari ini dan kemarin - tidak bisa approve
+      return false;
     } catch (e) {
       // Jika terjadi error parsing tanggal, return false untuk keamanan
       return false;
