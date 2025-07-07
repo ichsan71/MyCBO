@@ -184,15 +184,10 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
         }
       }
 
-      // Debug log
-      Logger.debug(_tag,
-          'Selected Products: ${_selectedProducts.map((p) => p.nama).toList()}');
-      Logger.debug(_tag, 'Selected Product Names: $_selectedProductNames');
+      // Debug log for final verification
       Logger.debug(_tag, 'Selected Divisi IDs: $_selectedProductDivisiIds');
-      Logger.debug(_tag, 'Selected Divisi Names: $_selectedDivisiNames');
       Logger.debug(
           _tag, 'Selected Spesialis IDs: $_selectedProductSpesialisIds');
-      Logger.debug(_tag, 'Selected Spesialis Names: $_selectedSpesialisNames');
     });
   }
 
@@ -327,6 +322,11 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
         });
         return;
       }
+
+      // Final verification of the division and specialist IDs before submission
+      Logger.debug(_tag, 'Final data verification:');
+      Logger.debug(_tag, '  Divisi IDs: $_selectedProductDivisiIds');
+      Logger.debug(_tag, '  Spesialis IDs: $_selectedProductSpesialisIds');
 
       context.read<AddScheduleBloc>().add(
             SubmitScheduleEvent(

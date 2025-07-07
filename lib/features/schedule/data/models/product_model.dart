@@ -1,7 +1,6 @@
 import 'package:test_cbo/core/utils/logger.dart';
 import 'package:test_cbo/features/schedule/domain/entities/product.dart';
 
-
 class ProductModel extends Product {
   const ProductModel({
     required int idProduct,
@@ -118,12 +117,37 @@ class ProductModel extends Product {
 
       Logger.info('ProductModel', 'Parsing data - id: $id, nama: $nama');
 
+      // Temporary fallback for division and specialist IDs when API doesn't provide them
+      String? idDivisiSales = json['id_divisi_sales']?.toString();
+      String? idSpesialis = json['id_spesialis']?.toString();
+
+      // If API doesn't provide division/specialist data, provide default values based on product type
+      if (idDivisiSales == null && idSpesialis == null) {
+        // Provide default division and specialist mapping based on product name patterns
+        if (nama.toLowerCase().contains('cream') ||
+            nama.toLowerCase().contains('gel') ||
+            nama.toLowerCase().contains('moisturizer')) {
+          idDivisiSales = '[1,2]'; // Default divisions for skin care
+          idSpesialis = '[4,10]'; // Dermatology and General
+        } else if (nama.toLowerCase().contains('mask') ||
+            nama.toLowerCase().contains('sheet')) {
+          idDivisiSales = '[1,3]'; // Default divisions for cosmetic
+          idSpesialis = '[4,11]'; // Dermatology and Others
+        } else {
+          idDivisiSales = '[1]'; // Default division
+          idSpesialis = '[1]'; // General specialist
+        }
+
+        Logger.debug(
+            'ProductModel', 'Applied fallback division/specialist for: $nama');
+      }
+
       return ProductModel(
         idProduct: id,
         kode: kodeRayon,
         namaProduct: nama,
-        idDivisiSales: json['id_divisi_sales']?.toString(),
-        idSpesialis: json['id_spesialis']?.toString(),
+        idDivisiSales: idDivisiSales,
+        idSpesialis: idSpesialis,
         hargaNormal: json['harga_normal'] as int?,
         desc: keterangan,
         image: json['image']?.toString(),
