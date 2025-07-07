@@ -1,0 +1,222 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-01-07T12:00:00Z",
+  "categories": [
+    {
+      "id": "schedule",
+      "name": "Jadwal",
+      "icon": "📅",
+      "description": "Pertanyaan tentang fitur jadwal dan pengaturan waktu",
+      "order": 1,
+      "isActive": true,
+      "allowedRoles": ["ADMIN", "BCO", "RSM", "DM", "AM", "PS", "AE"]
+    },
+    {
+      "id": "kpi",
+      "name": "KPI",
+      "icon": "📊",
+      "description": "Pertanyaan tentang Key Performance Indicator dan analisis kinerja",
+      "order": 2,
+      "isActive": true,
+      "allowedRoles": []
+    },
+    {
+      "id": "approval",
+      "name": "Approval",
+      "icon": "✅",
+      "description": "Pertanyaan tentang proses persetujuan dan workflow",
+      "order": 3,
+      "isActive": true,
+      "allowedRoles": ["ADMIN", "GM", "CEO", "BCO", "RSM", "DM", "AM"]
+    },
+    {
+      "id": "realisasi",
+      "name": "Realisasi Visit",
+      "icon": "🏥",
+      "description": "Pertanyaan tentang realisasi kunjungan dan laporan visit",
+      "order": 4,
+      "isActive": true,
+      "allowedRoles": ["ADMIN", "GM", "CEO", "BCO", "RSM", "DM", "AM"]
+    },
+    {
+      "id": "notifications",
+      "name": "Notifikasi",
+      "icon": "🔔",
+      "description": "Pertanyaan tentang notifikasi dan pemberitahuan",
+      "order": 5,
+      "isActive": true,
+      "allowedRoles": []
+    },
+    {
+      "id": "general",
+      "name": "Umum",
+      "icon": "❓",
+      "description": "Pertanyaan umum tentang penggunaan aplikasi",
+      "order": 6,
+      "isActive": true,
+      "allowedRoles": []
+    }
+  ],
+  "questions": [
+    {
+      "id": "schedule_01",
+      "categoryId": "schedule",
+      "question": "Bagaimana cara melihat jadwal saya?",
+      "answer": "Untuk melihat jadwal Anda:\n\n1. Buka aplikasi dan masuk ke halaman utama\n2. Tap pada menu 'Jadwal' di navigation bar\n3. Anda akan melihat kalender dengan jadwal harian\n4. Tap pada tanggal tertentu untuk melihat detail jadwal hari tersebut\n\nJadwal akan menampilkan semua kegiatan, dan task yang telah dijadwalkan.",
+      "order": 1,
+      "isActive": true,
+      "keywords": ["jadwal", "kalender", "schedule", "melihat", "view"],
+      "relatedQuestionIds": ["schedule_02", "schedule_03"]
+    },
+    {
+      "id": "schedule_02",
+      "categoryId": "schedule",
+      "question": "Bagaimana cara menambah jadwal baru?",
+      "answer": "Untuk menambah jadwal baru:\n\n1. Masuk ke halaman Jadwal\n2. Tap tombol '+' atau 'Tambah Jadwal'\n3. Isi informasi jadwal:\n   - Judul kegiatan\n   - Tanggal dan waktu\n   - Deskripsi kegiatan\n4. Tap 'Simpan' untuk menyimpan jadwal\n\nJadwal baru akan muncul di list jadwal Anda dan Anda akan menerima notifikasi pengingat.",
+      "order": 2,
+      "isActive": true,
+      "keywords": ["tambah", "buat", "jadwal", "baru", "create"],
+      "relatedQuestionIds": ["schedule_01", "schedule_03"]
+    },
+    {
+      "id": "schedule_03",
+      "categoryId": "schedule",
+      "question": "Bagaimana cara mengubah atau menghapus jadwal?",
+      "answer": "Untuk mengubah jadwal:\n\n1. Pastikan jadwal anda berstatus ditolak\n2. Tap pada jadwal tersebut\n3. Pilih 'Edit' atau ikon pensil\n4. Ubah informasi yang diperlukan\n5. Tap 'Simpan Perubahan'\n ",
+      "order": 3,
+      "isActive": true,
+      "keywords": ["edit", "ubah", "hapus", "delete", "jadwal"],
+      "relatedQuestionIds": ["schedule_01", "schedule_02"]
+    },
+    {
+      "id": "kpi_01",
+      "categoryId": "kpi",
+      "question": "Apa itu KPI dan bagaimana cara melihatnya?",
+      "answer": "KPI (Key Performance Indicator) adalah indikator kinerja utama yang mengukur pencapaian target Anda.\n\nUntuk melihat KPI:\n\n1. Tap menu 'KPI' di halaman utama\n2. Pilih periode yang ingin dilihat\n3. Anda akan melihat dashboard dengan:\n   - Target vs Realisasi\n   - Persentase pencapaian\n   - Grafik perkembangan\n   - Breakdown per kategori\n\nKPI meliputi:\n- Jumlah visit yang dilakukan\n- Target vs realisasi penjualan\n- Rating performa",
+      "order": 1,
+      "isActive": true,
+      "keywords": ["kpi", "performa", "target", "realisasi", "dashboard"],
+      "relatedQuestionIds": ["kpi_02", "kpi_03"]
+    },
+    {
+      "id": "kpi_02",
+      "categoryId": "kpi",
+      "question": "Bagaimana cara meningkatkan nilai KPI saya?",
+      "answer": "Tips untuk meningkatkan nilai KPI Anda:\n\n📈 STRATEGI UMUM\n• Konsisten melakukan visit sesuai jadwal\n• Lengkapi laporan visit dengan detail\n• Follow up hasil visit dengan baik\n\n📊 FOKUS AREA UTAMA\n• Kuantitas: Tingkatkan jumlah visit\n• Kualitas: Pastikan setiap visit produktif\n• Dokumentasi: Lengkapi laporan tepat waktu\n• Follow-up: Tindak lanjuti setiap visit\n\n💡 TIPS PRAKTIS\n• Gunakan fitur check-in untuk akurasi lokasi\n• Upload foto dan dokumentasi visit\n• Isi feedback atau catatan\n• Monitor progress secara berkala\n\n✨ Konsistensi adalah kunci utama peningkatan KPI yang berkelanjutan!",
+      "order": 2,
+      "isActive": true,
+      "keywords": ["tingkatkan", "improve", "tips", "strategi", "performa"],
+      "relatedQuestionIds": ["realisasi_01", "realisasi_03"]
+    },
+    {
+      "id": "kpi_03",
+      "categoryId": "kpi",
+      "question": "Seberapa sering data KPI diperbarui?",
+      "answer": "Data KPI diperbarui secara real-time dengan jadwal sebagai berikut:\n\n⚡ UPDATE OTOMATIS\n• Setiap visit yang dicatat langsung mempengaruhi KPI\n• Data sinkronisasi setiap hari jam 00.00\n• Laporan harian terupdate setiap akhir hari\n\n📅 PERIODE REFRESH\n• Real-time: Check-in dan visit completion\n• Harian: Pukul 23:59 setiap hari\n• Mingguan: Setiap Senin pagi\n• Bulanan: Tanggal 1 setiap bulan\n\n🔄 MANUAL REFRESH\nAnda bisa refresh manual dengan:\n• Pull down pada halaman KPI\n• Tap ikon refresh di pojok kanan atas\n\n⚠️ Jika data tidak update, pastikan koneksi internet stabil dan coba refresh manual.",
+      "order": 3,
+      "isActive": true,
+      "keywords": ["update", "refresh", "sinkronisasi", "real-time"],
+      "relatedQuestionIds": ["general_02", "general_03"]
+    },
+    {
+      "id": "approval_01",
+      "categoryId": "approval",
+      "question": "Bagaimana cara approve jadwal?",
+      "answer": "Menu approval terdiri dari dua submenu:\n\n1. **Bulanan:**\n   - Menampilkan rencana kunjungan bulanan sesuai jumlah yang ditentukan admin.\n\n2. **Extra:**\n   - Menampilkan rencana kunjungan tambahan atau yang dibuat secara dadakan.\n\n**Langkah-langkah untuk approve jadwal:**\n\n1. Tap menu **'Approval'** pada dashboard\n2. Pilih submenu **'Bulanan'** atau **'Extra'** sesuai kebutuhan\n3. Lihat daftar pengajuan dari bawahan Anda\n4. Tap salah satu item untuk melihat detail jadwal kunjungan\n5. Tinjau informasi seperti:\n   - Nama user dan divisi\n   - Tanggal kunjungan\n   - Tujuan kunjungan\n   - Produk yang dibawa\n   - Catatan tambahan\n6. Pilih tombol **'Approve'** atau **'Reject'**\n\n📩 Setelah keputusan dibuat, sistem akan mengirim **notifikasi otomatis** ke pengaju mengenai status approval.",
+      "order": 1,
+      "isActive": true,
+      "keywords": ["approval", "pengajuan", "submit", "persetujuan"],
+      "relatedQuestionIds": ["approval_02", "approval_01"]
+    },
+    {
+      "id": "approval_02",
+      "categoryId": "approval",
+      "question": "Apa yang harus dilakukan jika approval ditolak?",
+      "answer": "Jika approval ditolak, berikut langkah-langkah yang bisa dilakukan:\n\n🔍 CEK ALASAN PENOLAKAN\n• Buka detail pengajuan yang ditolak\n• Baca komentar dari approver\n• Pahami alasan penolakan\n\n⚡ TINDAKAN YANG BISA DILAKUKAN\n• Revisi: Perbaiki sesuai feedback\n• Resubmit: Ajukan ulang setelah revisi\n• Diskusi: Hubungi approver untuk klarifikasi\n\n💡 TIPS REVISI\n• Lengkapi dokumen yang kurang\n• Perbaiki justifikasi\n• Konsultasi dengan atasan langsung\n\n🔄 PROSES RESUBMIT\n• Buat pengajuan baru dengan perbaikan\n• Referensikan pengajuan sebelumnya\n• Jelaskan perubahan yang dibuat",
+      "order": 3,
+      "isActive": true,
+      "keywords": ["ditolak", "rejected", "revisi", "resubmit"],
+      "relatedQuestionIds": ["approval_01", "general_04"]
+    },
+    {
+      "id": "realisasi_01",
+      "categoryId": "realisasi",
+      "question": "Bagaimana cara melakukan persetujuan realisasi visit?",
+      "answer": "Untuk melakukan persetujuan realisasi visit:\n\n1. **Pilih jadwal yang akan disetujui:**\n   - Pilih jadwal yang akan disetujui\n   - review detail jadwal\n - Pastikan jadwal berstatus done\n - Pastikan jadwal yang ingin disetujui tidak melewati batas waktu persetujuan realiasasi vist \n - Klik tombol 'setujui'\n2.",
+      "order": 1,
+      "isActive": true,
+      "keywords": ["check-in", "visit", "lokasi", "GPS"],
+      "relatedQuestionIds": ["realisasi_02", "realisasi_03"]
+    },
+    {
+      "id": "realisasi_02",
+      "categoryId": "realisasi",
+      "question": "Bagaimana cara melihat history realisasi visit saya?",
+      "answer": "Untuk melihat history realisasi visit:\n\n1. **Akses History:**\n   - Tap menu 'Visit' atau 'Realisasi'\n   - Pilih 'History Visit'\n   - Atau dari dashboard tap 'Lihat Semua Visit'\n\n2. **Filter & Search:**\n   - **Filter tanggal:** Pilih periode tertentu\n   - **Filter status:** Complete, Pending, Cancelled\n   - **Filter lokasi:** Berdasarkan klien/outlet\n   - **Search:** Cari berdasarkan nama klien\n\n3. **Informasi yang Ditampilkan:**\n   - Tanggal & waktu visit\n   - Durasi visit\n   - Lokasi/klien\n   - Status visit\n   - Summary aktivitas\n   - Rating/feedback\n\n4. **Detail Visit:**\n   - Tap pada visit untuk detail lengkap\n   - Lihat foto dan dokumentasi",
+      "order": 4,
+      "isActive": true,
+      "keywords": ["history", "visit", "export", "laporan"],
+      "relatedQuestionIds": ["realisasi_01", "realisasi_02"]
+    },
+    {
+      "id": "notifications_01",
+      "categoryId": "notifications",
+      "question": "Bagaimana cara mengatur notifikasi?",
+      "answer": "Untuk mengatur notifikasi:\n\n1. **Pengaturan Aplikasi:**\n   - Masuk ke 'Settings' atau 'Pengaturan'\n   - Pilih 'Notifikasi'\n   - Atur jenis notifikasi:\n\n2. **Jenis Notifikasi:**\n   - ✅ **Approval updates**\n   - 📅 **Jadwal reminder**\n   - 📊 **KPI alerts**\n   - 🏥 **Visit reminders**\n   - 📢 **System announcements**\n   - 💬 **Chat messages**\n\n3. **Pengaturan Waktu:**\n   - **Do Not Disturb:** 22:00 - 06:00\n   - **Working Hours:** 08:00 - 17:00\n   - **Weekend:** Aktif/Non-aktif\n\n4. **Metode Notifikasi:**\n   - Push notification\n   - Email notification\n   - SMS (untuk urgent)\n   - In-app notification\n\n5. **Pengaturan HP:**\n   - Pastikan notifikasi app aktif di settings HP\n   - Allow sound dan vibration\n   - Set sebagai priority app",
+      "order": 1,
+      "isActive": true,
+      "keywords": ["notifikasi", "pengaturan", "reminder", "alert"],
+      "relatedQuestionIds": ["notifications_02", "general_01"]
+    },
+    {
+      "id": "notifications_02",
+      "categoryId": "notifications",
+      "question": "Mengapa saya tidak menerima notifikasi?",
+      "answer": "Jika tidak menerima notifikasi:\n\n1. **Check Pengaturan App:**\n   - Buka Settings > Notifikasi\n   - Pastikan semua toggle aktif\n   - Check apakah ada filter waktu\n\n2. **Check Pengaturan HP:**\n   - Settings > Apps > [Nama App]\n   - Pastikan 'Notifications' enabled\n   - Check 'Battery Optimization' - exclude app\n   - Verifikasi 'Do Not Disturb' tidak aktif\n\n3. **Android Specific:**\n   - Allow 'Auto-start' untuk app\n   - Disable 'Battery Optimization'\n   - Check 'Notification Channels'\n\n4. **iOS Specific:**\n   - Settings > Notifications > [App Name]\n   - Allow Notifications ON\n   - Show in Notification Center ON\n   - Sounds ON\n\n5. **Network Issues:**\n   - Check koneksi internet\n   - Try logout-login ulang\n   - Clear app cache\n   - Update app ke versi terbaru\n\n6. **Troubleshooting:**\n   - Force close dan buka app lagi\n   - Restart HP\n   - Reinstall app (last resort)",
+      "order": 2,
+      "isActive": true,
+      "keywords": ["tidak", "menerima", "notifikasi", "troubleshooting"],
+      "relatedQuestionIds": ["notifications_01", "general_03"]
+    },
+    {
+      "id": "general_01",
+      "categoryId": "general",
+      "question": "Bagaimana cara logout dari aplikasi?",
+      "answer": "Untuk logout dari aplikasi:\n\n1. **Metode 1 - Via Profile:**\n   - Tap foto profile di pojok kanan atas\n   - Pilih 'Account Settings'\n   - Tap 'Logout'\n\n3. **Metode 3 - Via Menu:**\n   - Tap hamburger menu (3 garis)\n   - Scroll ke bawah\n   - Tap 'Logout'\n\n4. **Konfirmasi:**\n   - Sistem akan tanya konfirmasi\n   - Pilih 'Ya' atau 'Logout'\n   - Data lokal akan dihapus\n   - Kembali ke halaman login\n\n⚠️ **Catatan:** Pastikan semua data sudah tersinkronisasi sebelum logout. Data yang belum sync akan hilang.",
+      "order": 1,
+      "isActive": true,
+      "keywords": ["logout", "keluar", "exit", "sign out"],
+      "relatedQuestionIds": ["general_02", "general_03"]
+    },
+    {
+      "id": "general_02",
+      "categoryId": "general",
+      "question": "Bagaimana cara sync data saat offline?",
+      "answer": "Untuk sync data saat offline:\n\n1. **Auto Sync:**\n   - Data akan auto sync saat koneksi tersedia\n   - Check ikon sync di status bar\n   - Tunggu hingga proses selesai\n\n2. **Manual Sync:**\n   - Pull down pada halaman utama\n   - Atau tap ikon refresh\n   - Pilih 'Sync Now'\n\n3. **Data yang Di-sync:**\n   - ✅ Visit records\n   - ✅ Check-in/out data\n   - ✅ Laporan visit\n   - ✅ Foto dan dokumentasi\n   - ✅ KPI updates\n   - ✅ Messages dan notifications\n\n4. **Offline Mode:**\n   - App tetap bisa digunakan offline\n   - Data disimpan lokal sementara\n   - Auto sync saat online kembali\n   - Indicator 'Offline' akan muncul\n\n5. **Tips:**\n   - Sync sebelum area dengan sinyal lemah\n   - Use WiFi untuk sync data besar\n   - Check data integrity setelah sync\n   - Manual sync jika auto gagal",
+      "order": 2,
+      "isActive": true,
+      "keywords": ["sync", "offline", "sinkronisasi", "koneksi"],
+      "relatedQuestionIds": ["general_03", "notifications_02"]
+    },
+    {
+      "id": "general_03",
+      "categoryId": "general",
+      "question": "Bagaimana cara update aplikasi?",
+      "answer": "Untuk update aplikasi:\n\n1. **Auto Update (Recommended):**\n   - Enable 'Auto-update apps' di Play Store/App Store\n   - App akan update otomatis\n   - Notifikasi akan muncul saat ada update\n\n2. **Manual Update:**\n   \n   **Android (Play Store):**\n   - Buka Google Play Store\n   - Search nama aplikasi\n   - Jika ada update, akan ada tombol 'Update'\n   - Tap 'Update' dan tunggu selesai\n\n   **iOS (App Store):**\n   - Buka App Store\n   - Tap profile picture di pojok kanan atas\n   - Scroll ke 'Available Updates'\n   - Tap 'Update' untuk app ini\n\n3. **Check Version:**\n   - Settings > About App\n   - Lihat current version\n   - Compare dengan latest version\n\n4. **Update Notes:**\n   - Baca changelog sebelum update\n   - Backup data penting\n   - Pastikan storage cukup\n   - Update saat WiFi untuk save data\n\n5. **After Update:**\n   - Force close dan buka app lagi\n   - Check all features working\n   - Re-login jika diperlukan",
+      "order": 3,
+      "isActive": true,
+      "keywords": ["update", "upgrade", "version", "app store"],
+      "relatedQuestionIds": ["general_02", "notifications_02"]
+    },
+    {
+      "id": "general_04",
+      "categoryId": "general",
+      "question": "Siapa yang bisa saya hubungi jika ada masalah?",
+      "answer": "Jika mengalami masalah, Anda bisa menghubungi:\n\n1. **Help Desk IT:**\n   - 📞 Phone: +62-895-61771-5310\n   - 📧 Email: it_ho@maztafarma.com\n   - 💬 WhatsApp: +62-895-61771-5310\n   - ⏰ Jam kerja: 08:00 - 17:00 WIB\n\n2. **Support Categories:**\n   - 🔧 **Technical Issues:** Login, sync, crash\n   - 📊 **Data Issues:** KPI, reports, missing data\n   - 🏥 **Visit Issues:** Check-in, location, approval\n   - 🔔 **Notification Issues:** Settings, not receiving\n\n3. **Emergency Contact:**\n   - 📞 24/7 Hotline: +62-21-9876-5432\n   - Untuk masalah urgent di luar jam kerja\n\n4. **Self Service:**\n   - FAQ di website: maztafarma.com/faq\n   - Video tutorial: help.maztafarma.com\n   - User guide PDF: Download di app\n\n5. **Saat Menghubungi:**\n   - Siapkan employee ID\n   - Screenshot error (jika ada)\n   - Jelaskan langkah sebelum error\n   - Sebutkan versi app dan tipe HP\n\n6. **Response Time:**\n   - Chat/WA: 15 menit\n   - Email: 2 jam\n   - Phone: Immediately",
+      "order": 4,
+      "isActive": true,
+      "keywords": ["help", "support", "contact", "masalah", "bantuan"],
+      "relatedQuestionIds": ["general_01", "general_02", "general_03"]
+    }
+  ]
+}

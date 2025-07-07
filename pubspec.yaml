@@ -59,6 +59,7 @@ flutter:
     - assets/images/schedule.png
     - assets/images/product.png
     - assets/images/report.png
+    - assets/data/chatbot_data.json
   generate: true
 
 # Konfigurasi Splash Screen

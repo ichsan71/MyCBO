@@ -43,6 +43,17 @@ class NotificationRepositoryImpl implements NotificationRepository {
   }
 
   @override
+  Future<Either<Failure, void>> scheduleApprovalReminder() async {
+    try {
+      await localNotificationService.scheduleApprovalReminder();
+      return const Right(null);
+    } catch (e) {
+      return Left(NotificationFailure(
+          message: 'Failed to schedule approval reminder: $e'));
+    }
+  }
+
+  @override
   Future<Either<Failure, NotificationSettings>>
       getNotificationSettings() async {
     try {
@@ -137,6 +148,19 @@ class NotificationRepositoryImpl implements NotificationRepository {
     } catch (e) {
       return Left(
           NotificationFailure(message: 'Failed to test daily greeting: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> testApprovalReminder() async {
+    try {
+      final settings = await localNotificationService.getNotificationSettings();
+      await localNotificationService
+          .showTestApprovalReminder(settings.userName);
+      return const Right(null);
+    } catch (e) {
+      return Left(
+          NotificationFailure(message: 'Failed to test approval reminder: $e'));
     }
   }
 }

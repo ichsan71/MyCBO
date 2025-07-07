@@ -46,6 +46,7 @@ import '../../features/realisasi_visit/domain/usecases/get_realisasi_visits_gm_d
 import '../../features/realisasi_visit/domain/usecases/approve_realisasi_visit.dart';
 import '../../features/realisasi_visit/domain/usecases/reject_realisasi_visit.dart';
 import '../../features/realisasi_visit/presentation/bloc/realisasi_visit_bloc.dart';
+import '../../features/chatbot/di/chatbot_injection.dart';
 
 /// Service locator instance
 final sl = GetIt.instance;
@@ -100,6 +101,7 @@ Future<void> _initNonCriticalDependencies() async {
   _initNotificationDependencies();
   _initCheckInDependencies();
   _initKpiDependencies();
+  await initChatbotDependencies(sl);
 }
 
 // /// Initialize external dependencies

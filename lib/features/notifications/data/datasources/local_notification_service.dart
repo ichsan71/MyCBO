@@ -17,6 +17,7 @@ abstract class LocalNotificationService {
   Future<void> initialize();
   Future<void> scheduleCheckoutNotification();
   Future<void> scheduleDailyGreeting();
+  Future<void> scheduleApprovalReminder();
   Future<NotificationSettings> getNotificationSettings();
   Future<void> saveNotificationSettings(NotificationSettings settings);
   Future<bool> requestPermission();
@@ -28,6 +29,7 @@ abstract class LocalNotificationService {
   });
   Future<void> showTestCheckoutNotification(String username);
   Future<void> showTestDailyGreeting(String username);
+  Future<void> showTestApprovalReminder(String username);
 }
 
 class LocalNotificationServiceImpl implements LocalNotificationService {
@@ -127,6 +129,7 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
       // Schedule initial notifications
       await scheduleCheckoutNotification();
       await scheduleDailyGreeting();
+      await scheduleApprovalReminder();
       logger.i('Initial notifications scheduled');
     } catch (e, stackTrace) {
       logger.e('Error initializing notification service: $e\n$stackTrace');
@@ -366,6 +369,106 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
     } catch (e, stackTrace) {
       logger.e('Error in daily greeting: $e\n$stackTrace');
       throw Exception('Failed to schedule daily greeting: $e');
+    }
+  }
+
+  @override
+  Future<void> scheduleApprovalReminder() async {
+    try {
+      logger.i('Starting approval reminder scheduling...');
+
+      // Get current user
+      final userResult = await authRepository.getCurrentUser();
+      if (userResult.isLeft()) {
+        logger.e('Failed to get current user for approval reminder');
+        return;
+      }
+      final user =
+          userResult.getOrElse(() => throw Exception('User not found'));
+      logger.d('Got current user for approval reminder: ${user.name}');
+
+      // Create Android-specific notification details
+      const androidDetails = AndroidNotificationDetails(
+        'approval_reminder_channel',
+        'Approval Reminders',
+        channelDescription: 'Channel for approval reminder notifications',
+        importance: Importance.high,
+        priority: Priority.high,
+        enableVibration: true,
+        playSound: true,
+        visibility: NotificationVisibility.public,
+        channelShowBadge: true,
+        category: AndroidNotificationCategory.reminder,
+      );
+
+      const notificationDetails = NotificationDetails(android: androidDetails);
+
+      // Cancel any existing approval reminder notification
+      await flutterLocalNotificationsPlugin.cancel(5);
+      logger.d('Cancelled existing approval reminder notification');
+
+      // Get current time
+      final now = DateTime.now();
+      logger.d('Current time: $now');
+
+      // Approval reminder message
+      const approvalMessage =
+          'Halo, Jangan lupa ya untuk mengapprove kunjungan Maksimal Jam 12.00.';
+
+      // Check if we're in the approval reminder window (09:00 - 09:03)
+      if (now.hour == 9 && now.minute >= 0 && now.minute < 3) {
+        logger.d(
+            'Within approval reminder time window, showing immediate notification');
+
+        // Show immediate notification
+        await flutterLocalNotificationsPlugin.show(
+          5,
+          'Reminder Approval Kunjungan',
+          approvalMessage,
+          notificationDetails,
+        );
+        logger.i('Immediate approval reminder displayed');
+      }
+
+      // Schedule daily notification for next occurrence at 09:00 AM
+      DateTime scheduledTime = DateTime(now.year, now.month, now.day, 9, 0);
+
+      // If current time is past 09:00 AM today, schedule for tomorrow
+      if (now.hour >= 9) {
+        scheduledTime = scheduledTime.add(const Duration(days: 1));
+      }
+
+      final scheduledTimeString =
+          '${scheduledTime.day}/${scheduledTime.month} ${scheduledTime.hour}:${scheduledTime.minute.toString().padLeft(2, '0')}';
+      logger.d('Scheduling approval reminder for $scheduledTimeString');
+
+      // Convert DateTime to TZDateTime with proper timezone
+      final scheduledTZDate = tz.TZDateTime.from(scheduledTime, tz.local);
+      logger.d('Scheduled TZ time: $scheduledTZDate');
+
+      // Schedule the daily approval reminder using zonedSchedule for precise timing
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        5, // Approval reminder notification ID
+        'Reminder Approval Kunjungan',
+        approvalMessage,
+        scheduledTZDate,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        matchDateTimeComponents:
+            DateTimeComponents.time, // Repeat daily at the same time
+      );
+
+      logger.i('Approval reminder scheduled successfully for 09:00 AM daily');
+
+      // Save last approval reminder time
+      await sharedPreferences.setString(
+        'last_approval_reminder',
+        DateTime.now().toIso8601String(),
+      );
+      logger.d('Updated last approval reminder timestamp');
+    } catch (e, stackTrace) {
+      logger.e('Error in approval reminder: $e\n$stackTrace');
+      throw Exception('Failed to schedule approval reminder: $e');
     }
   }
 
@@ -661,6 +764,67 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
     }
   }
 
+  @override
+  Future<void> showTestApprovalReminder(String username) async {
+    try {
+      logger.i('Testing approval reminder notification...');
+
+      // Create Android-specific notification details
+      const androidDetails = AndroidNotificationDetails(
+        'test_approval_channel',
+        'Test Approval Notifications',
+        channelDescription: 'Channel for testing approval notifications',
+        importance: Importance.high,
+        priority: Priority.high,
+        enableVibration: true,
+        playSound: true,
+        visibility: NotificationVisibility.public,
+      );
+
+      const notificationDetails = NotificationDetails(android: androidDetails);
+
+      // Approval reminder message
+      const approvalMessage =
+          'Halo, Jangan lupa ya untuk mengapprove kunjungan Maksimal Jam 12.00.';
+
+      // Show immediate test notification
+      await flutterLocalNotificationsPlugin.show(
+        103,
+        'Test Reminder Approval Kunjungan',
+        approvalMessage,
+        notificationDetails,
+      );
+
+      logger.i('Test approval reminder shown successfully');
+
+      // Test approval reminder scheduled for next 09:00 AM
+      final now = DateTime.now();
+      DateTime testScheduledTime = DateTime(now.year, now.month, now.day, 9, 0);
+
+      // If past 09 AM today, schedule for tomorrow
+      if (now.hour >= 9) {
+        testScheduledTime = testScheduledTime.add(const Duration(days: 1));
+      }
+
+      final testTZDate = tz.TZDateTime.from(testScheduledTime, tz.local);
+
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        301, // Test approval reminder ID
+        'Test Reminder Approval Kunjungan (Scheduled)',
+        approvalMessage,
+        testTZDate,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+
+      logger.i('Test approval reminder scheduled for next 09:00 AM');
+    } catch (e, stackTrace) {
+      logger.e('Error showing test approval reminder: $e\n$stackTrace');
+      throw Exception('Failed to show test approval reminder: $e');
+    }
+  }
+
   // Helper method to check notification permissions and channels
   Future<bool> _checkNotificationSetup() async {
     try {
@@ -712,6 +876,17 @@ class LocalNotificationServiceImpl implements LocalNotificationService {
             'daily_greeting_channel',
             'Daily Greetings',
             description: 'Channel for daily greeting notifications',
+            importance: Importance.high,
+            enableVibration: true,
+            playSound: true,
+          ),
+        );
+
+        await androidPlugin.createNotificationChannel(
+          const AndroidNotificationChannel(
+            'approval_reminder_channel',
+            'Approval Reminders',
+            description: 'Channel for approval reminder notifications',
             importance: Importance.high,
             enableVibration: true,
             playSound: true,

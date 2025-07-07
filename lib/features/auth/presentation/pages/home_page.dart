@@ -426,6 +426,14 @@ class _HomeContentState extends State<_HomeContent>
                                 ),
                               _buildMenuCard(
                                 context: context,
+                                title: 'Tanya Mazbot',
+                                icon: Icons.smart_toy,
+                                color: Colors.blue[600]!,
+                                onTap: () =>
+                                    Navigator.pushNamed(context, '/chatbot'),
+                              ),
+                              _buildMenuCard(
+                                context: context,
                                 title: l10n.settings,
                                 icon: Icons.settings,
                                 color: Colors.grey[700]!,

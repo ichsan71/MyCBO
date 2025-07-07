@@ -29,6 +29,7 @@ import 'package:test_cbo/features/kpi/presentation/bloc/kpi_bloc.dart';
 import 'package:test_cbo/features/kpi/domain/entities/kpi_member.dart';
 import 'package:month_year_picker/month_year_picker.dart';
 import 'package:test_cbo/features/kpi/presentation/pages/kpi_member_detail_page.dart';
+import 'package:test_cbo/features/chatbot/presentation/pages/chatbot_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -252,6 +253,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                     month: args['month'] as String,
                   );
                 },
+                '/chatbot': (context) => const ChatbotPage(),
               },
             );
           },
