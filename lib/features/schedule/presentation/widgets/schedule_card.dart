@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/presentation/theme/app_theme.dart';
 import '../../domain/entities/schedule.dart';
 import '../utils/schedule_status_helper.dart';
 
@@ -16,8 +18,18 @@ class ScheduleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: AppTheme.getCardBackgroundColor(context),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: AppTheme.getBorderColor(context),
+          width: 1,
+        ),
+      ),
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -29,28 +41,42 @@ class ScheduleCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       schedule.namaTujuan,
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.getPrimaryTextColor(context),
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  _buildStatusChip(schedule),
+                  const SizedBox(width: 8),
+                  _buildStatusChip(schedule, context),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
                 'Type: ${schedule.tipeSchedule}',
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: AppTheme.getSecondaryTextColor(context),
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Date: ${schedule.tglVisit}',
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: AppTheme.getSecondaryTextColor(context),
+                ),
               ),
               if (schedule.note.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(
                   'Note: ${schedule.note}',
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: AppTheme.getSecondaryTextColor(context),
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -62,7 +88,7 @@ class ScheduleCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusChip(Schedule schedule) {
+  Widget _buildStatusChip(Schedule schedule, BuildContext context) {
     final statusText = ScheduleStatusHelper.getStatusText(schedule);
     final statusColor = ScheduleStatusHelper.getStatusColor(schedule);
     final statusIcon = ScheduleStatusHelper.getStatusIcon(schedule);
@@ -85,7 +111,7 @@ class ScheduleCard extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             statusText,
-            style: TextStyle(
+            style: GoogleFonts.poppins(
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color: statusColor,

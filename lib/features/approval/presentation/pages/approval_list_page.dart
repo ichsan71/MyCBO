@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/di/injection_container.dart';
+import 'package:test_cbo/core/presentation/theme/app_theme.dart';
 import '../bloc/approval_bloc.dart';
 import '../widgets/approval_card.dart';
 import 'approval_detail_page.dart';
@@ -91,13 +92,7 @@ class _ApprovalListViewState extends State<ApprovalListView>
           child: Container(
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              boxShadow: AppTheme.defaultShadow,
             ),
             child: SafeArea(
               child: Padding(
@@ -158,27 +153,28 @@ class _ApprovalListViewState extends State<ApprovalListView>
         body: Column(
           children: [
             Container(
-              color: Colors.white,
+              color: AppTheme.getCardBackgroundColor(context),
               padding: const EdgeInsets.all(16.0),
               child: Container(
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: AppTheme.getBackgroundColor(context),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.grey[300]!),
+                  border: Border.all(color: AppTheme.getBorderColor(context)),
                 ),
                 child: TextField(
                   controller: _searchController,
                   onChanged: _onSearchChanged,
-                  style: GoogleFonts.poppins(),
+                  style: GoogleFonts.poppins(
+                      color: AppTheme.getPrimaryTextColor(context)),
                   decoration: InputDecoration(
                     hintText: 'Cari nama Anggota...',
                     hintStyle: GoogleFonts.poppins(
-                      color: Colors.grey[600],
+                      color: AppTheme.getSecondaryTextColor(context),
                     ),
                     prefixIcon: Icon(
                       Icons.search,
-                      color: Colors.grey[600],
+                      color: AppTheme.getSecondaryTextColor(context),
                     ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
@@ -191,7 +187,7 @@ class _ApprovalListViewState extends State<ApprovalListView>
             ),
             Expanded(
               child: Container(
-                color: Colors.grey[50],
+                color: AppTheme.getBackgroundColor(context),
                 child: TabBarView(
                   physics: const NeverScrollableScrollPhysics(),
                   controller: _tabController,
@@ -224,11 +220,13 @@ class _ApprovalListViewState extends State<ApprovalListView>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                Icon(Icons.error_outline,
+                    size: 48, color: AppTheme.getErrorColor(context)),
                 const SizedBox(height: 16),
                 Text(
                   state.message,
-                  style: GoogleFonts.poppins(color: Colors.red),
+                  style: GoogleFonts.poppins(
+                      color: AppTheme.getErrorColor(context)),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
@@ -251,11 +249,13 @@ class _ApprovalListViewState extends State<ApprovalListView>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.inbox, size: 48, color: Colors.grey[400]),
+                  Icon(Icons.inbox,
+                      size: 48, color: AppTheme.getSecondaryTextColor(context)),
                   const SizedBox(height: 16),
                   Text(
                     'Tidak ada persetujuan',
-                    style: GoogleFonts.poppins(color: Colors.grey[600]),
+                    style: GoogleFonts.poppins(
+                        color: AppTheme.getSecondaryTextColor(context)),
                   ),
                 ],
               ),
@@ -269,11 +269,11 @@ class _ApprovalListViewState extends State<ApprovalListView>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.search_off, size: 48, color: Colors.grey[400]),
+                  Icon(Icons.search_off, size: 48, color: AppTheme.getSecondaryTextColor(context)),
                   const SizedBox(height: 16),
                   Text(
                     'Tidak ada hasil pencarian',
-                    style: GoogleFonts.poppins(color: Colors.grey[600]),
+                    style: GoogleFonts.poppins(color: AppTheme.getSecondaryTextColor(context)),
                   ),
                 ],
               ),

@@ -43,64 +43,57 @@ class _ScheduleCardState extends State<ScheduleCard> {
     final Color backgroundColor;
     final Color borderColor;
     final String statusText;
-    final Color textColor = Theme.of(context).brightness == Brightness.dark
-        ? Colors.white
-        : Colors.black;
-    final Color secondaryTextColor =
-        Theme.of(context).brightness == Brightness.dark
-            ? Colors.white70
-            : Colors.black54;
 
     switch (approvedStatus) {
       case 1:
-        statusColor = AppTheme.successColor;
-        backgroundColor = AppTheme.successColor.withOpacity(0.1);
-        borderColor = AppTheme.successColor.withOpacity(0.3);
+        statusColor = AppTheme.getSuccessColor(context);
+        backgroundColor = AppTheme.getSuccessColor(context).withOpacity(0.1);
+        borderColor = AppTheme.getSuccessColor(context).withOpacity(0.3);
         statusText = 'Disetujui';
         break;
       case 2:
-        statusColor = AppTheme.errorColor;
-        backgroundColor = AppTheme.errorColor.withOpacity(0.1);
-        borderColor = AppTheme.errorColor.withOpacity(0.3);
+        statusColor = AppTheme.getErrorColor(context);
+        backgroundColor = AppTheme.getErrorColor(context).withOpacity(0.1);
+        borderColor = AppTheme.getErrorColor(context).withOpacity(0.3);
         statusText = 'Ditolak';
         break;
       default:
-        statusColor = AppTheme.warningColor;
-        backgroundColor = AppTheme.warningColor.withOpacity(0.1);
-        borderColor = AppTheme.warningColor.withOpacity(0.3);
+        statusColor = AppTheme.getWarningColor(context);
+        backgroundColor = AppTheme.getWarningColor(context).withOpacity(0.1);
+        borderColor = AppTheme.getWarningColor(context).withOpacity(0.3);
         statusText = 'Menunggu';
     }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.getCardBackgroundColor(context),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.50),
+            color: AppTheme.getSecondaryTextColor(context).withOpacity(0.1),
             blurRadius: 15,
             offset: const Offset(0, 2),
           ),
         ],
         border: Border.all(
           color: widget.isJoinVisit
-              ? AppTheme.successColor
+              ? AppTheme.getSuccessColor(context)
               : widget.isSelected
-                  ? AppTheme.primaryColor
+                  ? AppTheme.getPrimaryColor(context)
                   : approvedStatus == 2
-                      ? AppTheme.errorColor.withOpacity(0.3)
+                      ? AppTheme.getErrorColor(context).withOpacity(0.3)
                       : approvedStatus == 1
-                          ? AppTheme.successColor.withOpacity(0.3)
-                          : Colors.grey.shade200,
+                          ? AppTheme.getSuccessColor(context).withOpacity(0.3)
+                          : AppTheme.getBorderColor(context),
           width: widget.isJoinVisit ? 2 : 1,
         ),
       ),
       child: Material(
         color: widget.isJoinVisit
-            ? AppTheme.successColor.withOpacity(0.05)
+            ? AppTheme.getSuccessColor(context).withOpacity(0.05)
             : widget.isSelected
-                ? AppTheme.primaryColor.withOpacity(0.05)
+                ? AppTheme.getPrimaryColor(context).withOpacity(0.05)
                 : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         clipBehavior: Clip.antiAlias,
@@ -124,7 +117,7 @@ class _ScheduleCardState extends State<ScheduleCard> {
                         child: Checkbox(
                           value: widget.isSelected,
                           onChanged: (value) => widget.onSelect(value ?? false),
-                          activeColor: AppTheme.primaryColor,
+                          activeColor: AppTheme.getPrimaryColor(context),
                         ),
                       ),
                     if (approvedStatus == 0) const SizedBox(width: 8),
@@ -137,7 +130,7 @@ class _ScheduleCardState extends State<ScheduleCard> {
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: textColor,
+                              color: AppTheme.getPrimaryTextColor(context),
                             ),
                           ),
                           if (clinicName.isNotEmpty) ...[
@@ -146,7 +139,7 @@ class _ScheduleCardState extends State<ScheduleCard> {
                               clinicName,
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
-                                color: secondaryTextColor,
+                                color: AppTheme.getSecondaryTextColor(context),
                               ),
                             ),
                           ],
@@ -198,9 +191,9 @@ class _ScheduleCardState extends State<ScheduleCard> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
+                    color: AppTheme.getSurfaceColor(context),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade200),
+                    border: Border.all(color: AppTheme.getBorderColor(context)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,28 +203,28 @@ class _ScheduleCardState extends State<ScheduleCard> {
                           Icon(
                             Icons.calendar_today,
                             size: 16,
-                            color: secondaryTextColor,
+                            color: AppTheme.getSecondaryTextColor(context),
                           ),
                           const SizedBox(width: 8),
                           Text(
                             visitDate,
                             style: GoogleFonts.poppins(
                               fontSize: 14,
-                              color: textColor,
+                              color: AppTheme.getPrimaryTextColor(context),
                             ),
                           ),
                           const SizedBox(width: 16),
                           Icon(
                             Icons.access_time,
                             size: 16,
-                            color: secondaryTextColor,
+                            color: AppTheme.getSecondaryTextColor(context),
                           ),
                           const SizedBox(width: 8),
                           Text(
                             shift,
                             style: GoogleFonts.poppins(
                               fontSize: 14,
-                              color: textColor,
+                              color: AppTheme.getPrimaryTextColor(context),
                             ),
                           ),
                         ],
@@ -243,7 +236,7 @@ class _ScheduleCardState extends State<ScheduleCard> {
                             Icon(
                               Icons.medical_services,
                               size: 16,
-                              color: secondaryTextColor,
+                              color: AppTheme.getSecondaryTextColor(context),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
@@ -253,7 +246,7 @@ class _ScheduleCardState extends State<ScheduleCard> {
                                     .join(', '),
                                 style: GoogleFonts.poppins(
                                   fontSize: 14,
-                                  color: textColor,
+                                  color: AppTheme.getPrimaryTextColor(context),
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -269,7 +262,7 @@ class _ScheduleCardState extends State<ScheduleCard> {
                             Icon(
                               Icons.note,
                               size: 16,
-                              color: secondaryTextColor,
+                              color: AppTheme.getSecondaryTextColor(context),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
@@ -277,7 +270,7 @@ class _ScheduleCardState extends State<ScheduleCard> {
                                 note,
                                 style: GoogleFonts.poppins(
                                   fontSize: 14,
-                                  color: textColor,
+                                  color: AppTheme.getPrimaryTextColor(context),
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -298,7 +291,7 @@ class _ScheduleCardState extends State<ScheduleCard> {
                         onChanged: widget.canJoinVisit
                             ? widget.onJoinVisitChanged
                             : null,
-                        activeColor: AppTheme.successColor,
+                        activeColor: AppTheme.getSuccessColor(context),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -306,10 +299,11 @@ class _ScheduleCardState extends State<ScheduleCard> {
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           color: widget.isJoinVisit
-                              ? AppTheme.successColor
+                              ? AppTheme.getSuccessColor(context)
                               : widget.canJoinVisit
-                                  ? textColor
-                                  : Colors.grey[400],
+                                  ? AppTheme.getPrimaryTextColor(context)
+                                  : AppTheme.getSecondaryTextColor(context)
+                                      .withOpacity(0.5),
                           fontWeight: widget.isJoinVisit
                               ? FontWeight.w600
                               : FontWeight.normal,
@@ -320,7 +314,7 @@ class _ScheduleCardState extends State<ScheduleCard> {
                         Icon(
                           Icons.group,
                           size: 16,
-                          color: AppTheme.successColor,
+                          color: AppTheme.getSuccessColor(context),
                         ),
                       ],
                     ],

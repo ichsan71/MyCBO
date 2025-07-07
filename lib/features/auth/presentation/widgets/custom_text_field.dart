@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:test_cbo/core/presentation/theme/app_theme.dart';
 
 class CustomTextField extends StatelessWidget {
   final TextEditingController controller;
@@ -51,50 +52,51 @@ class CustomTextField extends StatelessWidget {
       focusNode: focusNode,
       style: GoogleFonts.poppins(
         fontSize: 14,
-        color: Colors.black87,
+        color: AppTheme.primaryTextColor,
       ),
       decoration: InputDecoration(
         labelText: labelText,
         hintText: hintText,
-        prefixIcon:
-            prefixIcon != null ? Icon(prefixIcon, color: Colors.grey) : null,
+        prefixIcon: prefixIcon != null
+            ? Icon(prefixIcon, color: AppTheme.secondaryTextColor)
+            : null,
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.grey),
+          borderSide: BorderSide(color: AppTheme.borderColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.grey),
+          borderSide: BorderSide(color: AppTheme.borderColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.blue, width: 2),
+          borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.red),
+          borderSide: BorderSide(color: AppTheme.errorColor),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
+          borderSide: BorderSide(color: AppTheme.errorColor, width: 2),
         ),
         labelStyle: GoogleFonts.poppins(
           fontSize: 14,
-          color: Colors.grey,
+          color: AppTheme.secondaryTextColor,
         ),
         hintStyle: GoogleFonts.poppins(
           fontSize: 14,
-          color: Colors.grey.withOpacity(0.7),
+          color: AppTheme.secondaryTextColor.withOpacity(0.7),
         ),
         errorStyle: GoogleFonts.poppins(
           fontSize: 12,
-          color: Colors.red,
+          color: AppTheme.errorColor,
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         filled: true,
-        fillColor: Colors.grey.withOpacity(0.05),
+        fillColor: AppTheme.cardBackgroundColor,
       ),
     );
   }

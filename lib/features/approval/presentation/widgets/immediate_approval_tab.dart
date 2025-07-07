@@ -48,7 +48,7 @@ class ImmediateApprovalTab extends StatelessWidget {
                                     child: Text(
                                       'Batal',
                                       style: GoogleFonts.poppins(
-                                        color: Colors.grey[600],
+                                        color: AppTheme.secondaryTextColor,
                                       ),
                                     ),
                                   ),
@@ -136,7 +136,7 @@ class ImmediateApprovalTab extends StatelessWidget {
                                     child: Text(
                                       'Batal',
                                       style: GoogleFonts.poppins(
-                                        color: Colors.grey[600],
+                                        color: AppTheme.secondaryTextColor,
                                       ),
                                     ),
                                   ),
@@ -145,10 +145,11 @@ class ImmediateApprovalTab extends StatelessWidget {
                                       if (comment.trim().isEmpty) {
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
+                                          SnackBar(
+                                            content: const Text(
                                                 'Alasan penolakan harus diisi'),
-                                            backgroundColor: Colors.red,
+                                            backgroundColor:
+                                                AppTheme.errorColor,
                                           ),
                                         );
                                         return;
@@ -170,7 +171,7 @@ class ImmediateApprovalTab extends StatelessWidget {
                                       }
                                     },
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
+                                      backgroundColor: AppTheme.errorColor,
                                     ),
                                     child: Text(
                                       'Tolak Semua',
@@ -184,7 +185,7 @@ class ImmediateApprovalTab extends StatelessWidget {
                             );
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
+                            backgroundColor: AppTheme.errorColor,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
                           icon: const Icon(Icons.cancel),
@@ -216,7 +217,7 @@ class ImmediateApprovalTab extends StatelessWidget {
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: BorderSide(color: AppTheme.borderColor),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),

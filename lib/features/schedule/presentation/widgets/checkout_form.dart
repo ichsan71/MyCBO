@@ -11,6 +11,7 @@ import '../bloc/schedule_bloc.dart';
 import '../bloc/schedule_event.dart';
 import '../bloc/schedule_state.dart';
 import 'package:test_cbo/core/presentation/widgets/shimmer_button_loading.dart';
+import 'package:test_cbo/core/presentation/theme/app_theme.dart';
 
 class CheckoutForm extends StatefulWidget {
   final Schedule schedule;
@@ -239,9 +240,9 @@ class _CheckoutFormState extends State<CheckoutForm> {
         if (state is CheckOutSuccess) {
           // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Check-out berhasil!'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: const Text('Check-out berhasil!'),
+              backgroundColor: AppTheme.getSuccessColor(context),
             ),
           );
 
@@ -252,7 +253,7 @@ class _CheckoutFormState extends State<CheckoutForm> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
-              backgroundColor: Colors.red,
+              backgroundColor: AppTheme.getErrorColor(context),
             ),
           );
           // Reset loading state
@@ -286,9 +287,9 @@ class _CheckoutFormState extends State<CheckoutForm> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: AppTheme.getPrimaryColor(context).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.shade300),
+                  border: Border.all(color: AppTheme.getPrimaryColor(context)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -296,7 +297,7 @@ class _CheckoutFormState extends State<CheckoutForm> {
                     Row(
                       children: [
                         Icon(Icons.check_circle_outline,
-                            color: Colors.blue.shade700),
+                            color: AppTheme.getPrimaryColor(context)),
                         const SizedBox(width: 8),
                         const Expanded(
                           child: Text(
@@ -313,16 +314,18 @@ class _CheckoutFormState extends State<CheckoutForm> {
                       value: _selectedStatus,
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: AppTheme.getCardBackgroundColor(context),
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.blue.shade200),
+                          borderSide: BorderSide(
+                              color: AppTheme.getBorderColor(context)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.blue.shade200),
+                          borderSide: BorderSide(
+                              color: AppTheme.getBorderColor(context)),
                         ),
                       ),
                       items: _statusOptions.map((String value) {
@@ -349,19 +352,20 @@ class _CheckoutFormState extends State<CheckoutForm> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
+                    color: AppTheme.getErrorColor(context).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Row(
                     children: [
                       Icon(Icons.error_outline,
-                          color: Colors.red.shade700, size: 16),
+                          color: AppTheme.getErrorColor(context), size: 16),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           _imageError!,
                           style: TextStyle(
-                              color: Colors.red.shade700, fontSize: 12),
+                              color: AppTheme.getErrorColor(context),
+                              fontSize: 12),
                         ),
                       ),
                     ],

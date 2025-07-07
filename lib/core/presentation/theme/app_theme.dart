@@ -57,10 +57,13 @@ class AppTheme {
   );
 
   static ThemeColors get colors {
-    if (currentContext == null) {
-      return lightColors;
-    }
-    return Theme.of(currentContext!).brightness == Brightness.dark
+    // Fallback to light colors if no context is available
+    return lightColors;
+  }
+
+  // Safe method to get colors with context
+  static ThemeColors getColors(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
         ? darkColors
         : lightColors;
   }
@@ -97,6 +100,8 @@ class AppTheme {
   static const Duration animationMedium = Duration(milliseconds: 300);
   static const Duration animationLong = Duration(milliseconds: 500);
 
+  // Deprecated - kept for backward compatibility but should not be used
+  @Deprecated('Use getColors(context) instead')
   static BuildContext? currentContext;
 
   static ThemeData lightTheme() {
@@ -441,6 +446,53 @@ class AppTheme {
   static Color get scheduleHighlightColor => colors.scheduleHighlight;
   static Color get dividerColor => colors.divider;
   static Color get borderColor => colors.border;
+
+  // Safe context-aware color getters
+  static Color getPrimaryColor(BuildContext context) =>
+      getColors(context).primary;
+  static Color getSecondaryColor(BuildContext context) =>
+      getColors(context).secondary;
+  static Color getTertiaryColor(BuildContext context) =>
+      getColors(context).tertiary;
+  static Color getSuccessColor(BuildContext context) =>
+      getColors(context).success;
+  static Color getWarningColor(BuildContext context) =>
+      getColors(context).warning;
+  static Color getErrorColor(BuildContext context) => getColors(context).error;
+  static Color getBackgroundColor(BuildContext context) =>
+      getColors(context).surface;
+  static Color getSurfaceColor(BuildContext context) =>
+      getColors(context).surface;
+  static Color getCardBackgroundColor(BuildContext context) =>
+      getColors(context).cardBackground;
+  static Color getPrimaryTextColor(BuildContext context) =>
+      getColors(context).primaryText;
+  static Color getSecondaryTextColor(BuildContext context) =>
+      getColors(context).secondaryText;
+  static Color getDisabledColor(BuildContext context) =>
+      getColors(context).disabled;
+
+  // Safe context-aware schedule specific colors
+  static Color getScheduleTextColor(BuildContext context) =>
+      getColors(context).scheduleText;
+  static Color getScheduleIconColor(BuildContext context) =>
+      getColors(context).scheduleIcon;
+  static Color getScheduleHeaderColor(BuildContext context) =>
+      getColors(context).scheduleHeader;
+  static Color getScheduleSubtextColor(BuildContext context) =>
+      getColors(context).scheduleSubtext;
+  static Color getScheduleBackgroundColor(BuildContext context) =>
+      getColors(context).scheduleBackground;
+  static Color getScheduleCardColor(BuildContext context) =>
+      getColors(context).scheduleCard;
+  static Color getScheduleSelectedItemColor(BuildContext context) =>
+      getColors(context).scheduleSelectedItem;
+  static Color getScheduleHighlightColor(BuildContext context) =>
+      getColors(context).scheduleHighlight;
+  static Color getDividerColor(BuildContext context) =>
+      getColors(context).divider;
+  static Color getBorderColor(BuildContext context) =>
+      getColors(context).border;
 }
 
 class ThemeColors {

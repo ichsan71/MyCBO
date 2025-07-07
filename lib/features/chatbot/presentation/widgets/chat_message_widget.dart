@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../domain/entities/chat_message.dart';
+import 'package:test_cbo/core/presentation/theme/app_theme.dart';
 
 class ChatMessageWidget extends StatefulWidget {
   final ChatMessage message;
@@ -99,8 +100,8 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget>
                           ),
                           decoration: BoxDecoration(
                             color: widget.message.type == MessageType.user
-                                ? Colors.blue[600]
-                                : Colors.white,
+                                ? AppTheme.getPrimaryColor(context)
+                                : AppTheme.getCardBackgroundColor(context),
                             borderRadius: BorderRadius.only(
                               topLeft: const Radius.circular(20),
                               topRight: const Radius.circular(20),
@@ -127,7 +128,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget>
                               fontSize: 14,
                               color: widget.message.type == MessageType.user
                                   ? Colors.white
-                                  : Colors.black87,
+                                  : AppTheme.getPrimaryTextColor(context),
                               height: 1.4,
                             ),
                           ),
@@ -137,7 +138,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget>
                           _formatTime(widget.message.timestamp),
                           style: GoogleFonts.poppins(
                             fontSize: 11,
-                            color: Colors.grey[500],
+                            color: AppTheme.getSecondaryTextColor(context),
                           ),
                         ),
                       ],
@@ -191,12 +192,12 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget>
       width: 32,
       height: 32,
       decoration: BoxDecoration(
-        color: Colors.grey[300],
+        color: AppTheme.getBorderColor(context),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Icon(
         Icons.person,
-        color: Colors.grey[600],
+        color: AppTheme.getSecondaryTextColor(context),
         size: 18,
       ),
     );

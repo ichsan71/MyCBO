@@ -12,6 +12,7 @@ import '../../data/models/checkin_request_model.dart';
 import '../bloc/schedule_bloc.dart';
 import '../bloc/schedule_state.dart';
 import 'package:test_cbo/core/presentation/widgets/shimmer_button_loading.dart';
+import 'package:test_cbo/core/presentation/theme/app_theme.dart';
 
 class CheckinForm extends StatefulWidget {
   final int scheduleId;
@@ -136,15 +137,16 @@ class _CheckinFormState extends State<CheckinForm> {
       if (isMockLocation) {
         if (mounted) {
           setState(() {
-            _locationError = 'Lokasi palsu terdeteksi, silahkan cek kembali lokasi anda';
+            _locationError =
+                'Lokasi palsu terdeteksi, silahkan cek kembali lokasi anda';
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
+            SnackBar(
+              content: const Text(
                 'Anda terdeteksi menggunakan lokasi palsu (Mock Location). Mohon nonaktifkan fitur Mock Location untuk melakukan check-in.',
               ),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 5),
+              backgroundColor: AppTheme.getErrorColor(context),
+              duration: const Duration(seconds: 5),
             ),
           );
         }
@@ -281,7 +283,8 @@ class _CheckinFormState extends State<CheckinForm> {
     if (_isLoading) return;
 
     // Check for mock location error
-    if (_locationError == 'Lokasi palsu terdeteksi, silahkan cek kembali lokasi anda') {
+    if (_locationError ==
+        'Lokasi palsu terdeteksi, silahkan cek kembali lokasi anda') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -391,16 +394,17 @@ class _CheckinFormState extends State<CheckinForm> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: AppTheme.getSuccessColor(context).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green.shade300),
+                  border: Border.all(color: AppTheme.getSuccessColor(context)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.location_on, color: Colors.green.shade700),
+                        Icon(Icons.location_on,
+                            color: AppTheme.getSuccessColor(context)),
                         const SizedBox(width: 8),
                         const Expanded(
                           child: Text(
@@ -411,8 +415,8 @@ class _CheckinFormState extends State<CheckinForm> {
                           ),
                         ),
                         IconButton(
-                          icon:
-                              Icon(Icons.refresh, color: Colors.green.shade700),
+                          icon: Icon(Icons.refresh,
+                              color: AppTheme.getSuccessColor(context)),
                           onPressed: _getCurrentLocation,
                           tooltip: 'Perbarui lokasi',
                         ),
@@ -423,7 +427,9 @@ class _CheckinFormState extends State<CheckinForm> {
                     const SizedBox(height: 4),
                     Text(
                       'Lat: ${_currentPosition!.latitude.toStringAsFixed(6)}, Long: ${_currentPosition!.longitude.toStringAsFixed(6)}',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.getSecondaryTextColor(context)),
                     ),
                   ],
                 ),
@@ -433,13 +439,13 @@ class _CheckinFormState extends State<CheckinForm> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: _locationError != null
-                      ? Colors.red.shade50
-                      : Colors.orange.withOpacity(0.1),
+                      ? AppTheme.getErrorColor(context).withOpacity(0.1)
+                      : AppTheme.getWarningColor(context).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: _locationError != null
-                        ? Colors.red.shade300
-                        : Colors.orange.shade300,
+                        ? AppTheme.getErrorColor(context)
+                        : AppTheme.getWarningColor(context),
                   ),
                 ),
                 child: Column(
@@ -449,8 +455,8 @@ class _CheckinFormState extends State<CheckinForm> {
                         Icon(
                           Icons.location_off,
                           color: _locationError != null
-                              ? Colors.red
-                              : Colors.orange,
+                              ? AppTheme.getErrorColor(context)
+                              : AppTheme.getWarningColor(context),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -459,8 +465,8 @@ class _CheckinFormState extends State<CheckinForm> {
                                 'Sedang mendapatkan lokasi saat ini...',
                             style: TextStyle(
                               color: _locationError != null
-                                  ? Colors.red
-                                  : Colors.orange,
+                                  ? AppTheme.getErrorColor(context)
+                                  : AppTheme.getWarningColor(context),
                             ),
                           ),
                         ),
@@ -473,7 +479,7 @@ class _CheckinFormState extends State<CheckinForm> {
                         icon: const Icon(Icons.refresh),
                         label: const Text('Coba Lagi'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red,
+                          foregroundColor: AppTheme.getErrorColor(context),
                         ),
                       ),
                     ],
@@ -488,19 +494,20 @@ class _CheckinFormState extends State<CheckinForm> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
+                  color: AppTheme.getErrorColor(context).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Row(
                   children: [
                     Icon(Icons.error_outline,
-                        color: Colors.red.shade700, size: 16),
+                        color: AppTheme.getErrorColor(context), size: 16),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _imageError!,
-                        style:
-                            TextStyle(color: Colors.red.shade700, fontSize: 12),
+                        style: TextStyle(
+                            color: AppTheme.getErrorColor(context),
+                            fontSize: 12),
                       ),
                     ),
                   ],
@@ -580,7 +587,7 @@ class _CheckinFormState extends State<CheckinForm> {
                   'Foto diambil pada: $_imageTimestamp',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: AppTheme.getSecondaryTextColor(context),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -598,7 +605,7 @@ class _CheckinFormState extends State<CheckinForm> {
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 foregroundColor: Colors.white,
-                backgroundColor: Theme.of(context).primaryColor,
+                backgroundColor: AppTheme.getPrimaryColor(context),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -630,8 +637,9 @@ class _CheckinFormState extends State<CheckinForm> {
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 foregroundColor: Colors.white,
-                backgroundColor: Theme.of(context).primaryColor,
-                disabledBackgroundColor: Colors.blue.shade200,
+                backgroundColor: AppTheme.getPrimaryColor(context),
+                disabledBackgroundColor:
+                    AppTheme.getPrimaryColor(context).withOpacity(0.3),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../../../core/presentation/theme/app_theme.dart';
 
 class ScheduleFilterSection extends StatelessWidget {
   final String selectedFilter;
@@ -41,9 +42,10 @@ class ScheduleFilterSection extends StatelessWidget {
                 ),
                 selected: selectedFilter == filter,
                 onSelected: (_) => onFilterSelected(filter),
-                backgroundColor: Colors.grey[100],
-                selectedColor: Colors.blue[100],
-                checkmarkColor: Colors.blue[700],
+                backgroundColor: AppTheme.getCardBackgroundColor(context),
+                selectedColor:
+                    AppTheme.getPrimaryColor(context).withOpacity(0.1),
+                checkmarkColor: AppTheme.getPrimaryColor(context),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),

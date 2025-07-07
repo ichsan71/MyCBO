@@ -20,6 +20,7 @@ import 'package:test_cbo/core/utils/logger.dart';
 import 'package:test_cbo/features/schedule/domain/entities/doctor_clinic_base.dart';
 import 'package:test_cbo/core/presentation/widgets/custom_snackbar.dart';
 import 'package:test_cbo/core/presentation/widgets/success_message.dart';
+import 'package:test_cbo/core/presentation/theme/app_theme.dart';
 import 'dart:convert';
 
 class AddSchedulePage extends StatefulWidget {
@@ -720,13 +721,13 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
               Icon(
                 Icons.warning_amber_rounded,
                 size: 48,
-                color: isDark ? Colors.white70 : Colors.grey[600],
+                color: AppTheme.secondaryTextColor,
               ),
               const SizedBox(height: 16),
               Text(
                 'Tidak ada data dokter tersedia',
                 style: TextStyle(
-                  color: isDark ? Colors.white70 : Colors.grey[600],
+                  color: AppTheme.secondaryTextColor,
                   fontSize: 16,
                 ),
                 textAlign: TextAlign.center,
@@ -735,7 +736,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
               Text(
                 'Silakan coba refresh halaman atau periksa koneksi internet Anda',
                 style: TextStyle(
-                  color: isDark ? Colors.white60 : Colors.grey[500],
+                  color: AppTheme.secondaryTextColor.withOpacity(0.8),
                   fontSize: 14,
                 ),
                 textAlign: TextAlign.center,
@@ -771,13 +772,13 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
               Icon(
                 Icons.search_off,
                 size: 48,
-                color: isDark ? Colors.white70 : Colors.grey[600],
+                color: AppTheme.secondaryTextColor,
               ),
               const SizedBox(height: 16),
               Text(
                 'Tidak ada dokter yang sesuai dengan pencarian',
                 style: TextStyle(
-                  color: isDark ? Colors.white70 : Colors.grey[600],
+                  color: AppTheme.secondaryTextColor,
                   fontSize: 16,
                 ),
                 textAlign: TextAlign.center,
@@ -793,17 +794,10 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? Colors.grey[600]! : Colors.grey[400]!,
+          color: AppTheme.getBorderColor(context),
           width: 1.5,
         ),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            isDark ? Colors.grey[900]!.withOpacity(0.3) : Colors.grey[50]!,
-            isDark ? Colors.grey[800]!.withOpacity(0.1) : Colors.white,
-          ],
-        ),
+        color: AppTheme.getCardBackgroundColor(context),
       ),
       child: Stack(
         children: [
@@ -812,12 +806,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
             thumbVisibility: true,
             thickness: 10,
             radius: const Radius.circular(5),
-            thumbColor: isDark
-                ? Colors.cyan.withOpacity(0.8)
-                : Theme.of(context).primaryColor.withOpacity(0.9),
-            trackColor: isDark
-                ? Colors.white.withOpacity(0.1)
-                : Colors.grey.withOpacity(0.3),
+            thumbColor: AppTheme.getPrimaryColor(context).withOpacity(0.8),
+            trackColor: AppTheme.getBorderColor(context).withOpacity(0.3),
             trackVisibility: true,
             trackRadius: const Radius.circular(5),
             crossAxisMargin: 3,
@@ -832,27 +822,18 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                 final doctor = filteredDoctors[index];
                 final isSelected = _selectedDoctor?.id == doctor.id;
 
-                // Log item build
-                Logger.debug(_tag,
-                    'Building doctor item: ${doctor.nama} (selected: $isSelected)');
-
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? Theme.of(context)
-                            .primaryColor
+                        ? AppTheme.getPrimaryColor(context)
                             .withOpacity(isDark ? 0.2 : 0.1)
-                        : Theme.of(context).cardColor,
+                        : AppTheme.getCardBackgroundColor(context),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isSelected
-                          ? isDark
-                              ? Colors.white
-                              : Theme.of(context).primaryColor
-                          : isDark
-                              ? Colors.grey[700]!
-                              : Colors.grey[300]!,
+                          ? AppTheme.getPrimaryColor(context)
+                          : AppTheme.getBorderColor(context),
                       width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -874,16 +855,13 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .primaryColor
+                                color: AppTheme.getPrimaryColor(context)
                                     .withOpacity(isDark ? 0.2 : 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 Icons.person,
-                                color: isDark
-                                    ? Colors.white
-                                    : Theme.of(context).primaryColor,
+                                color: AppTheme.getPrimaryColor(context),
                                 size: 20,
                               ),
                             ),
@@ -897,9 +875,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
-                                      color: isDark
-                                          ? Colors.white
-                                          : Colors.black87,
+                                      color:
+                                          AppTheme.getPrimaryTextColor(context),
                                     ),
                                   ),
                                   if (doctor.alamat != null &&
@@ -909,9 +886,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                                       doctor.alamat!,
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: isDark
-                                            ? Colors.white70
-                                            : Colors.black54,
+                                        color: AppTheme.getSecondaryTextColor(
+                                            context),
                                       ),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
@@ -923,9 +899,9 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                                       doctor.spesialis,
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: isDark
-                                            ? Colors.white60
-                                            : Colors.black45,
+                                        color: AppTheme.getSecondaryTextColor(
+                                                context)
+                                            .withOpacity(0.8),
                                         fontStyle: FontStyle.italic,
                                       ),
                                     ),
@@ -936,9 +912,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                             if (isSelected)
                               Icon(
                                 Icons.check_circle,
-                                color: isDark
-                                    ? Colors.white
-                                    : Theme.of(context).primaryColor,
+                                color: AppTheme.getPrimaryColor(context),
                               ),
                           ],
                         ),
@@ -957,13 +931,12 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? Colors.black.withOpacity(0.7)
-                      : Colors.white.withOpacity(0.9),
+                      ? AppTheme.getBackgroundColor(context).withOpacity(0.7)
+                      : AppTheme.getCardBackgroundColor(context)
+                          .withOpacity(0.9),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isDark
-                        ? Colors.cyan.withOpacity(0.5)
-                        : Theme.of(context).primaryColor.withOpacity(0.5),
+                    color: AppTheme.getPrimaryColor(context).withOpacity(0.5),
                     width: 1,
                   ),
                 ),
@@ -973,17 +946,14 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                     Icon(
                       Icons.swipe_vertical,
                       size: 14,
-                      color:
-                          isDark ? Colors.cyan : Theme.of(context).primaryColor,
+                      color: AppTheme.getPrimaryColor(context),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       'Scroll',
                       style: TextStyle(
                         fontSize: 11,
-                        color: isDark
-                            ? Colors.cyan
-                            : Theme.of(context).primaryColor,
+                        color: AppTheme.getPrimaryColor(context),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1009,15 +979,15 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? Colors.grey[600]! : Colors.grey[400]!,
+          color: AppTheme.borderColor,
           width: 1.5,
         ),
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            isDark ? Colors.grey[900]!.withOpacity(0.3) : Colors.grey[50]!,
-            isDark ? Colors.grey[800]!.withOpacity(0.1) : Colors.white,
+            AppTheme.cardBackgroundColor,
+            AppTheme.surfaceColor,
           ],
         ),
       ),
@@ -1028,12 +998,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
             thumbVisibility: true,
             thickness: 10,
             radius: const Radius.circular(5),
-            thumbColor: isDark
-                ? Colors.cyan.withOpacity(0.8)
-                : Theme.of(context).primaryColor.withOpacity(0.9),
-            trackColor: isDark
-                ? Colors.white.withOpacity(0.1)
-                : Colors.grey.withOpacity(0.3),
+            thumbColor: AppTheme.primaryColor.withOpacity(0.8),
+            trackColor: AppTheme.borderColor.withOpacity(0.3),
             trackVisibility: true,
             trackRadius: const Radius.circular(5),
             crossAxisMargin: 3,
@@ -1059,12 +1025,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isSelected
-                          ? isDark
-                              ? Colors.white
-                              : Theme.of(context).primaryColor
-                          : isDark
-                              ? Colors.grey[700]!
-                              : Colors.grey[300]!,
+                          ? AppTheme.primaryColor
+                          : AppTheme.borderColor,
                       width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -1091,9 +1053,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                               ),
                               child: Icon(
                                 Icons.local_hospital,
-                                color: isDark
-                                    ? Colors.white
-                                    : Theme.of(context).primaryColor,
+                                color: AppTheme.primaryColor,
                                 size: 20,
                               ),
                             ),
@@ -1107,9 +1067,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
-                                      color: isDark
-                                          ? Colors.white
-                                          : Colors.black87,
+                                      color: AppTheme.primaryTextColor,
                                     ),
                                   ),
                                   if (clinic.alamat != null &&
@@ -1119,9 +1077,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                                       clinic.alamat!,
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: isDark
-                                            ? Colors.white70
-                                            : Colors.black54,
+                                        color: AppTheme.secondaryTextColor,
                                       ),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
@@ -1133,9 +1089,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                             if (isSelected)
                               Icon(
                                 Icons.check_circle,
-                                color: isDark
-                                    ? Colors.white
-                                    : Theme.of(context).primaryColor,
+                                color: AppTheme.primaryColor,
                               ),
                           ],
                         ),
@@ -1153,14 +1107,10 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.black.withOpacity(0.7)
-                      : Colors.white.withOpacity(0.9),
+                  color: AppTheme.cardBackgroundColor.withOpacity(0.9),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isDark
-                        ? Colors.cyan.withOpacity(0.5)
-                        : Theme.of(context).primaryColor.withOpacity(0.5),
+                    color: AppTheme.primaryColor.withOpacity(0.5),
                     width: 1,
                   ),
                 ),
@@ -1170,17 +1120,14 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                     Icon(
                       Icons.swipe_vertical,
                       size: 14,
-                      color:
-                          isDark ? Colors.cyan : Theme.of(context).primaryColor,
+                      color: AppTheme.primaryColor,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       'Scroll',
                       style: TextStyle(
                         fontSize: 11,
-                        color: isDark
-                            ? Colors.cyan
-                            : Theme.of(context).primaryColor,
+                        color: AppTheme.primaryColor,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1212,8 +1159,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                 label: Text(
                   product.nama,
                   style: TextStyle(
-                    color:
-                        isDark ? Colors.white : Theme.of(context).primaryColor,
+                    color: AppTheme.primaryColor,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -1223,13 +1169,11 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                 deleteIcon: Icon(
                   Icons.close,
                   size: 18,
-                  color: isDark ? Colors.white : Theme.of(context).primaryColor,
+                  color: AppTheme.primaryColor,
                 ),
                 onDeleted: () => _onProductSelected(product),
                 side: BorderSide(
-                  color: isDark
-                      ? Colors.white54
-                      : Theme.of(context).primaryColor.withOpacity(0.5),
+                  color: AppTheme.primaryColor.withOpacity(0.5),
                   width: 1,
                 ),
               );
@@ -1237,7 +1181,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
           ),
           const SizedBox(height: 16),
           Divider(
-            color: isDark ? Colors.white24 : Colors.grey[300],
+            color: AppTheme.dividerColor,
           ),
           const SizedBox(height: 16),
         ],
@@ -1248,17 +1192,10 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDark ? Colors.grey[600]! : Colors.grey[400]!,
+              color: AppTheme.getBorderColor(context),
               width: 1.5,
             ),
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                isDark ? Colors.grey[900]!.withOpacity(0.3) : Colors.grey[50]!,
-                isDark ? Colors.grey[800]!.withOpacity(0.1) : Colors.white,
-              ],
-            ),
+            color: AppTheme.getCardBackgroundColor(context),
           ),
           child: Stack(
             children: [
@@ -1267,12 +1204,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                 thumbVisibility: true,
                 thickness: 10,
                 radius: const Radius.circular(5),
-                thumbColor: isDark
-                    ? Colors.cyan.withOpacity(0.8)
-                    : Theme.of(context).primaryColor.withOpacity(0.9),
-                trackColor: isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.grey.withOpacity(0.3),
+                thumbColor: AppTheme.getPrimaryColor(context).withOpacity(0.8),
+                trackColor: AppTheme.getBorderColor(context).withOpacity(0.3),
                 trackVisibility: true,
                 trackRadius: const Radius.circular(5),
                 crossAxisMargin: 3,
@@ -1291,19 +1224,13 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                       margin: const EdgeInsets.only(bottom: 8),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? Theme.of(context)
-                                .primaryColor
-                                .withOpacity(isDark ? 0.2 : 0.1)
-                            : Theme.of(context).cardColor,
+                            ? AppTheme.getPrimaryColor(context).withOpacity(0.1)
+                            : AppTheme.getCardBackgroundColor(context),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isSelected
-                              ? isDark
-                                  ? Colors.white
-                                  : Theme.of(context).primaryColor
-                              : isDark
-                                  ? Colors.grey[700]!
-                                  : Colors.grey[300]!,
+                              ? AppTheme.getPrimaryColor(context)
+                              : AppTheme.getBorderColor(context),
                           width: isSelected ? 2 : 1,
                         ),
                       ),
@@ -1319,16 +1246,13 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context)
-                                        .primaryColor
-                                        .withOpacity(isDark ? 0.2 : 0.1),
+                                    color: AppTheme.getPrimaryColor(context)
+                                        .withOpacity(0.1),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
                                     Icons.medical_services,
-                                    color: isDark
-                                        ? Colors.white
-                                        : Theme.of(context).primaryColor,
+                                    color: AppTheme.getPrimaryColor(context),
                                     size: 20,
                                   ),
                                 ),
@@ -1343,9 +1267,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                                         style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
-                                          color: isDark
-                                              ? Colors.white
-                                              : Colors.black87,
+                                          color: AppTheme.getPrimaryTextColor(
+                                              context),
                                         ),
                                       ),
                                       if (product.kode != null) ...[
@@ -1354,9 +1277,9 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                                           'Kode: ${product.kode}',
                                           style: TextStyle(
                                             fontSize: 12,
-                                            color: isDark
-                                                ? Colors.white70
-                                                : Colors.black54,
+                                            color:
+                                                AppTheme.getSecondaryTextColor(
+                                                    context),
                                           ),
                                         ),
                                       ],
@@ -1366,9 +1289,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                                 if (isSelected)
                                   Icon(
                                     Icons.check_circle,
-                                    color: isDark
-                                        ? Colors.white
-                                        : Theme.of(context).primaryColor,
+                                    color: AppTheme.getPrimaryColor(context),
                                   ),
                               ],
                             ),
@@ -1387,14 +1308,12 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.black.withOpacity(0.7)
-                          : Colors.white.withOpacity(0.9),
+                      color: AppTheme.getCardBackgroundColor(context)
+                          .withOpacity(0.9),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isDark
-                            ? Colors.cyan.withOpacity(0.5)
-                            : Theme.of(context).primaryColor.withOpacity(0.5),
+                        color:
+                            AppTheme.getPrimaryColor(context).withOpacity(0.5),
                         width: 1,
                       ),
                     ),
@@ -1404,18 +1323,14 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                         Icon(
                           Icons.swipe_vertical,
                           size: 14,
-                          color: isDark
-                              ? Colors.cyan
-                              : Theme.of(context).primaryColor,
+                          color: AppTheme.getPrimaryColor(context),
                         ),
                         const SizedBox(width: 4),
                         Text(
                           'Scroll',
                           style: TextStyle(
                             fontSize: 11,
-                            color: isDark
-                                ? Colors.cyan
-                                : Theme.of(context).primaryColor,
+                            color: AppTheme.getPrimaryColor(context),
                             fontWeight: FontWeight.w600,
                           ),
                         ),

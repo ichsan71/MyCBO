@@ -60,7 +60,7 @@ class RealisasiVisitCard extends StatelessWidget {
                           'Role: ${realisasiVisit.role}',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: AppTheme.getSecondaryTextColor(context),
                           ),
                         ),
                       ],
@@ -76,35 +76,39 @@ class RealisasiVisitCard extends StatelessWidget {
                 'Total Jadwal',
                 realisasiVisit.totalSchedule.toString(),
                 Icons.calendar_today,
+                context,
               ),
               const SizedBox(height: 8),
               _buildInfoRow(
                 'Dokter',
                 realisasiVisit.jumlahDokter,
                 Icons.medical_services,
+                context,
               ),
               const SizedBox(height: 8),
               _buildInfoRow(
                 'Klinik',
                 realisasiVisit.jumlahKlinik,
                 Icons.local_hospital,
+                context,
               ),
               const SizedBox(height: 8),
               _buildInfoRow(
                 'Terrealisasi',
                 '${realisasiVisit.totalTerrealisasi}/${realisasiVisit.totalSchedule}',
                 Icons.check_circle,
+                context,
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  _buildStatusIndicator('Selesai', totalDone, Colors.green),
+                  _buildStatusIndicator('Selesai', totalDone, AppTheme.getSuccessColor(context), context),
                   const SizedBox(width: 16),
                   _buildStatusIndicator(
-                      'Belum Selesai', totalNotDone, Colors.red),
+                      'Belum Selesai', totalNotDone, AppTheme.getErrorColor(context), context),
                   const SizedBox(width: 16),
                   _buildStatusIndicator(
-                      'Menunggu', totalPending, Colors.orange),
+                      'Menunggu', totalPending, AppTheme.getWarningColor(context), context),
                 ],
               ),
             ],
@@ -135,20 +139,21 @@ class RealisasiVisitCard extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value, IconData icon) {
+  Widget _buildInfoRow(
+      String label, String value, IconData icon, BuildContext context) {
     return Row(
       children: [
         Icon(
           icon,
           size: 16,
-          color: Colors.grey[600],
+          color: AppTheme.getSecondaryTextColor(context),
         ),
         const SizedBox(width: 8),
         Text(
           '$label:',
           style: GoogleFonts.poppins(
             fontSize: 14,
-            color: Colors.grey[600],
+            color: AppTheme.getSecondaryTextColor(context),
           ),
         ),
         const SizedBox(width: 4),
@@ -163,7 +168,7 @@ class RealisasiVisitCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusIndicator(String label, int count, Color color) {
+  Widget _buildStatusIndicator(String label, int count, Color color, BuildContext context) {
     return Expanded(
       child: Row(
         children: [
@@ -181,7 +186,7 @@ class RealisasiVisitCard extends StatelessWidget {
               '$label: $count',
               style: GoogleFonts.poppins(
                 fontSize: 12,
-                color: Colors.grey[700],
+                color: AppTheme.getPrimaryTextColor(context),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

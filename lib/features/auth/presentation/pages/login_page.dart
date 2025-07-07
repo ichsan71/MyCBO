@@ -9,6 +9,7 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/privacy_policy_modal.dart';
 import 'package:test_cbo/core/presentation/widgets/shimmer_button_loading.dart';
 import '../widgets/custom_checkbox.dart';
+import 'package:test_cbo/core/presentation/theme/app_theme.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -33,7 +34,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.getBackgroundColor(context),
       resizeToAvoidBottomInset: true,
       body: MultiBlocProvider(
         providers: [
@@ -45,7 +46,7 @@ class _LoginPageState extends State<LoginPage> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AppTheme.getErrorColor(context),
                 ),
               );
             } else if (state is AuthAuthenticated) {
@@ -79,7 +80,7 @@ class _LoginPageState extends State<LoginPage> {
                                 style: GoogleFonts.poppins(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
+                                  color: AppTheme.getPrimaryTextColor(context),
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -88,7 +89,8 @@ class _LoginPageState extends State<LoginPage> {
                                 'Silakan masuk untuk melanjutkan',
                                 style: GoogleFonts.poppins(
                                   fontSize: 12,
-                                  color: Colors.black54,
+                                  color:
+                                      AppTheme.getSecondaryTextColor(context),
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -127,7 +129,8 @@ class _LoginPageState extends State<LoginPage> {
                                           _isPasswordVisible
                                               ? Icons.visibility_outlined
                                               : Icons.visibility_off_outlined,
-                                          color: Colors.grey,
+                                          color: AppTheme.getSecondaryTextColor(
+                                              context),
                                         ),
                                         onPressed: () {
                                           setState(() {
@@ -152,11 +155,14 @@ class _LoginPageState extends State<LoginPage> {
                               const SizedBox(height: 24),
                               // Privacy Policy Checkbox
                               Container(
-                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 8, horizontal: 4),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey[50],
+                                  color:
+                                      AppTheme.getCardBackgroundColor(context),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.grey[200]!),
+                                  border: Border.all(
+                                      color: AppTheme.getBorderColor(context)),
                                 ),
                                 child: Row(
                                   children: [
@@ -165,11 +171,13 @@ class _LoginPageState extends State<LoginPage> {
                                       value: privacyState.isAgreed,
                                       onChanged: (value) {
                                         context.read<PrivacyPolicyBloc>().add(
-                                              PrivacyPolicyAgreedChanged(value ?? false),
+                                              PrivacyPolicyAgreedChanged(
+                                                  value ?? false),
                                             );
                                         if (value ?? false) {
                                           context.read<PrivacyPolicyBloc>().add(
-                                                const PrivacyPolicyModalVisibilityChanged(true),
+                                                const PrivacyPolicyModalVisibilityChanged(
+                                                    true),
                                               );
                                         }
                                       },
@@ -179,14 +187,16 @@ class _LoginPageState extends State<LoginPage> {
                                       child: GestureDetector(
                                         onTap: () {
                                           context.read<PrivacyPolicyBloc>().add(
-                                                const PrivacyPolicyModalVisibilityChanged(true),
+                                                const PrivacyPolicyModalVisibilityChanged(
+                                                    true),
                                               );
                                         },
                                         child: Text(
                                           'Saya menyetujui Kebijakan Privasi',
                                           style: GoogleFonts.poppins(
                                             fontSize: 13,
-                                            color: Colors.black87,
+                                            color: AppTheme.getPrimaryTextColor(
+                                                context),
                                             height: 1.5,
                                           ),
                                         ),
@@ -212,7 +222,7 @@ class _LoginPageState extends State<LoginPage> {
                                         }
                                       },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
+                                  backgroundColor: AppTheme.primaryColor,
                                   foregroundColor: Colors.white,
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 16),

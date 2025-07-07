@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../../../core/presentation/theme/app_theme.dart';
 
 class KpiChartShimmer extends StatelessWidget {
   const KpiChartShimmer({Key? key}) : super(key: key);
@@ -23,13 +24,15 @@ class KpiChartShimmer extends StatelessWidget {
                   child: Stack(
                     children: [
                       Shimmer.fromColors(
-                        baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                        highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                        baseColor:
+                            isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                        highlightColor:
+                            isDark ? Colors.grey[700]! : Colors.grey[100]!,
                         child: Container(
                           decoration: const BoxDecoration(
                             shape: BoxShape.circle,
                             color: Colors.white,
-                          ), 
+                          ),
                         ),
                       ),
                       Center(
@@ -37,8 +40,12 @@ class KpiChartShimmer extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Shimmer.fromColors(
-                              baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                              highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                              baseColor: isDark
+                                  ? Colors.grey[800]!
+                                  : Colors.grey[300]!,
+                              highlightColor: isDark
+                                  ? Colors.grey[700]!
+                                  : Colors.grey[100]!,
                               child: Container(
                                 width: 60,
                                 height: 14,
@@ -50,8 +57,12 @@ class KpiChartShimmer extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Shimmer.fromColors(
-                              baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                              highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                              baseColor: isDark
+                                  ? Colors.grey[800]!
+                                  : Colors.grey[300]!,
+                              highlightColor: isDark
+                                  ? Colors.grey[700]!
+                                  : Colors.grey[100]!,
                               child: Container(
                                 width: 80,
                                 height: 24,
@@ -86,8 +97,12 @@ class KpiChartShimmer extends StatelessWidget {
                         child: Row(
                           children: [
                             Shimmer.fromColors(
-                              baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                              highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                              baseColor: isDark
+                                  ? Colors.grey[800]!
+                                  : Colors.grey[300]!,
+                              highlightColor: isDark
+                                  ? Colors.grey[700]!
+                                  : Colors.grey[100]!,
                               child: Container(
                                 width: 10,
                                 height: 10,
@@ -100,8 +115,12 @@ class KpiChartShimmer extends StatelessWidget {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Shimmer.fromColors(
-                                baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                                highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                                baseColor: isDark
+                                    ? Colors.grey[800]!
+                                    : Colors.grey[300]!,
+                                highlightColor: isDark
+                                    ? Colors.grey[700]!
+                                    : Colors.grey[100]!,
                                 child: Container(
                                   height: 12,
                                   decoration: BoxDecoration(
@@ -150,8 +169,10 @@ class KpiChartShimmer extends StatelessWidget {
                   Row(
                     children: [
                       Shimmer.fromColors(
-                        baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                        highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                        baseColor:
+                            isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                        highlightColor:
+                            isDark ? Colors.grey[700]! : Colors.grey[100]!,
                         child: Container(
                           width: 8,
                           height: 8,
@@ -164,8 +185,10 @@ class KpiChartShimmer extends StatelessWidget {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Shimmer.fromColors(
-                          baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                          highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                          baseColor:
+                              isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                          highlightColor:
+                              isDark ? Colors.grey[700]! : Colors.grey[100]!,
                           child: Container(
                             height: 12,
                             decoration: BoxDecoration(
@@ -182,8 +205,10 @@ class KpiChartShimmer extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Shimmer.fromColors(
-                        baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                        highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                        baseColor:
+                            isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                        highlightColor:
+                            isDark ? Colors.grey[700]! : Colors.grey[100]!,
                         child: Container(
                           width: 35,
                           height: 8,
@@ -195,8 +220,10 @@ class KpiChartShimmer extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Shimmer.fromColors(
-                        baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                        highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                        baseColor:
+                            isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                        highlightColor:
+                            isDark ? Colors.grey[700]! : Colors.grey[100]!,
                         child: Container(
                           width: 60,
                           height: 10,
@@ -208,8 +235,10 @@ class KpiChartShimmer extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Shimmer.fromColors(
-                        baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                        highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                        baseColor:
+                            isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                        highlightColor:
+                            isDark ? Colors.grey[700]! : Colors.grey[100]!,
                         child: Container(
                           width: 45,
                           height: 8,
@@ -221,8 +250,10 @@ class KpiChartShimmer extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Shimmer.fromColors(
-                        baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                        highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                        baseColor:
+                            isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                        highlightColor:
+                            isDark ? Colors.grey[700]! : Colors.grey[100]!,
                         child: Container(
                           width: 40,
                           height: 10,
@@ -237,7 +268,8 @@ class KpiChartShimmer extends StatelessWidget {
                   const SizedBox(height: 10),
                   Shimmer.fromColors(
                     baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                    highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                    highlightColor:
+                        isDark ? Colors.grey[700]! : Colors.grey[100]!,
                     child: Container(
                       height: 4,
                       decoration: BoxDecoration(
@@ -254,4 +286,4 @@ class KpiChartShimmer extends StatelessWidget {
       ],
     );
   }
-} 
+}

@@ -13,6 +13,7 @@ import '../../../schedule/presentation/bloc/schedule_event.dart';
 import '../../../schedule/presentation/bloc/schedule_state.dart';
 import '../../../schedule/presentation/pages/schedule_detail_page.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/presentation/theme/app_theme.dart';
 
 class SchedulePage extends StatefulWidget {
   const SchedulePage({Key? key}) : super(key: key);
@@ -355,7 +356,7 @@ Page: 1
             if (state is AuthAuthenticated) {
               return FloatingActionButton(
                 onPressed: () => _navigateToAddSchedule(),
-                backgroundColor: Theme.of(context).primaryColor,
+                backgroundColor: AppTheme.getPrimaryColor(context),
                 child: const Icon(Icons.add),
               );
             }
@@ -376,6 +377,7 @@ Page: 1
                       style: GoogleFonts.poppins(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
+                        color: AppTheme.getPrimaryTextColor(context),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -384,12 +386,14 @@ Page: 1
                     // Search Bar
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppTheme.getCardBackgroundColor(context),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!),
+                        border:
+                            Border.all(color: AppTheme.getBorderColor(context)),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: AppTheme.getSecondaryTextColor(context)
+                                .withOpacity(0.1),
                             blurRadius: 8,
                             spreadRadius: 1,
                             offset: const Offset(0, 2),
@@ -398,23 +402,26 @@ Page: 1
                       ),
                       child: TextField(
                         controller: _searchController,
-                        style: GoogleFonts.poppins(fontSize: 14),
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: AppTheme.getPrimaryTextColor(context),
+                        ),
                         decoration: InputDecoration(
                           hintText: l10n.searchHint,
                           hintStyle: GoogleFonts.poppins(
                             fontSize: 14,
-                            color: Colors.grey[400],
+                            color: AppTheme.getSecondaryTextColor(context),
                           ),
                           prefixIcon: Icon(
                             Icons.search,
-                            color: Colors.grey[400],
+                            color: AppTheme.getSecondaryTextColor(context),
                             size: 20,
                           ),
                           suffixIcon: _searchController.text.isNotEmpty
                               ? Container(
                                   margin: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.grey[200],
+                                    color: AppTheme.getSurfaceColor(context),
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
@@ -426,14 +433,15 @@ Page: 1
                                         _searchController.clear();
                                       });
                                     },
-                                    color: Colors.grey[600],
+                                    color:
+                                        AppTheme.getSecondaryTextColor(context),
                                   ),
                                 )
                               : null,
                           border: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(
                               vertical: 14, horizontal: 8),
-                          fillColor: Colors.white,
+                          fillColor: AppTheme.getCardBackgroundColor(context),
                           filled: true,
                         ),
                         onChanged: (value) {
@@ -559,7 +567,7 @@ Page: 1
           Icon(
             Icons.event_busy,
             size: 70,
-            color: Colors.grey[400],
+            color: AppTheme.getSecondaryTextColor(context),
           ),
           const SizedBox(height: 16),
           Text(
@@ -567,7 +575,7 @@ Page: 1
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              color: AppTheme.getPrimaryTextColor(context),
             ),
           ),
           const SizedBox(height: 8),
@@ -576,7 +584,7 @@ Page: 1
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: AppTheme.getSecondaryTextColor(context),
             ),
           ),
           const SizedBox(height: 20),
@@ -695,36 +703,36 @@ Page: 1
     final lowerDraft = draft.toLowerCase().trim();
 
     if (lowerDraft.contains('rejected')) {
-      return Colors.red.shade700;
+      return AppTheme.getErrorColor(context);
     }
 
     if (approved == 0) {
-      return Colors.orange.shade700;
+      return AppTheme.getWarningColor(context);
     }
 
     if (approved == 1) {
       // Jika status check-in adalah detail dan realisasi belum disetujui
       if (lowerStatus == 'detail' &&
           !ScheduleStatusHelper.isRealisasiApproved(realisasiApprove)) {
-        return Colors.orange.shade700;
+        return AppTheme.getWarningColor(context);
       }
 
       if (lowerStatus == 'check-out' || lowerStatus == 'selesai') {
         return ScheduleStatusHelper.isRealisasiApproved(realisasiApprove)
-            ? Colors.teal.shade700
-            : Colors.orange.shade700;
+            ? AppTheme.getTertiaryColor(context)
+            : AppTheme.getWarningColor(context);
       }
 
       if (lowerStatus == 'belum checkin') {
-        return Colors.blue.shade700;
+        return AppTheme.getPrimaryColor(context);
       }
 
       if (lowerStatus == 'check-in' || lowerStatus == 'belum checkout') {
-        return Colors.green.shade700;
+        return AppTheme.getSuccessColor(context);
       }
     }
 
-    return Colors.grey.shade700;
+    return AppTheme.getSecondaryTextColor(context);
   }
 
   String _getStatusText(
@@ -817,17 +825,20 @@ Page: 1
       duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: AppTheme.getCardBackgroundColor(context),
         borderRadius: BorderRadius.circular(16),
         border: lowerDraft.contains('rejected')
-            ? Border.all(color: Colors.red.shade200, width: 1.5)
-            : Border.all(
-                color: isDark ? Colors.grey.shade800 : Colors.grey.shade200),
+            ? Border.all(
+                color: AppTheme.getErrorColor(context).withOpacity(0.3),
+                width: 1.5)
+            : Border.all(color: AppTheme.getBorderColor(context)),
         boxShadow: [
           BoxShadow(
             color: lowerDraft.contains('rejected')
-                ? Colors.red.withOpacity(isDark ? 0.2 : 0.08)
-                : Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                ? AppTheme.getErrorColor(context)
+                    .withOpacity(isDark ? 0.2 : 0.08)
+                : AppTheme.getSecondaryTextColor(context)
+                    .withOpacity(isDark ? 0.3 : 0.05),
             blurRadius: 10,
             spreadRadius: 1,
             offset: const Offset(0, 3),
@@ -870,18 +881,17 @@ Page: 1
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               color: lowerDraft.contains('rejected')
-                                  ? Colors.red.shade50
-                                  : Theme.of(context)
-                                      .primaryColor
+                                  ? AppTheme.getErrorColor(context)
+                                      .withOpacity(isDark ? 0.2 : 0.1)
+                                  : AppTheme.getPrimaryColor(context)
                                       .withOpacity(isDark ? 0.2 : 0.1),
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
                                   color: lowerDraft.contains('rejected')
-                                      ? Colors.red.shade100
+                                      ? AppTheme.getErrorColor(context)
                                           .withOpacity(isDark ? 0.3 : 0.5)
-                                      : Theme.of(context)
-                                          .primaryColor
+                                      : AppTheme.getPrimaryColor(context)
                                           .withOpacity(isDark ? 0.3 : 0.15),
                                   blurRadius: 4,
                                   spreadRadius: 1,
@@ -892,8 +902,8 @@ Page: 1
                               Icons.person,
                               size: 18,
                               color: lowerDraft.contains('rejected')
-                                  ? Colors.red.shade700
-                                  : Theme.of(context).primaryColor,
+                                  ? AppTheme.getErrorColor(context)
+                                  : AppTheme.getPrimaryColor(context),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -925,8 +935,8 @@ Page: 1
                                     style: GoogleFonts.poppins(
                                       fontSize: 12,
                                       color: lowerDraft.contains('rejected')
-                                          ? Colors.red.shade700
-                                          : Colors.green.shade700,
+                                          ? AppTheme.getErrorColor(context)
+                                          : AppTheme.getSuccessColor(context),
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -975,9 +985,9 @@ Page: 1
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
+                    color: AppTheme.getSurfaceColor(context),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
+                    border: Border.all(color: AppTheme.getBorderColor(context)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -987,8 +997,8 @@ Page: 1
                         'Tanggal:',
                         schedule.tglVisit,
                         lowerDraft.contains('rejected')
-                            ? Colors.red.shade400
-                            : Colors.grey.shade600,
+                            ? AppTheme.getErrorColor(context)
+                            : AppTheme.getSecondaryTextColor(context),
                       ),
                       const SizedBox(height: 8),
                       _buildDetailRow(
@@ -997,7 +1007,7 @@ Page: 1
                         schedule.shift,
                         lowerDraft.contains('rejected')
                             ? Colors.red.shade400
-                            : Colors.grey.shade600,
+                            : AppTheme.getSecondaryTextColor(context),
                       ),
                       const SizedBox(height: 8),
                       _buildDetailRow(
@@ -1007,7 +1017,7 @@ Page: 1
                             ? schedule.namaSpesialis ?? '-'
                             : '-',
                         lowerDraft.contains('rejected')
-                            ? Colors.red.shade400
+                            ? AppTheme.getErrorColor(context)
                             : null,
                       ),
                     ],
@@ -1018,10 +1028,12 @@ Page: 1
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.05),
+                      color:
+                          AppTheme.getPrimaryColor(context).withOpacity(0.05),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Theme.of(context).primaryColor.withOpacity(0.2),
+                        color:
+                            AppTheme.getPrimaryColor(context).withOpacity(0.2),
                       ),
                     ),
                     child: Column(
@@ -1033,8 +1045,8 @@ Page: 1
                               Icons.medication,
                               size: 16,
                               color: lowerDraft.contains('rejected')
-                                  ? Colors.red.shade500
-                                  : Theme.of(context).primaryColor,
+                                  ? AppTheme.getErrorColor(context)
+                                  : AppTheme.getPrimaryColor(context),
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -1043,8 +1055,8 @@ Page: 1
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: lowerDraft.contains('rejected')
-                                    ? Colors.red.shade500
-                                    : Theme.of(context).primaryColor,
+                                    ? AppTheme.getErrorColor(context)
+                                    : AppTheme.getPrimaryColor(context),
                               ),
                             ),
                           ],
@@ -1062,20 +1074,21 @@ Page: 1
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: lowerDraft.contains('rejected')
-                                        ? Colors.white
-                                        : Colors.white,
+                                    color: AppTheme.getCardBackgroundColor(
+                                        context),
                                     borderRadius: BorderRadius.circular(6),
                                     border: Border.all(
                                       color: lowerDraft.contains('rejected')
-                                          ? Colors.red.shade300
-                                          : Theme.of(context)
-                                              .primaryColor
+                                          ? AppTheme.getErrorColor(context)
+                                              .withOpacity(0.3)
+                                          : AppTheme.getPrimaryColor(context)
                                               .withOpacity(0.3),
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.03),
+                                        color: AppTheme.getSecondaryTextColor(
+                                                context)
+                                            .withOpacity(0.03),
                                         blurRadius: 2,
                                         offset: const Offset(0, 1),
                                       ),
@@ -1086,8 +1099,8 @@ Page: 1
                                     style: GoogleFonts.poppins(
                                       fontSize: 12,
                                       color: lowerDraft.contains('rejected')
-                                          ? Colors.red.shade700
-                                          : Theme.of(context).primaryColor,
+                                          ? AppTheme.getErrorColor(context)
+                                          : AppTheme.getPrimaryColor(context),
                                     ),
                                   ),
                                 );
@@ -1103,7 +1116,7 @@ Page: 1
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: AppTheme.getSurfaceColor(context),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
@@ -1114,7 +1127,7 @@ Page: 1
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade700,
+                            color: AppTheme.getPrimaryTextColor(context),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -1122,7 +1135,7 @@ Page: 1
                           schedule.note,
                           style: GoogleFonts.poppins(
                             fontSize: 14,
-                            color: Colors.grey.shade600,
+                            color: AppTheme.getSecondaryTextColor(context),
                           ),
                         ),
                       ],
@@ -1139,15 +1152,14 @@ Page: 1
 
   Widget _buildDetailRow(IconData icon, String label, String value,
       [Color? customColor]) {
-    final textColor =
-        customColor ?? Theme.of(context).textTheme.bodyMedium?.color;
+    final textColor = customColor ?? AppTheme.getPrimaryTextColor(context);
 
     return Row(
       children: [
         Icon(
           icon,
           size: 16,
-          color: customColor ?? Theme.of(context).primaryColor,
+          color: customColor ?? AppTheme.getPrimaryColor(context),
         ),
         const SizedBox(width: 8),
         Text(
@@ -1176,22 +1188,21 @@ Page: 1
   Widget _buildFilterChip(String label) {
     final l10n = AppLocalizations.of(context)!;
     final isSelected = _selectedFilter == label;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     Color getFilterColor() {
       switch (label) {
         case 'Pending':
-          return Colors.orange.shade700;
+          return AppTheme.getWarningColor(context);
         case 'Check-in':
-          return Colors.blue.shade700;
+          return AppTheme.getPrimaryColor(context);
         case 'Check-out':
-          return Colors.green.shade700;
+          return AppTheme.getSuccessColor(context);
         case 'Selesai':
-          return Colors.teal.shade700;
+          return AppTheme.getTertiaryColor(context);
         case 'Ditolak':
-          return Colors.red.shade700;
+          return AppTheme.getErrorColor(context);
         default:
-          return Theme.of(context).primaryColor;
+          return AppTheme.getPrimaryColor(context);
       }
     }
 
@@ -1203,22 +1214,22 @@ Page: 1
         onSelected: (selected) {
           _onFilterSelected(selected ? label : l10n.filterAll);
         },
-        backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
+        backgroundColor: AppTheme.getSurfaceColor(context),
         selectedColor: getFilterColor().withOpacity(0.2),
         checkmarkColor: getFilterColor(),
         labelStyle: GoogleFonts.poppins(
           color: isSelected
               ? getFilterColor()
-              : isDark
-                  ? Colors.white
-                  : Colors.black87,
+              : AppTheme.getPrimaryTextColor(context),
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
           side: BorderSide(
-            color: isSelected ? getFilterColor() : Colors.transparent,
+            color: isSelected
+                ? getFilterColor()
+                : AppTheme.getBorderColor(context),
           ),
         ),
       ),
@@ -1232,7 +1243,7 @@ Page: 1
         OutlinedButton.icon(
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            side: BorderSide(color: Theme.of(context).primaryColor),
+            side: BorderSide(color: AppTheme.getPrimaryColor(context)),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
@@ -1241,14 +1252,14 @@ Page: 1
           icon: Icon(
             Icons.date_range,
             size: 20,
-            color: Theme.of(context).primaryColor,
+            color: AppTheme.getPrimaryColor(context),
           ),
           label: Text(
             _selectedDateRange != null
                 ? _formatRangeDate(_selectedDateRange!)
                 : 'Pilih Rentang Tanggal',
             style: TextStyle(
-              color: Theme.of(context).primaryColor,
+              color: AppTheme.getPrimaryColor(context),
               fontSize: 14,
             ),
           ),
@@ -1264,7 +1275,7 @@ Page: 1
                     Icon(
                       Icons.info_outline,
                       size: 16,
-                      color: Theme.of(context).primaryColor,
+                      color: AppTheme.getPrimaryColor(context),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -1272,7 +1283,7 @@ Page: 1
                         'Menampilkan jadwal:',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Theme.of(context).primaryColor,
+                          color: AppTheme.getPrimaryColor(context),
                         ),
                       ),
                     ),
@@ -1281,7 +1292,7 @@ Page: 1
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       onPressed: _clearDateRange,
-                      color: Theme.of(context).primaryColor,
+                      color: AppTheme.getPrimaryColor(context),
                     ),
                   ],
                 ),
@@ -1292,7 +1303,7 @@ Page: 1
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Theme.of(context).primaryColor,
+                      color: AppTheme.getPrimaryColor(context),
                     ),
                   ),
                 ),

@@ -96,13 +96,13 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
         listener: (context, state) {
           if (state is RealisasiVisitApproved) {
             setState(() => _isProcessing = false);
-            
+
             // Refresh data setelah approval berhasil
             context.read<RealisasiVisitBloc>().add(
-              GetRealisasiVisitsEvent(
-                idAtasan: widget.userId,
-              ),
-            );
+                  GetRealisasiVisitsEvent(
+                    idAtasan: widget.userId,
+                  ),
+                );
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -116,16 +116,17 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
             );
           } else if (state is RealisasiVisitLoaded) {
             // Data sudah diperbarui, sekarang kita bisa menutup halaman
-            Navigator.pop(context, true); // Pass true untuk menandakan perubahan berhasil
+            Navigator.pop(
+                context, true); // Pass true untuk menandakan perubahan berhasil
           } else if (state is RealisasiVisitRejected) {
             setState(() => _isProcessing = false);
-            
+
             // Refresh data setelah reject berhasil
             context.read<RealisasiVisitBloc>().add(
-              GetRealisasiVisitsEvent(
-                idAtasan: widget.userId,
-              ),
-            );
+                  GetRealisasiVisitsEvent(
+                    idAtasan: widget.userId,
+                  ),
+                );
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -204,7 +205,7 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
-                            color: Colors.grey.shade200,
+                            color: AppTheme.getBorderColor(context),
                             width: 1.5,
                           ),
                         ),
@@ -302,10 +303,11 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: Colors.grey.shade100,
+                                      color: AppTheme.getCardBackgroundColor(
+                                          context),
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
-                                        color: Colors.grey.shade300,
+                                        color: AppTheme.getBorderColor(context),
                                         width: 1,
                                       ),
                                     ),
@@ -314,7 +316,8 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                                       style: GoogleFonts.poppins(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500,
-                                        color: Colors.grey.shade700,
+                                        color: AppTheme.getSecondaryTextColor(
+                                            context),
                                       ),
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -337,7 +340,8 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                                       'Pilih semua jadwal yang tersedia',
                                       style: GoogleFonts.poppins(
                                         fontSize: 14,
-                                        color: Colors.grey.shade700,
+                                        color: AppTheme.getSecondaryTextColor(
+                                            context),
                                       ),
                                     ),
                                   ),
@@ -485,7 +489,7 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
           '$label: ',
           style: GoogleFonts.poppins(
             fontSize: 14,
-            color: Colors.grey[600],
+            color: AppTheme.getSecondaryTextColor(context),
           ),
         ),
         Text(
@@ -505,11 +509,12 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
       children: [
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.getCardBackgroundColor(context),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color:
-                  _isSearchFocused ? AppTheme.primaryColor : Colors.grey[300]!,
+              color: _isSearchFocused
+                  ? AppTheme.primaryColor
+                  : AppTheme.getBorderColor(context),
               width: _isSearchFocused ? 1.5 : 1,
             ),
             boxShadow: [
@@ -528,12 +533,13 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
               hintText: 'Cari nama dokter, tanggal, status...',
               hintStyle: GoogleFonts.poppins(
                 fontSize: 14,
-                color: Colors.grey[400],
+                color: AppTheme.getSecondaryTextColor(context),
               ),
               prefixIcon: Icon(
                 Icons.search,
-                color:
-                    _isSearchFocused ? AppTheme.primaryColor : Colors.grey[400],
+                color: _isSearchFocused
+                    ? AppTheme.primaryColor
+                    : AppTheme.getSecondaryTextColor(context),
                 size: 20,
               ),
               suffixIcon: _searchQuery.isNotEmpty
@@ -545,7 +551,7 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                           _searchQuery = '';
                         });
                       },
-                      color: Colors.grey[400],
+                      color: AppTheme.getSecondaryTextColor(context),
                     )
                   : null,
               border: InputBorder.none,
@@ -582,12 +588,14 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppTheme.primaryColor : Colors.white,
+                      color: isSelected
+                          ? AppTheme.primaryColor
+                          : AppTheme.getCardBackgroundColor(context),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isSelected
                             ? AppTheme.primaryColor
-                            : Colors.grey[300]!,
+                            : AppTheme.getBorderColor(context),
                       ),
                       boxShadow: isSelected
                           ? [
@@ -605,7 +613,9 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                         Icon(
                           filter['icon'],
                           size: 16,
-                          color: isSelected ? Colors.white : Colors.grey[600],
+                          color: isSelected
+                              ? Colors.white
+                              : AppTheme.getSecondaryTextColor(context),
                         ),
                         const SizedBox(width: 6),
                         Text(
@@ -614,7 +624,9 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                             fontSize: 14,
                             fontWeight:
                                 isSelected ? FontWeight.w600 : FontWeight.w400,
-                            color: isSelected ? Colors.white : Colors.grey[600],
+                            color: isSelected
+                                ? Colors.white
+                                : AppTheme.getSecondaryTextColor(context),
                           ),
                         ),
                       ],
@@ -703,11 +715,11 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: AppTheme.getCardBackgroundColor(context),
                   shape: BoxShape.circle,
                 ),
-                child:
-                    Icon(Icons.search_off, size: 60, color: Colors.grey[400]),
+                child: Icon(Icons.search_off,
+                    size: 60, color: AppTheme.getSecondaryTextColor(context)),
               ),
               const SizedBox(height: 16),
               Text(
@@ -715,7 +727,7 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
-                  color: Colors.grey[700],
+                  color: AppTheme.getPrimaryTextColor(context),
                 ),
               ),
               const SizedBox(height: 8),
@@ -723,7 +735,7 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                 'Coba kata kunci pencarian lain',
                 style: GoogleFonts.poppins(
                   fontSize: 16,
-                  color: Colors.grey[500],
+                  color: AppTheme.getSecondaryTextColor(context),
                 ),
               ),
               const SizedBox(height: 20),
@@ -882,11 +894,11 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
       duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.getCardBackgroundColor(context),
         borderRadius: AppTheme.borderRadiusSmall,
         border: isSelected
             ? Border.all(color: AppTheme.primaryColor, width: 2)
-            : Border.all(color: Colors.grey.shade200),
+            : Border.all(color: AppTheme.getBorderColor(context)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -960,14 +972,17 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                                 Row(
                                   children: [
                                     Icon(Icons.event,
-                                        size: 14, color: Colors.grey[600]),
+                                        size: 14,
+                                        color: AppTheme.getSecondaryTextColor(
+                                            context)),
                                     const SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
                                         'Tanggal: $formattedDate',
                                         style: GoogleFonts.poppins(
                                           fontSize: 14,
-                                          color: Colors.grey[600],
+                                          color: AppTheme.getSecondaryTextColor(
+                                              context),
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -990,9 +1005,9 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
+                    color: AppTheme.getBackgroundColor(context),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
+                    border: Border.all(color: AppTheme.getBorderColor(context)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1033,7 +1048,8 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                                     'Lokasi:',
                                     style: GoogleFonts.poppins(
                                       fontSize: 14,
-                                      color: Colors.grey[600],
+                                      color: AppTheme.getSecondaryTextColor(
+                                          context),
                                     ),
                                   ),
                                   Text(

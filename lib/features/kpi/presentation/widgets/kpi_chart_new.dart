@@ -5,6 +5,7 @@ import 'package:test_cbo/features/kpi/data/models/kpi_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:month_year_picker/month_year_picker.dart';
+import '../../../../core/presentation/theme/app_theme.dart';
 
 class KpiChartNew extends StatefulWidget {
   final List<KpiGrafik> kpiData;
@@ -151,14 +152,14 @@ class _KpiChartNewState extends State<KpiChartNew>
             Icon(
               Icons.bar_chart_outlined,
               size: 48,
-              color: Colors.grey[400],
+              color: AppTheme.getSecondaryTextColor(context),
             ),
             const SizedBox(height: 16),
             Text(
               'Data KPI tidak tersedia untuk periode ini',
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: Colors.grey[600],
+                color: AppTheme.getSecondaryTextColor(context),
               ),
               textAlign: TextAlign.center,
             ),
@@ -206,7 +207,8 @@ class _KpiChartNewState extends State<KpiChartNew>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey[300]!),
+                        border:
+                            Border.all(color: AppTheme.getBorderColor(context)),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -230,7 +232,8 @@ class _KpiChartNewState extends State<KpiChartNew>
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey[300]!),
+                      border:
+                          Border.all(color: AppTheme.getBorderColor(context)),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -244,10 +247,12 @@ class _KpiChartNewState extends State<KpiChartNew>
                             ),
                           ),
                           style: GoogleFonts.poppins(
-                              fontSize: 14, color: Colors.grey[600]),
+                              fontSize: 14,
+                              color: AppTheme.getSecondaryTextColor(context)),
                         ),
-                        const Icon(Icons.calendar_today,
-                            size: 18, color: Colors.grey),
+                        Icon(Icons.calendar_today,
+                            size: 18,
+                            color: AppTheme.getSecondaryTextColor(context)),
                       ],
                     ),
                   ),
@@ -582,7 +587,7 @@ class _KpiChartNewState extends State<KpiChartNew>
                             'Total\nNilai',
                             style: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: AppTheme.getSecondaryTextColor(context),
                               height: 1.2,
                             ),
                             textAlign: TextAlign.center,
@@ -629,7 +634,7 @@ class _KpiChartNewState extends State<KpiChartNew>
                   style: GoogleFonts.poppins(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[700],
+                    color: AppTheme.getPrimaryTextColor(context),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -682,13 +687,13 @@ class _KpiChartNewState extends State<KpiChartNew>
 
   Color _getAchievementColor(double achievement) {
     if (achievement >= 100) {
-      return Colors.green;
+      return AppTheme.getSuccessColor(context);
     } else if (achievement >= 80) {
-      return Colors.blue;
+      return AppTheme.getPrimaryColor(context);
     } else if (achievement >= 60) {
-      return Colors.orange;
+      return AppTheme.getWarningColor(context);
     } else {
-      return Colors.red;
+      return AppTheme.getErrorColor(context);
     }
   }
 

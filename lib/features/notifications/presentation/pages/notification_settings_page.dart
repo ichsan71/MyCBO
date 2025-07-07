@@ -10,12 +10,14 @@ import 'package:test_cbo/core/presentation/widgets/app_bar_widget.dart';
 import 'package:test_cbo/core/utils/logger.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:test_cbo/core/presentation/theme/app_theme.dart';
 
 class NotificationSettingsPage extends StatefulWidget {
   const NotificationSettingsPage({super.key});
 
   @override
-  State<NotificationSettingsPage> createState() => _NotificationSettingsPageState();
+  State<NotificationSettingsPage> createState() =>
+      _NotificationSettingsPageState();
 }
 
 class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
@@ -47,9 +49,10 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
           // Debug logging
           Logger.debug(_tag, 'Current state: ${state.runtimeType}');
           if (state is NotificationSettingsLoaded) {
-            Logger.debug(_tag, 'Settings loaded: checkout=${state.isCheckoutEnabled}, greeting=${state.isDailyGreetingEnabled}');
+            Logger.debug(_tag,
+                'Settings loaded: checkout=${state.isCheckoutEnabled}, greeting=${state.isDailyGreetingEnabled}');
           }
-          
+
           if (state is NotificationLoading) {
             return _buildShimmerLoading(context);
           }
@@ -64,13 +67,13 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                   Icon(
                     Icons.error_outline,
                     size: 48,
-                    color: Colors.red[300],
+                    color: AppTheme.getErrorColor(context),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     '${l10n.error}: ${state.message}',
                     style: GoogleFonts.poppins(
-                      color: Colors.red[700],
+                      color: AppTheme.getErrorColor(context),
                       fontSize: 16,
                     ),
                     textAlign: TextAlign.center,
@@ -78,7 +81,9 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      context.read<NotificationBloc>().add(const InitializeNotifications());
+                      context
+                          .read<NotificationBloc>()
+                          .add(const InitializeNotifications());
                     },
                     child: const Text('Coba Lagi'),
                   ),
@@ -112,7 +117,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
           context,
           l10n.notificationSettingsTitle,
           Icons.notifications_active,
-          Colors.orange,
+          AppTheme.getWarningColor(context),
           [
             _buildAnimatedSwitchTile(
               context,
@@ -189,7 +194,6 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
             //     }
             //   },
             // ),
-          
           ],
         ),
         const SizedBox(height: 16),
@@ -197,7 +201,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
           context,
           l10n.appearanceSettingsTitle,
           Icons.palette,
-          Colors.purple,
+          AppTheme.getPrimaryColor(context),
           [
             SwitchListTile(
               title: Text(
@@ -306,15 +310,15 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: value
-                        ? Theme.of(context)
-                            .primaryColor
-                            .withOpacity(0.1)
-                        : Colors.grey.withAlpha(51),
+                        ? AppTheme.getPrimaryColor(context).withOpacity(0.1)
+                        : AppTheme.getCardBackgroundColor(context),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     icon,
-                    color: value ? Theme.of(context).primaryColor : Colors.grey,
+                    color: value
+                        ? AppTheme.getPrimaryColor(context)
+                        : AppTheme.getSecondaryTextColor(context),
                     size: 20,
                   ),
                 ),
@@ -335,7 +339,11 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                         subtitle,
                         style: GoogleFonts.poppins(
                           fontSize: 14,
-                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.color
+                              ?.withOpacity(0.7),
                         ),
                       ),
                     ],
@@ -372,9 +380,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .primaryColor
-                        .withOpacity(0.1),
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -400,7 +406,11 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                         l10n.languageDesc,
                         style: GoogleFonts.poppins(
                           fontSize: 14,
-                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.color
+                              ?.withOpacity(0.7),
                         ),
                       ),
                     ],
@@ -445,9 +455,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .primaryColor
-                        .withOpacity(0.1),
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -473,7 +481,11 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                         subtitle,
                         style: GoogleFonts.poppins(
                           fontSize: 14,
-                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.color
+                              ?.withOpacity(0.7),
                         ),
                       ),
                     ],
@@ -489,15 +501,15 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
 
   Widget _buildShimmerLoading(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
+      baseColor: AppTheme.getSecondaryTextColor(context).withOpacity(0.3),
+      highlightColor: AppTheme.getCardBackgroundColor(context),
       child: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
           // Notification settings section shimmer
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppTheme.getCardBackgroundColor(context),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -530,14 +542,15 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                 // Shimmer items
                 for (int i = 0; i < 4; i++)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 8.0),
                     child: Row(
                       children: [
                         Container(
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppTheme.getBackgroundColor(context),
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
@@ -618,7 +631,8 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                 // Shimmer items
                 for (int i = 0; i < 2; i++)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 8.0),
                     child: Row(
                       children: [
                         Container(

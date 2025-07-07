@@ -375,7 +375,7 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
                       'Pilih BCO untuk melihat daftar jadwal',
                       style: GoogleFonts.poppins(
                         fontSize: 16,
-                        color: Colors.grey[600],
+                        color: AppTheme.getSecondaryTextColor(context),
                       ),
                     ),
                   ),
@@ -402,7 +402,7 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
                                   'Tidak ada data realisasi visit',
                                   style: GoogleFonts.poppins(
                                     fontSize: 16,
-                                    color: Colors.grey[600],
+                                    color: AppTheme.getSecondaryTextColor(context),
                                   ),
                                 ),
                               )
@@ -465,7 +465,7 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
                           textAlign: TextAlign.center,
                           style: GoogleFonts.poppins(
                             fontSize: 16,
-                            color: Colors.grey[600],
+                            color: AppTheme.getSecondaryTextColor(context),
                           ),
                         ),
                       ),
@@ -728,7 +728,7 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
           'Tidak ada data realisasi visit',
           style: GoogleFonts.poppins(
             fontSize: 16,
-            color: Colors.grey[600],
+            color: AppTheme.getSecondaryTextColor(context),
           ),
         ),
       );

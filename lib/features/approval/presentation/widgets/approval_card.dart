@@ -15,13 +15,16 @@ class ApprovalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey[200]!),
+        side: BorderSide(color: AppTheme.getBorderColor(context)),
       ),
       elevation: 0,
+      color: AppTheme.getCardBackgroundColor(context),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -41,7 +44,7 @@ class ApprovalCard extends StatelessWidget {
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.primaryColor,
+                            color: AppTheme.getPrimaryTextColor(context),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -51,7 +54,7 @@ class ApprovalCard extends StatelessWidget {
                           'Periode: ${approval.month}/${approval.year}',
                           style: GoogleFonts.poppins(
                             fontSize: 13,
-                            color: Colors.grey[600],
+                            color: AppTheme.getSecondaryTextColor(context),
                           ),
                         ),
                       ],
@@ -61,7 +64,9 @@ class ApprovalCard extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      color: isDark
+                          ? AppTheme.getPrimaryColor(context).withOpacity(0.2)
+                          : AppTheme.getPrimaryColor(context).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -69,7 +74,7 @@ class ApprovalCard extends StatelessWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                        color: AppTheme.primaryColor,
+                        color: AppTheme.getPrimaryColor(context),
                       ),
                     ),
                   ),
@@ -79,18 +84,21 @@ class ApprovalCard extends StatelessWidget {
               Row(
                 children: [
                   _buildInfoItem(
+                    context,
                     Icons.calendar_today,
                     'Total Jadwal',
                     approval.totalSchedule.toString(),
                   ),
                   const SizedBox(width: 24),
                   _buildInfoItem(
+                    context,
                     Icons.medical_services,
                     'Dokter',
                     approval.jumlahDokter,
                   ),
                   const SizedBox(width: 24),
                   _buildInfoItem(
+                    context,
                     Icons.local_hospital,
                     'Klinik',
                     approval.jumlahKlinik,
@@ -104,14 +112,15 @@ class ApprovalCard extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoItem(IconData icon, String label, String value) {
+  Widget _buildInfoItem(
+      BuildContext context, IconData icon, String label, String value) {
     return Expanded(
       child: Row(
         children: [
           Icon(
             icon,
             size: 16,
-            color: Colors.grey[600],
+            color: AppTheme.getSecondaryTextColor(context),
           ),
           const SizedBox(width: 4),
           Expanded(
@@ -122,13 +131,14 @@ class ApprovalCard extends StatelessWidget {
                   label,
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: AppTheme.getSecondaryTextColor(context),
                   ),
                 ),
                 Text(
                   value,
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w500,
+                    color: AppTheme.getPrimaryTextColor(context),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

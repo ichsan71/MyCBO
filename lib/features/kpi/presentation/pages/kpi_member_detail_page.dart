@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../domain/entities/kpi_member.dart';
 import '../widgets/kpi_chart_new.dart';
 import '../../../../core/presentation/widgets/app_bar_widget.dart';
+import '../../../../core/presentation/theme/app_theme.dart';
 
 class KpiMemberDetailPage extends StatefulWidget {
   final KpiMember kpiMember;
@@ -207,7 +208,7 @@ class _KpiMemberDetailPageState extends State<KpiMemberDetailPage> {
     final totalAchievement = _calculateTotalAchievement();
     final averageAchievement =
         totalAchievement / widget.kpiMember.grafik.length;
-    
+
     return Row(
       children: [
         Expanded(
@@ -268,7 +269,7 @@ class _KpiMemberDetailPageState extends State<KpiMemberDetailPage> {
             label,
             style: GoogleFonts.poppins(
               fontSize: 11,
-              color: Colors.grey[600],
+              color: AppTheme.getSecondaryTextColor(context),
             ),
             textAlign: TextAlign.center,
           ),
@@ -332,13 +333,13 @@ class _KpiMemberDetailPageState extends State<KpiMemberDetailPage> {
 
   Color _getAchievementColor(double achievement) {
     if (achievement >= 100) {
-      return Colors.green;
+      return AppTheme.getSuccessColor(context);
     } else if (achievement >= 80) {
-      return Colors.blue;
+      return AppTheme.getPrimaryColor(context);
     } else if (achievement >= 60) {
-      return Colors.orange;
+      return AppTheme.getWarningColor(context);
     } else {
-      return Colors.red;
+      return AppTheme.getErrorColor(context);
     }
   }
-} 
+}

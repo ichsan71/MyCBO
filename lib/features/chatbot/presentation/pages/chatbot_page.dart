@@ -13,6 +13,7 @@ import '../widgets/chat_feedback_widget.dart';
 import '../widgets/chat_message_widget.dart';
 import '../widgets/chat_question_selector.dart';
 import '../widgets/chat_typing_indicator.dart';
+import 'package:test_cbo/core/presentation/theme/app_theme.dart';
 
 class ChatbotPage extends StatefulWidget {
   const ChatbotPage({super.key});
@@ -150,13 +151,14 @@ class _ChatbotPageState extends State<ChatbotPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppTheme.getBackgroundColor(context),
       floatingActionButton: _buildScrollToBottomButton(),
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.getSurfaceColor(context),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: Icon(Icons.arrow_back,
+              color: AppTheme.getPrimaryTextColor(context)),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
@@ -197,14 +199,14 @@ class _ChatbotPageState extends State<ChatbotPage> {
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: AppTheme.getPrimaryTextColor(context),
                   ),
                 ),
                 Text(
                   'Asisten Virtual Anda',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: AppTheme.getSecondaryTextColor(context),
                   ),
                 ),
               ],
@@ -213,7 +215,8 @@ class _ChatbotPageState extends State<ChatbotPage> {
         ),
         actions: [
           PopupMenuButton<String>(
-            icon: const Icon(Icons.refresh, color: Colors.black87),
+            icon: Icon(Icons.refresh,
+                color: AppTheme.getPrimaryTextColor(context)),
             onSelected: (value) {
               switch (value) {
                 case 'refresh':

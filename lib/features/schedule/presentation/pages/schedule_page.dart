@@ -6,6 +6,7 @@ import '../bloc/schedule_event.dart';
 import '../bloc/schedule_state.dart';
 import '../widgets/schedule_card.dart';
 import 'package:intl/intl.dart';
+import 'package:test_cbo/core/presentation/theme/app_theme.dart';
 
 class SchedulePage extends StatefulWidget {
   final int userId;
@@ -142,9 +143,27 @@ class _SchedulePageState extends State<SchedulePage> {
       padding: const EdgeInsets.all(8.0),
       child: TextField(
         controller: _searchController,
-        decoration: const InputDecoration(
+        style: TextStyle(color: AppTheme.getPrimaryTextColor(context)),
+        decoration: InputDecoration(
           hintText: 'Search schedules...',
-          prefixIcon: Icon(Icons.search),
+          hintStyle: TextStyle(color: AppTheme.getSecondaryTextColor(context)),
+          prefixIcon: Icon(Icons.search,
+              color: AppTheme.getSecondaryTextColor(context)),
+          filled: true,
+          fillColor: AppTheme.getCardBackgroundColor(context),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: AppTheme.getBorderColor(context)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: AppTheme.getBorderColor(context)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide:
+                BorderSide(color: AppTheme.getPrimaryColor(context), width: 2),
+          ),
         ),
         onChanged: (value) {
           // Handle search

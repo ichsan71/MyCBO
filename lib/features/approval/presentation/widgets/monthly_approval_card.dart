@@ -23,7 +23,7 @@ class MonthlyApprovalCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey[200]!),
+        side: BorderSide(color: AppTheme.getBorderColor(context)),
       ),
       elevation: 0,
       child: InkWell(
@@ -55,7 +55,7 @@ class MonthlyApprovalCard extends StatelessWidget {
                           'Periode: $monthName ${approval.year}',
                           style: GoogleFonts.poppins(
                             fontSize: 13,
-                            color: Colors.grey[600],
+                            color: AppTheme.getSecondaryTextColor(context),
                           ),
                         ),
                       ],
@@ -83,18 +83,21 @@ class MonthlyApprovalCard extends StatelessWidget {
               Row(
                 children: [
                   _buildInfoItem(
+                    context,
                     Icons.calendar_today,
                     'Total Jadwal',
                     approval.totalSchedule.toString(),
                   ),
                   const SizedBox(width: 24),
                   _buildInfoItem(
+                    context,
                     Icons.medical_services,
                     'Dokter',
                     approval.jumlahDokter,
                   ),
                   const SizedBox(width: 24),
                   _buildInfoItem(
+                    context,
                     Icons.local_hospital,
                     'Klinik',
                     approval.jumlahKlinik,
@@ -108,14 +111,15 @@ class MonthlyApprovalCard extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoItem(IconData icon, String label, String value) {
+  Widget _buildInfoItem(
+      BuildContext context, IconData icon, String label, String value) {
     return Expanded(
       child: Row(
         children: [
           Icon(
             icon,
             size: 16,
-            color: Colors.grey[600],
+            color: AppTheme.getSecondaryTextColor(context),
           ),
           const SizedBox(width: 4),
           Expanded(
@@ -126,7 +130,7 @@ class MonthlyApprovalCard extends StatelessWidget {
                   label,
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: AppTheme.getSecondaryTextColor(context),
                   ),
                 ),
                 Text(

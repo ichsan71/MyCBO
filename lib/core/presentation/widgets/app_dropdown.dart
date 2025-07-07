@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_theme.dart';
 
 class AppDropdown<T> extends StatelessWidget {
   final String hintText;
@@ -57,10 +58,10 @@ class AppDropdown<T> extends StatelessWidget {
       isExpanded: isExpanded,
       isDense: isDense,
       icon: const Icon(Icons.arrow_drop_down),
-      dropdownColor: Colors.white,
+      dropdownColor: AppTheme.cardBackgroundColor,
       style: GoogleFonts.poppins(
         fontSize: 14,
-        color: Colors.black87,
+        color: AppTheme.primaryTextColor,
       ),
     );
   }

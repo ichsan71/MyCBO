@@ -16,6 +16,7 @@ import '../widgets/checkin_form.dart';
 import '../widgets/checkout_form.dart';
 import '../../../../core/presentation/widgets/shimmer_schedule_detail_loading.dart';
 import '../../../../core/presentation/widgets/success_message.dart';
+import 'package:test_cbo/core/presentation/theme/app_theme.dart';
 
 class ScheduleDetailPage extends StatefulWidget {
   final Schedule schedule;
@@ -92,7 +93,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
       scaffoldMessenger.showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: Colors.red,
+          backgroundColor: AppTheme.getErrorColor(context),
         ),
       );
     } else {
@@ -226,7 +227,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
       context: currentContext,
       isScrollControlled: true,
       enableDrag: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.getCardBackgroundColor(context),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -272,7 +273,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
       isScrollControlled: true,
       enableDrag: true,
       isDismissible: false,
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.getCardBackgroundColor(context),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -442,7 +443,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                 'scheduleTypeDisplay: $scheduleTypeDisplay');
 
             return Container(
-              color: theme.colorScheme.background,
+              color: AppTheme.getBackgroundColor(context),
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -451,7 +452,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                     _buildCard(
                       title: 'Informasi Jadwal',
                       icon: Icons.calendar_today,
-                      iconColor: theme.colorScheme.primary,
+                      iconColor: AppTheme.getPrimaryColor(context),
                       children: [
                         _buildDetailRow(
                           label: 'Tipe Schedule',
@@ -485,7 +486,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                     _buildCard(
                       title: 'Informasi Tujuan',
                       icon: Icons.person,
-                      iconColor: theme.colorScheme.secondary,
+                      iconColor: AppTheme.getSecondaryColor(context),
                       children: [
                         _buildDetailRow(
                           label: 'Tujuan',
@@ -513,15 +514,15 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                     _buildCard(
                       title: 'Informasi Produk',
                       icon: Icons.shopping_bag,
-                      iconColor: theme.colorScheme.tertiary,
+                      iconColor: AppTheme.getTertiaryColor(context),
                       children: [
                         if (widget.schedule.namaProduct != null &&
                             widget.schedule.namaProduct!.isNotEmpty) ...[
                           Text(
                             'Produk',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color:
-                                  theme.colorScheme.onSurface.withOpacity(0.6),
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: AppTheme.getSecondaryTextColor(context),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -535,12 +536,13 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 12, vertical: 8),
                                       decoration: BoxDecoration(
-                                        color: theme.colorScheme.primary
+                                        color: AppTheme.getPrimaryColor(context)
                                             .withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(20),
                                         border: Border.all(
-                                          color: theme.colorScheme.primary
-                                              .withOpacity(0.3),
+                                          color:
+                                              AppTheme.getPrimaryColor(context)
+                                                  .withOpacity(0.3),
                                           width: 1,
                                         ),
                                       ),
@@ -551,7 +553,8 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                                             Icon(
                                               Icons.medication,
                                               size: 16,
-                                              color: theme.colorScheme.primary,
+                                              color: AppTheme.getPrimaryColor(
+                                                  context),
                                             ),
                                             const SizedBox(width: 8),
                                             Flexible(
@@ -562,7 +565,8 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                                                   height: 1.2,
                                                   fontWeight: FontWeight.w500,
                                                   color:
-                                                      theme.colorScheme.primary,
+                                                      AppTheme.getPrimaryColor(
+                                                          context),
                                                 ),
                                                 overflow: TextOverflow.ellipsis,
                                               ),
@@ -584,9 +588,9 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                             widget.schedule.namaDivisi!.isNotEmpty) ...[
                           Text(
                             'Divisi',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color:
-                                  theme.colorScheme.onSurface.withOpacity(0.6),
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: AppTheme.getSecondaryTextColor(context),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -594,11 +598,11 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
-                              color:
-                                  theme.colorScheme.secondary.withOpacity(0.1),
+                              color: AppTheme.getSecondaryColor(context)
+                                  .withOpacity(0.1),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: theme.colorScheme.secondary
+                                color: AppTheme.getSecondaryColor(context)
                                     .withOpacity(0.3),
                                 width: 1,
                               ),
@@ -610,7 +614,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                                   Icon(
                                     Icons.category,
                                     size: 16,
-                                    color: theme.colorScheme.secondary,
+                                    color: AppTheme.getSecondaryColor(context),
                                   ),
                                   const SizedBox(width: 8),
                                   Flexible(
@@ -620,7 +624,8 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                                         fontSize: 13,
                                         height: 1.2,
                                         fontWeight: FontWeight.w500,
-                                        color: theme.colorScheme.secondary,
+                                        color:
+                                            AppTheme.getSecondaryColor(context),
                                       ),
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -641,7 +646,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                     _buildCard(
                       title: 'Catatan',
                       icon: Icons.note,
-                      iconColor: theme.colorScheme.primary,
+                      iconColor: AppTheme.getPrimaryColor(context),
                       children: [
                         _buildDetailRow(
                           label: 'Catatan',
@@ -692,10 +697,12 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                         margin: const EdgeInsets.symmetric(horizontal: 16),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.orange.shade50,
+                          color: AppTheme.getWarningColor(context)
+                              .withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Colors.orange.shade200,
+                            color: AppTheme.getWarningColor(context)
+                                .withOpacity(0.3),
                             width: 1,
                           ),
                         ),
@@ -704,12 +711,13 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.orange.shade100,
+                                color: AppTheme.getWarningColor(context)
+                                    .withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(
                                 Icons.warning_amber_rounded,
-                                color: Colors.orange.shade800,
+                                color: AppTheme.getWarningColor(context),
                                 size: 24,
                               ),
                             ),
@@ -723,7 +731,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                                     style: GoogleFonts.poppins(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 16,
-                                      color: Colors.orange.shade800,
+                                      color: AppTheme.getWarningColor(context),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -731,7 +739,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                                     'Jadwal ini masih menunggu persetujuan dari approver. Anda tidak dapat melakukan check-in sebelum jadwal disetujui.',
                                     style: GoogleFonts.poppins(
                                       fontSize: 14,
-                                      color: Colors.orange.shade700,
+                                      color: AppTheme.getWarningColor(context),
                                     ),
                                   ),
                                 ],
@@ -758,10 +766,12 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                         margin: const EdgeInsets.symmetric(horizontal: 16),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.orange.shade50,
+                          color: AppTheme.getWarningColor(context)
+                              .withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Colors.orange.shade200,
+                            color: AppTheme.getWarningColor(context)
+                                .withOpacity(0.3),
                             width: 1,
                           ),
                         ),
@@ -770,12 +780,13 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.orange.shade100,
+                                color: AppTheme.getWarningColor(context)
+                                    .withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(
                                 Icons.pending_outlined,
-                                color: Colors.orange.shade800,
+                                color: AppTheme.getWarningColor(context),
                                 size: 24,
                               ),
                             ),
@@ -789,7 +800,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                                     style: GoogleFonts.poppins(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 16,
-                                      color: Colors.orange.shade800,
+                                      color: AppTheme.getWarningColor(context),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -797,7 +808,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                                     'Realisasi kunjungan Anda sedang dalam proses persetujuan. Silakan tunggu hingga approver menyetujui realisasi kunjungan.',
                                     style: GoogleFonts.poppins(
                                       fontSize: 14,
-                                      color: Colors.orange.shade700,
+                                      color: AppTheme.getWarningColor(context),
                                     ),
                                   ),
                                 ],
@@ -824,7 +835,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                               : null,
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: theme.colorScheme.primary,
+                            backgroundColor: AppTheme.getPrimaryColor(context),
                             minimumSize: const Size(double.infinity, 50),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -869,7 +880,8 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                               : null,
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: theme.colorScheme.secondary,
+                            backgroundColor:
+                                AppTheme.getSecondaryColor(context),
                             minimumSize: const Size(double.infinity, 50),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -916,19 +928,13 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
     required Color iconColor,
     required List<Widget> children,
   }) {
-    final theme = Theme.of(context);
-    final TextStyle titleStyle = theme.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.bold,
-        ) ??
-        const TextStyle(fontWeight: FontWeight.bold);
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withValues(alpha: 50),
+        color: AppTheme.getCardBackgroundColor(context),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: theme.colorScheme.surface.withValues(alpha: 127),
+          color: AppTheme.getBorderColor(context),
         ),
       ),
       child: Column(
@@ -938,7 +944,14 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
             children: [
               Icon(icon, color: iconColor),
               const SizedBox(width: 8),
-              Text(title, style: titleStyle),
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.getPrimaryTextColor(context),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -953,28 +966,29 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
     required String value,
     required IconData icon,
   }) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-
-    final labelStyle = textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onSurface.withOpacity(0.6),
-        ) ??
-        TextStyle(
-          color: theme.colorScheme.onSurface.withOpacity(0.6),
-        );
-
-    final valueStyle = textTheme.titleMedium ?? const TextStyle();
-
     return Row(
       children: [
-        Icon(icon, size: 20, color: theme.colorScheme.primary),
+        Icon(icon, size: 20, color: AppTheme.getPrimaryColor(context)),
         const SizedBox(width: 8),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: labelStyle),
-              Text(value, style: valueStyle),
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: AppTheme.getSecondaryTextColor(context),
+                ),
+              ),
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: AppTheme.getPrimaryTextColor(context),
+                ),
+              ),
             ],
           ),
         ),
@@ -1009,24 +1023,24 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
     }
   }
 
-  Color _getStatusColor(String status) {
+  Color _getStatusColor(String status, BuildContext context) {
     switch (status) {
       case 'Ditolak':
-        return Colors.red.shade700;
+        return AppTheme.getErrorColor(context);
       case 'Menunggu Persetujuan':
-        return Colors.orange.shade700;
+        return AppTheme.getWarningColor(context);
       case 'Disetujui - Menunggu Check-in':
-        return Colors.blue.shade700;
+        return AppTheme.getPrimaryColor(context);
       case 'Disetujui - Menunggu Check-out':
-        return Colors.green.shade700;
+        return AppTheme.getSuccessColor(context);
       case 'Selesai':
-        return Colors.teal.shade700;
+        return AppTheme.getTertiaryColor(context);
       default:
-        return Colors.grey.shade700;
+        return AppTheme.getSecondaryTextColor(context);
     }
   }
 
-  Widget _buildStatusBadge(Schedule schedule) {
+  Widget _buildStatusBadge(Schedule schedule, BuildContext context) {
     final lowerStatus = schedule.statusCheckin.toLowerCase().trim();
     final lowerDraft = schedule.draft.toLowerCase().trim();
 
@@ -1037,13 +1051,13 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
     // Cek status ditolak
     if (lowerDraft.contains('rejected')) {
       statusText = 'Ditolak';
-      statusColor = Colors.red.shade700;
+      statusColor = AppTheme.getErrorColor(context);
       statusIcon = Icons.cancel_outlined;
     }
     // Cek status menunggu persetujuan
     else if (schedule.approved == 0) {
       statusText = 'Menunggu Persetujuan';
-      statusColor = Colors.orange.shade700;
+      statusColor = AppTheme.getWarningColor(context);
       statusIcon = Icons.pending_outlined;
     }
     // Untuk jadwal yang sudah disetujui
@@ -1055,7 +1069,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
           !ScheduleStatusHelper.isRealisasiApproved(
               schedule.realisasiApprove)) {
         statusText = 'Menunggu Persetujuan';
-        statusColor = Colors.orange.shade700;
+        statusColor = AppTheme.getWarningColor(context);
         statusIcon = Icons.pending_outlined;
       }
       // Jika sudah check-out atau selesai dan realisasi disetujui
@@ -1064,28 +1078,28 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
               lowerStatus == 'detail') &&
           ScheduleStatusHelper.isRealisasiApproved(schedule.realisasiApprove)) {
         statusText = 'Selesai';
-        statusColor = Colors.teal.shade700;
+        statusColor = AppTheme.getTertiaryColor(context);
         statusIcon = Icons.check_circle_outlined;
       }
       // Status check-in
       else if (lowerStatus == 'belum checkin') {
         statusText = 'Check-in';
-        statusColor = Colors.blue.shade700;
+        statusColor = AppTheme.getPrimaryColor(context);
         statusIcon = Icons.login_outlined;
       }
       // Status check-out
       else if (lowerStatus == 'check-in' || lowerStatus == 'belum checkout') {
         statusText = 'Check-out';
-        statusColor = Colors.green.shade700;
+        statusColor = AppTheme.getSuccessColor(context);
         statusIcon = Icons.logout_outlined;
       } else {
         statusText = schedule.statusCheckin;
-        statusColor = Colors.grey.shade700;
+        statusColor = AppTheme.getSecondaryTextColor(context);
         statusIcon = Icons.help_outline;
       }
     } else {
       statusText = schedule.statusCheckin;
-      statusColor = Colors.grey.shade700;
+      statusColor = AppTheme.getSecondaryTextColor(context);
       statusIcon = Icons.help_outline;
     }
 
@@ -1130,7 +1144,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
       return _buildWarningCard(
         'Jadwal ini sedang menunggu persetujuan.',
         'Anda tidak dapat melakukan check-in sebelum jadwal disetujui.',
-        Colors.orange.shade700,
+        AppTheme.getWarningColor(context),
       );
     }
     // Tampilkan warning untuk jadwal yang menunggu persetujuan realisasi
@@ -1142,7 +1156,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
       return _buildWarningCard(
         'Menunggu persetujuan realisasi kunjungan.',
         'Realisasi kunjungan Anda sedang dalam proses persetujuan.',
-        Colors.orange.shade700,
+        AppTheme.getWarningColor(context),
       );
     }
     // Tampilkan warning untuk jadwal yang ditolak
@@ -1152,7 +1166,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
         schedule.alasanReject?.isNotEmpty == true
             ? 'Alasan: ${schedule.alasanReject}'
             : 'Silakan hubungi approver Anda untuk informasi lebih lanjut.',
-        Colors.red.shade700,
+        AppTheme.getErrorColor(context),
       );
     }
 
@@ -1215,27 +1229,23 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
     required int approved,
     required IconData icon,
   }) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-
-    final labelStyle = textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onSurface.withOpacity(0.6),
-        ) ??
-        TextStyle(
-          color: theme.colorScheme.onSurface.withOpacity(0.6),
-        );
-
     return Row(
       children: [
-        Icon(icon, size: 20, color: theme.colorScheme.primary),
+        Icon(icon, size: 20, color: AppTheme.getPrimaryColor(context)),
         const SizedBox(width: 8),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: labelStyle),
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: AppTheme.getSecondaryTextColor(context),
+                ),
+              ),
               const SizedBox(height: 4),
-              _buildStatusBadge(widget.schedule),
+              _buildStatusBadge(widget.schedule, context),
             ],
           ),
         ),

@@ -62,16 +62,14 @@ class ScheduleTypeDisplay extends StatelessWidget {
             Icon(
               Icons.category,
               size: 16,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white70
-                  : Colors.grey[600],
+              color: AppTheme.getSecondaryTextColor(context),
             ),
             const SizedBox(width: 8),
             Text(
               'Tipe: ',
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: Colors.grey[600],
+                color: AppTheme.getSecondaryTextColor(context),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -80,7 +78,7 @@ class ScheduleTypeDisplay extends StatelessWidget {
                 displayName.isNotEmpty ? displayName : '-',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
-                  color: Colors.grey[800],
+                  color: AppTheme.getPrimaryTextColor(context),
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -447,14 +445,8 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
       child: Container(
         padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: AppTheme.getCardBackgroundColor(context),
+          boxShadow: AppTheme.defaultShadow,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -464,6 +456,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
+                color: AppTheme.getPrimaryTextColor(context),
               ),
             ),
             const SizedBox(height: 16),
@@ -480,7 +473,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
                             .totalSchedule
                             .toString(),
                     Icons.calendar_month,
-                    AppTheme.primaryColor,
+                    AppTheme.getPrimaryColor(context),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -495,7 +488,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
                             .jumlahDokter
                             .toString(),
                     Icons.medical_services,
-                    AppTheme.successColor,
+                    AppTheme.getSuccessColor(context),
                   ),
                 ),
               ],
@@ -513,10 +506,10 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
                       style: GoogleFonts.poppins(),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.successColor,
+                      backgroundColor: AppTheme.getSuccessColor(context),
                       foregroundColor: Colors.white,
                       disabledBackgroundColor:
-                          AppTheme.successColor.withOpacity(0.3),
+                          AppTheme.getSuccessColor(context).withOpacity(0.3),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -535,10 +528,10 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
                       style: GoogleFonts.poppins(),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.errorColor,
+                      backgroundColor: AppTheme.getErrorColor(context),
                       foregroundColor: Colors.white,
                       disabledBackgroundColor:
-                          AppTheme.errorColor.withOpacity(0.3),
+                          AppTheme.getErrorColor(context).withOpacity(0.3),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -556,10 +549,12 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
 
   Widget _buildInfoCard(
       String title, String value, IconData icon, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: isDark ? color.withOpacity(0.15) : color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: color.withOpacity(0.3),
@@ -580,7 +575,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
                 title,
                 style: GoogleFonts.poppins(
                   fontSize: 14,
-                  color: Colors.grey[600],
+                  color: AppTheme.getSecondaryTextColor(context),
                 ),
               ),
             ],
@@ -618,7 +613,8 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
                 _isLoadingDetails
                     ? 'Memuat detail persetujuan...'
                     : 'Memuat...',
-                style: GoogleFonts.poppins(color: Colors.grey[600]),
+                style: GoogleFonts.poppins(
+                    color: AppTheme.getSecondaryTextColor(context)),
               ),
             ],
           ),
@@ -844,7 +840,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
                       state.message,
                       style: GoogleFonts.poppins(),
                     ),
-                    backgroundColor: AppTheme.errorColor,
+                    backgroundColor: AppTheme.getErrorColor(context),
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -865,7 +861,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
                       state.message,
                       style: GoogleFonts.poppins(),
                     ),
-                    backgroundColor: AppTheme.errorColor,
+                    backgroundColor: AppTheme.getErrorColor(context),
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -877,7 +873,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
           ),
         ],
         child: Container(
-          color: Colors.grey[50],
+          color: AppTheme.getBackgroundColor(context),
           child: CustomScrollView(
             slivers: [
               _buildHeaderSection(),

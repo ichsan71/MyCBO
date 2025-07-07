@@ -56,7 +56,7 @@ class _MonthlyApprovalTabState extends State<MonthlyApprovalTab> {
                           _handleBulkReject(context);
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
+                          backgroundColor: AppTheme.errorColor,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         icon: const Icon(Icons.cancel),
@@ -95,7 +95,7 @@ class _MonthlyApprovalTabState extends State<MonthlyApprovalTab> {
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: BorderSide(color: AppTheme.borderColor),
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -175,7 +175,7 @@ class _MonthlyApprovalTabState extends State<MonthlyApprovalTab> {
                             'Pilih jadwal yang akan di-join',
                             style: GoogleFonts.poppins(
                               fontSize: 13,
-                              color: Colors.grey[600],
+                              color: AppTheme.secondaryTextColor,
                               fontStyle: FontStyle.italic,
                             ),
                           ),
@@ -252,9 +252,10 @@ class _MonthlyApprovalTabState extends State<MonthlyApprovalTab> {
 
                             if (selectedIds.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Pilih minimal satu jadwal'),
-                                  backgroundColor: Colors.red,
+                                SnackBar(
+                                  content:
+                                      const Text('Pilih minimal satu jadwal'),
+                                  backgroundColor: AppTheme.errorColor,
                                 ),
                               );
                               return;
@@ -262,10 +263,10 @@ class _MonthlyApprovalTabState extends State<MonthlyApprovalTab> {
 
                             if (_isJoinVisit && selectedIds.length > 1) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
+                                SnackBar(
+                                  content: const Text(
                                       'Untuk Join Visit, pilih hanya satu jadwal'),
-                                  backgroundColor: Colors.red,
+                                  backgroundColor: AppTheme.errorColor,
                                 ),
                               );
                               return;
@@ -339,14 +340,14 @@ class _MonthlyApprovalTabState extends State<MonthlyApprovalTab> {
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         children: [
-          Icon(icon, size: 14, color: Colors.grey[600]),
+          Icon(icon, size: 14, color: AppTheme.secondaryTextColor),
           const SizedBox(width: 4),
           Expanded(
             child: Text(
               text,
               style: GoogleFonts.poppins(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: AppTheme.secondaryTextColor,
               ),
             ),
           ),

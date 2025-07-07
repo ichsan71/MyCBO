@@ -9,6 +9,7 @@ import '../../../../core/presentation/widgets/app_bar_widget.dart';
 import '../../../../core/presentation/widgets/app_button.dart';
 import '../../../../core/presentation/widgets/shimmer_loading.dart';
 import '../../data/models/kpi_model.dart';
+import '../../../../core/presentation/theme/app_theme.dart';
 
 class KpiMemberPage extends StatefulWidget {
   const KpiMemberPage({Key? key}) : super(key: key);
@@ -112,7 +113,7 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
                           state.message,
                           style: GoogleFonts.poppins(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: AppTheme.getSecondaryTextColor(context),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -135,14 +136,14 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
                           Icon(
                             Icons.bar_chart_outlined,
                             size: 64,
-                            color: Colors.grey[400],
+                            color: AppTheme.getSecondaryTextColor(context),
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'Tidak ada data KPI Anggota',
                             style: GoogleFonts.poppins(
                               fontSize: 16,
-                              color: Colors.grey[600],
+                              color: AppTheme.getSecondaryTextColor(context),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -150,7 +151,7 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
                             'untuk periode ${DateFormat('MMMM yyyy', 'id_ID').format(DateTime(int.parse(_currentYear), int.parse(_currentMonth)))}',
                             style: GoogleFonts.poppins(
                               fontSize: 14,
-                              color: Colors.grey[500],
+                              color: AppTheme.getSecondaryTextColor(context),
                             ),
                           ),
                         ],
@@ -219,7 +220,7 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
                               'Kode Rayon',
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: AppTheme.getSecondaryTextColor(context),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -289,7 +290,7 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
         Icon(
           icon,
           size: 16,
-          color: Colors.grey[600],
+          color: AppTheme.getSecondaryTextColor(context),
         ),
         const SizedBox(width: 8),
         Column(
@@ -299,7 +300,7 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
               label,
               style: GoogleFonts.poppins(
                 fontSize: 11,
-                color: Colors.grey[500],
+                color: AppTheme.getSecondaryTextColor(context),
               ),
             ),
             Text(
@@ -307,7 +308,7 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
+                color: AppTheme.getPrimaryTextColor(context),
               ),
             ),
           ],
@@ -353,7 +354,7 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(color: AppTheme.getBorderColor(context)),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -432,15 +433,15 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
 
   Color _getCategoryColor(double value) {
     if (value >= 91) {
-      return Colors.green;
+      return AppTheme.getSuccessColor(context);
     } else if (value >= 76) {
-      return Colors.blue;
+      return AppTheme.getPrimaryColor(context);
     } else if (value >= 66) {
-      return Colors.yellow.shade700;
+      return AppTheme.getWarningColor(context);
     } else if (value >= 51) {
-      return Colors.orange;
+      return AppTheme.getWarningColor(context);
     } else {
-      return Colors.red;
+      return AppTheme.getErrorColor(context);
     }
   }
 
