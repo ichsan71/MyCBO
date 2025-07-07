@@ -201,7 +201,8 @@ class RealisasiVisitRemoteDataSourceImpl
   }
 
   @override
-  Future<List<RealisasiVisitGMModel>> getRealisasiVisitsGMDetails(int idBCO) async {
+  Future<List<RealisasiVisitGMModel>> getRealisasiVisitsGMDetails(
+      int idBCO) async {
     try {
       final token = sharedPreferences.getString(Constants.tokenKey);
       if (token == null) {
@@ -296,8 +297,8 @@ class RealisasiVisitRemoteDataSourceImpl
       Logger.info(_tag, 'URL: $uri');
 
       final formData = {
-        'id_realisasi_visit': idRealisasiVisit.toString(),
-        'id_user': idUser.toString(),
+        'id_atasan': idUser.toString(),
+        'id_schedule': json.encode(['$idRealisasiVisit']),
       };
 
       Logger.info(_tag, 'Form Data: $formData');
@@ -316,7 +317,15 @@ class RealisasiVisitRemoteDataSourceImpl
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         Logger.info(_tag, 'Approve response data: $data');
-        return data['message'] ?? 'Realisasi visit berhasil disetujui';
+
+        if (data['success'] == true) {
+          return data['message'] ?? 'Realisasi visit berhasil disetujui';
+        } else {
+          // Jika success = false, lempar exception dengan pesan error dari API
+          throw ServerException(
+            message: data['message'] ?? 'Gagal menyetujui realisasi visit',
+          );
+        }
       } else if (response.statusCode == 401) {
         Logger.error(_tag, 'Unauthorized: 401');
         throw UnauthorizedException(message: 'Unauthorized');
@@ -358,8 +367,8 @@ class RealisasiVisitRemoteDataSourceImpl
       Logger.info(_tag, 'URL: $uri');
 
       final formData = {
-        'id_realisasi_visit': idRealisasiVisit.toString(),
-        'id_user': idUser.toString(),
+        'id_atasan': idUser.toString(),
+        'id_schedule': json.encode(['$idRealisasiVisit']),
         'reason': reason,
       };
 
@@ -378,7 +387,15 @@ class RealisasiVisitRemoteDataSourceImpl
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return data['message'] ?? 'Realisasi visit berhasil ditolak';
+
+        if (data['success'] == true) {
+          return data['message'] ?? 'Realisasi visit berhasil ditolak';
+        } else {
+          // Jika success = false, lempar exception dengan pesan error dari API
+          throw ServerException(
+            message: data['message'] ?? 'Gagal menolak realisasi visit',
+          );
+        }
       } else if (response.statusCode == 401) {
         Logger.error(_tag, 'Unauthorized: 401');
         throw UnauthorizedException(message: 'Unauthorized');

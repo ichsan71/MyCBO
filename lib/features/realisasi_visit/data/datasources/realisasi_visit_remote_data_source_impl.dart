@@ -8,7 +8,8 @@ import '../models/realisasi_visit_gm_model.dart';
 import '../models/realisasi_visit_model.dart';
 import 'realisasi_visit_remote_data_source.dart';
 
-class RealisasiVisitRemoteDataSourceImpl implements RealisasiVisitRemoteDataSource {
+class RealisasiVisitRemoteDataSourceImpl
+    implements RealisasiVisitRemoteDataSource {
   final http.Client client;
   final String baseUrl;
   final SharedPreferences sharedPreferences;
@@ -61,7 +62,8 @@ class RealisasiVisitRemoteDataSourceImpl implements RealisasiVisitRemoteDataSour
         );
       }
     } catch (e) {
-      Logger.error('realisasi_visit_remote_ds', 'Error getting realisasi visits: $e');
+      Logger.error(
+          'realisasi_visit_remote_ds', 'Error getting realisasi visits: $e');
       if (e is ServerException || e is UnauthorizedException) rethrow;
       throw ServerException(message: e.toString());
     }
@@ -109,14 +111,16 @@ class RealisasiVisitRemoteDataSourceImpl implements RealisasiVisitRemoteDataSour
         );
       }
     } catch (e) {
-      Logger.error('realisasi_visit_remote_ds', 'Error getting GM realisasi visits: $e');
+      Logger.error(
+          'realisasi_visit_remote_ds', 'Error getting GM realisasi visits: $e');
       if (e is ServerException || e is UnauthorizedException) rethrow;
       throw ServerException(message: e.toString());
     }
   }
 
   @override
-  Future<List<RealisasiVisitGMModel>> getRealisasiVisitsGMDetails(int idBCO) async {
+  Future<List<RealisasiVisitGMModel>> getRealisasiVisitsGMDetails(
+      int idBCO) async {
     try {
       final token = sharedPreferences.getString(Constants.tokenKey);
       if (token == null) {
@@ -131,35 +135,48 @@ class RealisasiVisitRemoteDataSourceImpl implements RealisasiVisitRemoteDataSour
         },
       );
 
-      Logger.info('realisasi_visit_remote_ds', '=== API Kedua - Detail BCO ===');
-      Logger.info('realisasi_visit_remote_ds', 'URL: $baseUrl/list-approval-gm-all/$idBCO');
-      Logger.info('realisasi_visit_remote_ds', 'Response status: ${response.statusCode}');
-      Logger.info('realisasi_visit_remote_ds', 'Response body: ${response.body}');
+      Logger.info(
+          'realisasi_visit_remote_ds', '=== API Kedua - Detail BCO ===');
+      Logger.info('realisasi_visit_remote_ds',
+          'URL: $baseUrl/list-approval-gm-all/$idBCO');
+      Logger.info('realisasi_visit_remote_ds',
+          'Response status: ${response.statusCode}');
+      Logger.info(
+          'realisasi_visit_remote_ds', 'Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = json.decode(response.body);
-        Logger.info('realisasi_visit_remote_ds', 'Success: ${jsonResponse['success']}');
-        Logger.info('realisasi_visit_remote_ds', 'Message: ${jsonResponse['message']}');
-        
+        Logger.info(
+            'realisasi_visit_remote_ds', 'Success: ${jsonResponse['success']}');
+        Logger.info(
+            'realisasi_visit_remote_ds', 'Message: ${jsonResponse['message']}');
+
         if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
           final data = jsonResponse['data'];
-          Logger.info('realisasi_visit_remote_ds', 'Data type: ${data.runtimeType}');
+          Logger.info(
+              'realisasi_visit_remote_ds', 'Data type: ${data.runtimeType}');
           Logger.info('realisasi_visit_remote_ds', 'Data content: $data');
-          
+
           if (data is List) {
-            final List<RealisasiVisitGMModel> models = List<RealisasiVisitGMModel>.from(
+            final List<RealisasiVisitGMModel> models =
+                List<RealisasiVisitGMModel>.from(
               data.map((x) => RealisasiVisitGMModel.fromJson(x)),
             );
-            
-            Logger.info('realisasi_visit_remote_ds', 'Number of models: ${models.length}');
+
+            Logger.info('realisasi_visit_remote_ds',
+                'Number of models: ${models.length}');
             for (var i = 0; i < models.length; i++) {
               Logger.info('realisasi_visit_remote_ds', 'Model $i:');
-              Logger.info('realisasi_visit_remote_ds', '  - ID: ${models[i].id}');
-              Logger.info('realisasi_visit_remote_ds', '  - Name: ${models[i].name}');
-              Logger.info('realisasi_visit_remote_ds', '  - Role: ${models[i].roleUsers}');
-              Logger.info('realisasi_visit_remote_ds', '  - Details count: ${models[i].details.length}');
+              Logger.info(
+                  'realisasi_visit_remote_ds', '  - ID: ${models[i].id}');
+              Logger.info(
+                  'realisasi_visit_remote_ds', '  - Name: ${models[i].name}');
+              Logger.info('realisasi_visit_remote_ds',
+                  '  - Role: ${models[i].roleUsers}');
+              Logger.info('realisasi_visit_remote_ds',
+                  '  - Details count: ${models[i].details.length}');
             }
-            
+
             return models;
           } else {
             // If the response is a single object, wrap it in a list
@@ -167,7 +184,8 @@ class RealisasiVisitRemoteDataSourceImpl implements RealisasiVisitRemoteDataSour
             Logger.info('realisasi_visit_remote_ds', 'Single model data');
             Logger.info('realisasi_visit_remote_ds', '  - ID: ${model.id}');
             Logger.info('realisasi_visit_remote_ds', '  - Name: ${model.name}');
-            Logger.info('realisasi_visit_remote_ds', '  - Details count: ${model.details.length}');
+            Logger.info('realisasi_visit_remote_ds',
+                '  - Details count: ${model.details.length}');
             return [model];
           }
         } else {
@@ -201,21 +219,22 @@ class RealisasiVisitRemoteDataSourceImpl implements RealisasiVisitRemoteDataSour
       }
 
       final response = await client.post(
-        Uri.parse('$baseUrl/approve-realisasi-visit'),
+        Uri.parse('$baseUrl/realisasi-visit-approved/'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
         body: json.encode({
-          'id_realisasi_visit': idRealisasiVisit.toString(),
-          'id_user': idUser.toString(),
+          'id_atasan': idUser.toString(),
+          'id_schedule': ['$idRealisasiVisit'],
         }),
       );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = json.decode(response.body);
         if (jsonResponse['success'] == true) {
-          return jsonResponse['message'] ?? 'Realisasi visit berhasil disetujui';
+          return jsonResponse['message'] ??
+              'Realisasi visit berhasil disetujui';
         } else {
           throw ServerException(
             message: jsonResponse['message'] ?? 'Unknown error occurred',
@@ -229,7 +248,8 @@ class RealisasiVisitRemoteDataSourceImpl implements RealisasiVisitRemoteDataSour
         );
       }
     } catch (e) {
-      Logger.error('realisasi_visit_remote_ds', 'Error approving realisasi visit: $e');
+      Logger.error(
+          'realisasi_visit_remote_ds', 'Error approving realisasi visit: $e');
       if (e is ServerException || e is UnauthorizedException) rethrow;
       throw ServerException(message: e.toString());
     }
@@ -254,8 +274,8 @@ class RealisasiVisitRemoteDataSourceImpl implements RealisasiVisitRemoteDataSour
           'Authorization': 'Bearer $token',
         },
         body: json.encode({
-          'id_realisasi_visit': idRealisasiVisit,
-          'id_user': idUser,
+          'id_atasan': idUser.toString(),
+          'id_schedule': ['$idRealisasiVisit'],
           'reason': reason,
         }),
       );
@@ -281,4 +301,4 @@ class RealisasiVisitRemoteDataSourceImpl implements RealisasiVisitRemoteDataSour
       throw ServerException(message: e.toString());
     }
   }
-} 
+}

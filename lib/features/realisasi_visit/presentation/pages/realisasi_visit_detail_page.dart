@@ -96,6 +96,14 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
         listener: (context, state) {
           if (state is RealisasiVisitApproved) {
             setState(() => _isProcessing = false);
+            
+            // Refresh data setelah approval berhasil
+            context.read<RealisasiVisitBloc>().add(
+              GetRealisasiVisitsEvent(
+                idAtasan: widget.userId,
+              ),
+            );
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: const Text('Realisasi visit berhasil disetujui'),
@@ -106,9 +114,19 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                 ),
               ),
             );
-            Navigator.pop(context);
+          } else if (state is RealisasiVisitLoaded) {
+            // Data sudah diperbarui, sekarang kita bisa menutup halaman
+            Navigator.pop(context, true); // Pass true untuk menandakan perubahan berhasil
           } else if (state is RealisasiVisitRejected) {
             setState(() => _isProcessing = false);
+            
+            // Refresh data setelah reject berhasil
+            context.read<RealisasiVisitBloc>().add(
+              GetRealisasiVisitsEvent(
+                idAtasan: widget.userId,
+              ),
+            );
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: const Text('Realisasi visit berhasil ditolak'),
@@ -119,7 +137,6 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                 ),
               ),
             );
-            Navigator.pop(context);
           } else if (state is RealisasiVisitError) {
             setState(() => _isProcessing = false);
             ScaffoldMessenger.of(context).showSnackBar(

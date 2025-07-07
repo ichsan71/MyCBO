@@ -53,8 +53,8 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
       _loadRealisasiVisits();
     } else if (authState is AuthAuthenticated) {
       context.read<RealisasiVisitBloc>().add(
-        GetRealisasiVisitsEvent(idAtasan: authState.user.idUser),
-      );
+            GetRealisasiVisitsEvent(idAtasan: authState.user.idUser),
+          );
     }
   }
 
@@ -72,8 +72,8 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
       context.read<RealisasiVisitBloc>().add(
-        GetRealisasiVisitsGMEvent(idAtasan: authState.user.idUser),
-      );
+            GetRealisasiVisitsGMEvent(idAtasan: authState.user.idUser),
+          );
     }
   }
 
@@ -85,11 +85,11 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
       context.read<RealisasiVisitBloc>().add(
-        GetRealisasiVisitsGMDetailsEvent(
-          idBCO: bcoId,
-          idAtasan: authState.user.idUser,
-        ),
-      );
+            GetRealisasiVisitsGMDetailsEvent(
+              idBCO: bcoId,
+              idAtasan: authState.user.idUser,
+            ),
+          );
     }
   }
 
@@ -131,26 +131,30 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
     // Log current state for debugging
     Logger.info('realisasi_visit_page', '=== DROPDOWN STATE ===');
     Logger.info('realisasi_visit_page', 'Selected BCO ID: ${_selectedBCO?.id}');
-    Logger.info('realisasi_visit_page', 'Total BCOs in list: ${_gmList.length}');
-    
+    Logger.info(
+        'realisasi_visit_page', 'Total BCOs in list: ${_gmList.length}');
+
     // Create a map to track duplicate IDs
     final Map<int, bool> idMap = {};
     final List<RealisasiVisitGM> uniqueBCOs = [];
-    
+
     for (var bco in _gmList) {
       if (!idMap.containsKey(bco.id)) {
         idMap[bco.id] = true;
         uniqueBCOs.add(bco);
       } else {
-        Logger.error('realisasi_visit_page', 'Duplicate BCO ID found: ${bco.id}');
+        Logger.error(
+            'realisasi_visit_page', 'Duplicate BCO ID found: ${bco.id}');
       }
     }
-    
+
     Logger.info('realisasi_visit_page', 'Unique BCOs: ${uniqueBCOs.length}');
-    
+
     // If selected BCO is not in the unique list, reset it
-    if (_selectedBCO != null && !uniqueBCOs.any((bco) => bco.id == _selectedBCO!.id)) {
-      Logger.info('realisasi_visit_page', 'Selected BCO not found in unique list, resetting selection');
+    if (_selectedBCO != null &&
+        !uniqueBCOs.any((bco) => bco.id == _selectedBCO!.id)) {
+      Logger.info('realisasi_visit_page',
+          'Selected BCO not found in unique list, resetting selection');
       _selectedBCO = null;
     }
 
@@ -173,12 +177,14 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
             value: _selectedBCO?.id,
             isExpanded: true,
             items: uniqueBCOs.map((bco) {
-              Logger.info('realisasi_visit_page', 'Creating dropdown item for BCO: ${bco.id} - ${bco.name}');
+              Logger.info('realisasi_visit_page',
+                  'Creating dropdown item for BCO: ${bco.id} - ${bco.name}');
               return DropdownMenuItem<int>(
                 value: bco.id,
                 child: Text(
@@ -189,10 +195,13 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
               );
             }).toList(),
             onChanged: (int? value) {
-              Logger.info('realisasi_visit_page', 'Dropdown value changed to: $value');
+              Logger.info(
+                  'realisasi_visit_page', 'Dropdown value changed to: $value');
               if (value != null) {
-                final selectedBCO = uniqueBCOs.firstWhere((bco) => bco.id == value);
-                Logger.info('realisasi_visit_page', 'Found matching BCO: ${selectedBCO.name}');
+                final selectedBCO =
+                    uniqueBCOs.firstWhere((bco) => bco.id == value);
+                Logger.info('realisasi_visit_page',
+                    'Found matching BCO: ${selectedBCO.name}');
                 setState(() {
                   _selectedBCO = selectedBCO;
                   _gmDetailsList.clear();
@@ -245,8 +254,8 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
                 }
               } else if (authState is AuthAuthenticated) {
                 context.read<RealisasiVisitBloc>().add(
-                  GetRealisasiVisitsEvent(idAtasan: authState.user.idUser),
-                );
+                      GetRealisasiVisitsEvent(idAtasan: authState.user.idUser),
+                    );
               }
             },
           ),
@@ -255,51 +264,61 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
       body: BlocConsumer<RealisasiVisitBloc, RealisasiVisitState>(
         listener: (context, state) {
           Logger.info('realisasi_visit_page', '=== STATE CHANGED ===');
-          Logger.info('realisasi_visit_page', 'Current state: ${state.runtimeType}');
-          
+          Logger.info(
+              'realisasi_visit_page', 'Current state: ${state.runtimeType}');
+
           if (state is RealisasiVisitGMLoaded) {
             Logger.info('realisasi_visit_page', '=== API PERTAMA RESPONSE ===');
-            Logger.info('realisasi_visit_page', 'Received ${state.realisasiVisitsGM.length} BCOs');
+            Logger.info('realisasi_visit_page',
+                'Received ${state.realisasiVisitsGM.length} BCOs');
             for (var bco in state.realisasiVisitsGM) {
-              Logger.info('realisasi_visit_page', 'BCO in list: ${bco.name} (ID: ${bco.id})');
+              Logger.info('realisasi_visit_page',
+                  'BCO in list: ${bco.name} (ID: ${bco.id})');
             }
-            
+
             setState(() {
               _gmList = state.realisasiVisitsGM;
-              Logger.info('realisasi_visit_page', 'Updated _gmList length: ${_gmList.length}');
+              Logger.info('realisasi_visit_page',
+                  'Updated _gmList length: ${_gmList.length}');
             });
           } else if (state is RealisasiVisitGMDetailsLoaded) {
             Logger.info('realisasi_visit_page', '=== API KEDUA RESPONSE ===');
-            Logger.info('realisasi_visit_page', 'Selected BCO: ${_selectedBCO?.name} (ID: ${_selectedBCO?.id})');
-            Logger.info('realisasi_visit_page', 'Received ${state.realisasiVisitsGM.length} items');
-            
+            Logger.info('realisasi_visit_page',
+                'Selected BCO: ${_selectedBCO?.name} (ID: ${_selectedBCO?.id})');
+            Logger.info('realisasi_visit_page',
+                'Received ${state.realisasiVisitsGM.length} items');
+
             setState(() {
               _isLoadingDetails = false;
               _gmDetailsList.clear();
-              
+
               for (var item in state.realisasiVisitsGM) {
                 Logger.info('realisasi_visit_page', 'Processing item:');
                 Logger.info('realisasi_visit_page', '- ID: ${item.id}');
                 Logger.info('realisasi_visit_page', '- Name: ${item.name}');
-                Logger.info('realisasi_visit_page', '- Role: ${item.roleUsers}');
-                Logger.info('realisasi_visit_page', '- Details count: ${item.details.length}');
-                
-                _gmDetailsList.add(
-                  RealisasiVisit(
-                    idBawahan: item.id,
-                    namaBawahan: item.name,
-                    role: item.roleUsers,
-                    totalSchedule: item.jumlah.isNotEmpty ? item.jumlah.first.total : 0,
-                    jumlahDokter: _countDoctorsFromDetails(item.details),
-                    jumlahKlinik: _countClinicsFromDetails(item.details),
-                    totalTerrealisasi: item.jumlah.isNotEmpty ? item.jumlah.first.realisasi : '0',
-                    approved: 0,
-                    details: item.details,
-                  )
-                );
+                Logger.info(
+                    'realisasi_visit_page', '- Role: ${item.roleUsers}');
+                Logger.info('realisasi_visit_page',
+                    '- Details count: ${item.details.length}');
+
+                _gmDetailsList.add(RealisasiVisit(
+                  idBawahan: item.id,
+                  namaBawahan: item.name,
+                  role: item.roleUsers,
+                  totalSchedule:
+                      item.jumlah.isNotEmpty ? item.jumlah.first.total : 0,
+                  jumlahDokter: _countDoctorsFromDetails(item.details),
+                  jumlahKlinik: _countClinicsFromDetails(item.details),
+                  totalTerrealisasi: item.jumlah.isNotEmpty
+                      ? item.jumlah.first.realisasi
+                      : '0',
+                  approved: 0,
+                  details: item.details,
+                ));
               }
-              
-              Logger.info('realisasi_visit_page', 'Updated _gmDetailsList length: ${_gmDetailsList.length}');
+
+              Logger.info('realisasi_visit_page',
+                  'Updated _gmDetailsList length: ${_gmDetailsList.length}');
             });
           } else if (state is RealisasiVisitError) {
             setState(() {
@@ -309,7 +328,7 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
         },
         builder: (context, state) {
           Widget contentWidget;
-          
+
           if (isGM) {
             List<Widget> children = [
               _buildBCODropdown(),
@@ -412,8 +431,9 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
                       onPressed: () {
                         if (authState is AuthAuthenticated) {
                           context.read<RealisasiVisitBloc>().add(
-                            GetRealisasiVisitsEvent(idAtasan: authState.user.idUser),
-                          );
+                                GetRealisasiVisitsEvent(
+                                    idAtasan: authState.user.idUser),
+                              );
                         }
                       },
                     ),
@@ -456,8 +476,9 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
                         onRefresh: () async {
                           if (authState is AuthAuthenticated) {
                             context.read<RealisasiVisitBloc>().add(
-                              GetRealisasiVisitsEvent(idAtasan: authState.user.idUser),
-                            );
+                                  GetRealisasiVisitsEvent(
+                                      idAtasan: authState.user.idUser),
+                                );
                           }
                           return Future<void>.value();
                         },
@@ -472,14 +493,29 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => RealisasiVisitDetailPage(
+                                    builder: (context) =>
+                                        RealisasiVisitDetailPage(
                                       realisasiVisit: realisasiVisit,
-                                      userId: (context.read<AuthBloc>().state as AuthAuthenticated)
+                                      userId: (context.read<AuthBloc>().state
+                                              as AuthAuthenticated)
                                           .user
                                           .idUser,
                                     ),
                                   ),
-                                );
+                                ).then((result) {
+                                  // Jika ada perubahan (approval/reject berhasil), refresh data
+                                  if (result == true) {
+                                    final authState =
+                                        context.read<AuthBloc>().state;
+                                    if (authState is AuthAuthenticated) {
+                                      context.read<RealisasiVisitBloc>().add(
+                                            GetRealisasiVisitsEvent(
+                                              idAtasan: authState.user.idUser,
+                                            ),
+                                          );
+                                    }
+                                  }
+                                });
                               },
                             );
                           },
@@ -505,16 +541,19 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
 
   void _logDataState() {
     Logger.info('realisasi_visit_page', 'Showing data state');
-    Logger.info('realisasi_visit_page', 'Selected BCO details: ${_selectedBCO?.name} (${_selectedBCO?.id})');
-    Logger.info('realisasi_visit_page', 'Details list count: ${_gmDetailsList.length}');
+    Logger.info('realisasi_visit_page',
+        'Selected BCO details: ${_selectedBCO?.name} (${_selectedBCO?.id})');
+    Logger.info(
+        'realisasi_visit_page', 'Details list count: ${_gmDetailsList.length}');
   }
 
   Widget _buildBCOInfoCard() {
     if (_selectedBCO == null) return const SizedBox.shrink();
-    
+
     // Cek jika jumlah kosong atau total = 0
-    if (_selectedBCO!.jumlah.isEmpty || 
-        (_selectedBCO!.jumlah.isNotEmpty && _selectedBCO!.jumlah.first.total == 0)) {
+    if (_selectedBCO!.jumlah.isEmpty ||
+        (_selectedBCO!.jumlah.isNotEmpty &&
+            _selectedBCO!.jumlah.first.total == 0)) {
       return const SizedBox.shrink();
     }
 
@@ -530,14 +569,20 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
                   idBawahan: _selectedBCO!.id,
                   namaBawahan: _selectedBCO!.name,
                   role: _selectedBCO!.roleUsers,
-                  totalSchedule: _selectedBCO!.jumlah.isNotEmpty ? _selectedBCO!.jumlah.first.total : 0,
+                  totalSchedule: _selectedBCO!.jumlah.isNotEmpty
+                      ? _selectedBCO!.jumlah.first.total
+                      : 0,
                   jumlahDokter: _countDoctorsFromDetails(_selectedBCO!.details),
                   jumlahKlinik: _countClinicsFromDetails(_selectedBCO!.details),
-                  totalTerrealisasi: _selectedBCO!.jumlah.isNotEmpty ? _selectedBCO!.jumlah.first.realisasi : '0',
+                  totalTerrealisasi: _selectedBCO!.jumlah.isNotEmpty
+                      ? _selectedBCO!.jumlah.first.realisasi
+                      : '0',
                   approved: 0,
                   details: _selectedBCO!.details,
                 ),
-                userId: (context.read<AuthBloc>().state as AuthAuthenticated).user.idUser,
+                userId: (context.read<AuthBloc>().state as AuthAuthenticated)
+                    .user
+                    .idUser,
               ),
             ),
           );
@@ -606,7 +651,7 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
                     color: Colors.white24,
                   ),
                   // Statistik
-                  if (_selectedBCO!.jumlah.isNotEmpty) 
+                  if (_selectedBCO!.jumlah.isNotEmpty)
                     Expanded(
                       flex: 2,
                       child: Row(
@@ -669,11 +714,13 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
 
   Widget _buildRealisasiVisitList(List<RealisasiVisit> realisasiVisits) {
     Logger.info('realisasi_visit_page', '=== BUILDING LIST ===');
-    Logger.info('realisasi_visit_page', 'Items to display: ${realisasiVisits.length}');
-    
+    Logger.info(
+        'realisasi_visit_page', 'Items to display: ${realisasiVisits.length}');
+
     // Filter out items with total = 0
-    final filteredVisits = realisasiVisits.where((visit) => visit.totalSchedule > 0).toList();
-    
+    final filteredVisits =
+        realisasiVisits.where((visit) => visit.totalSchedule > 0).toList();
+
     if (filteredVisits.isEmpty) {
       Logger.info('realisasi_visit_page', 'No items to display');
       return Center(
@@ -687,7 +734,8 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
       );
     }
 
-    Logger.info('realisasi_visit_page', 'Building list with ${filteredVisits.length} items');
+    Logger.info('realisasi_visit_page',
+        'Building list with ${filteredVisits.length} items');
     return RefreshIndicator(
       onRefresh: () {
         if (_selectedBCO != null) {
@@ -700,7 +748,8 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
         itemCount: filteredVisits.length,
         itemBuilder: (context, index) {
           final realisasiVisit = filteredVisits[index];
-          Logger.info('realisasi_visit_page', 'Building item $index: ${realisasiVisit.namaBawahan}');
+          Logger.info('realisasi_visit_page',
+              'Building item $index: ${realisasiVisit.namaBawahan}');
           return RealisasiVisitCard(
             realisasiVisit: realisasiVisit,
             onTap: () {
@@ -709,9 +758,10 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
                 MaterialPageRoute(
                   builder: (context) => RealisasiVisitDetailPage(
                     realisasiVisit: realisasiVisit,
-                    userId: (context.read<AuthBloc>().state as AuthAuthenticated)
-                        .user
-                        .idUser,
+                    userId:
+                        (context.read<AuthBloc>().state as AuthAuthenticated)
+                            .user
+                            .idUser,
                   ),
                 ),
               );
