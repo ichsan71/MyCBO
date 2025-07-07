@@ -483,7 +483,7 @@ class _MonthlyApprovalTabState extends State<MonthlyApprovalTab> {
                     context.read<MonthlyApprovalBloc>().add(
                           SendMonthlyApproval(
                             scheduleIds: scheduleIds,
-                            scheduleJoinVisitIds: [], // No join visit for bulk reject
+                            scheduleJoinVisitIds: const [], // No join visit for bulk reject
                             userId: approval.idBawahan,
                             userAtasanId: approval.idBawahan,
                             isRejected: true,

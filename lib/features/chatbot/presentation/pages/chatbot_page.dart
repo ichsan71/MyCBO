@@ -104,19 +104,19 @@ class _ChatbotPageState extends State<ChatbotPage> {
     try {
       // Show loading indicator
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Row(
             children: [
-              const SizedBox(
+              SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               Text('Clearing cache and reloading...'),
             ],
           ),
-          duration: const Duration(seconds: 2),
+          duration: Duration(seconds: 2),
         ),
       );
 

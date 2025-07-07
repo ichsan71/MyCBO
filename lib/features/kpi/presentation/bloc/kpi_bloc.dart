@@ -130,8 +130,4 @@ class KpiBloc extends Bloc<KpiEvent, KpiState> {
     });
   }
 
-  @override
-  Future<void> close() {
-    return super.close();
-  }
 }

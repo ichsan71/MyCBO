@@ -22,7 +22,8 @@ class EditScheduleBloc extends Bloc<EditScheduleEvent, EditScheduleState> {
       emit(EditScheduleLoading());
       Logger.info('EditScheduleBloc', 'Loading edit schedule data...');
 
-      final result = await getEditScheduleData(Params(scheduleId: event.scheduleId));
+      final result =
+          await getEditScheduleData(Params(scheduleId: event.scheduleId));
 
       await result.fold(
         (failure) async {
@@ -50,11 +51,11 @@ class EditScheduleBloc extends Bloc<EditScheduleEvent, EditScheduleState> {
 
       // TODO: Implement save functionality
       // final result = await saveEditedSchedule(event.schedule);
-      
+
       emit(EditScheduleSaveSuccess());
     } catch (e) {
       Logger.error('EditScheduleBloc', 'Error saving schedule: $e');
       emit(EditScheduleError(e.toString()));
     }
   }
-} 
+}

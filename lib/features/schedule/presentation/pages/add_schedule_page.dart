@@ -333,7 +333,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
               product: _selectedProducts.map((p) => p.id.toString()).toList(),
               note: note,
               idUser: authState.user.idUser.toString(),
-              dokter: _selectedDoctor!.id!.toString(),
+              dokter: _selectedDoctor!.id.toString(),
               klinik: _selectedDestinationType == 'klinik'
                   ? _selectedDoctor!.nama
                   : '',

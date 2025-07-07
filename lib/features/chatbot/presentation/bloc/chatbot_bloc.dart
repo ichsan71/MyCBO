@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logger/logger.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../domain/entities/chat_message.dart';
-import '../../domain/entities/chat_feedback.dart';
 import '../../domain/usecases/get_chat_categories.dart';
 import '../../domain/usecases/get_questions_by_category.dart';
 import '../../domain/usecases/get_question_by_id.dart';

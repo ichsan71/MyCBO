@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/error/exceptions.dart';
 import '../models/chatbot_data_model.dart';
-import '../models/chat_category_model.dart';
-import '../models/chat_question_model.dart';
 import '../models/chat_feedback_model.dart';
 
 /// Abstract class defining the local data source interface

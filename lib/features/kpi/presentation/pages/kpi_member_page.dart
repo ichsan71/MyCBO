@@ -408,7 +408,7 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
           BoxShadow(
             color: color.withOpacity(0.2),
             blurRadius: 6,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),

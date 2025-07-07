@@ -307,7 +307,7 @@ class AddScheduleRepositoryImpl implements AddScheduleRepository {
       } catch (e) {
         Logger.error(
             _tag, 'Unexpected error when fetching daily schedules: $e');
-        return Left(ServerFailure(
+        return const Left(ServerFailure(
             message: 'Terjadi kesalahan saat mengambil jadwal harian'));
       }
     } else {
