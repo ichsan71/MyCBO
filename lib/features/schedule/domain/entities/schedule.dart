@@ -21,7 +21,7 @@ class Schedule extends Equatable {
   final String? namaDivisi;
   final int approved;
   final String? namaApprover;
-  final int? realisasiApprove;
+  final dynamic realisasiApprove;
   final int idUser;
   final List<String> productForIdDivisi;
   final List<String> productForIdSpesialis;
@@ -126,7 +126,7 @@ class Schedule extends Equatable {
     String? namaDivisi,
     int? approved,
     String? namaApprover,
-    int? realisasiApprove,
+    dynamic realisasiApprove,
     int? idUser,
     List<String>? productForIdDivisi,
     List<String>? productForIdSpesialis,

@@ -3,6 +3,23 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../domain/entities/schedule.dart';
 
 class ScheduleStatusHelper {
+  // Helper function to check if realisasi is approved
+  static bool isRealisasiApproved(dynamic realisasiApprove) {
+    if (realisasiApprove == null) return false;
+
+    // If it's an integer, check if it's 1
+    if (realisasiApprove is int) {
+      return realisasiApprove == 1;
+    }
+
+    // If it's a string, check if it's not empty (meaning it has been approved)
+    if (realisasiApprove is String) {
+      return realisasiApprove.trim().isNotEmpty;
+    }
+
+    return false;
+  }
+
   static String getStatusText(Schedule schedule) {
     final lowerStatus = schedule.statusCheckin.toLowerCase().trim();
     final lowerDraft = schedule.draft.toLowerCase().trim();
@@ -14,7 +31,7 @@ class ScheduleStatusHelper {
 
     // Jika jadwal sudah check-out tapi menunggu persetujuan realisasi
     if ((lowerStatus == 'check-out' || lowerStatus == 'selesai') &&
-        (schedule.realisasiApprove == null || schedule.realisasiApprove == 0)) {
+        !isRealisasiApproved(schedule.realisasiApprove)) {
       return 'Menunggu Persetujuan';
     }
 
@@ -28,7 +45,7 @@ class ScheduleStatusHelper {
           return 'Check-out';
         case 'check-out':
         case 'selesai':
-          return schedule.realisasiApprove == 1
+          return isRealisasiApproved(schedule.realisasiApprove)
               ? 'Selesai'
               : 'Menunggu Persetujuan';
       }

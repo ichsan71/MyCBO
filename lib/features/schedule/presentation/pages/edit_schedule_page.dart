@@ -135,7 +135,7 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
       } else {
         throw const FormatException('Unsupported date format');
       }
-      
+
       // Format the date as MM/dd/yyyy
       return DateFormat('MM/dd/yyyy').format(parsedDate);
     } catch (e) {
@@ -149,15 +149,15 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
     try {
       final parts = date.split('/');
       if (parts.length != 3) return false;
-      
+
       final month = int.parse(parts[0]);
       final day = int.parse(parts[1]);
       final year = int.parse(parts[2]);
-      
+
       if (month < 1 || month > 12) return false;
       if (day < 1 || day > 31) return false;
       if (year < 2000 || year > 2100) return false;
-      
+
       return true;
     } catch (e) {
       return false;
@@ -663,7 +663,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                             ),
                           ),
                           _spacer16,
-
                           AppCard(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -679,7 +678,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                             ),
                           ),
                           _spacer16,
-
                           AppCard(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -694,7 +692,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                             ),
                           ),
                           _spacer16,
-
                           AppCard(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -738,7 +735,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                             ),
                           ),
                           _spacer24,
-
                           Row(
                             children: [
                               const Icon(
@@ -757,7 +753,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                             ],
                           ),
                           _spacer16,
-
                           AppCard(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -796,7 +791,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                             ),
                           ),
                           _spacer16,
-
                           if (_selectedDestinationType == 'dokter') ...[
                             Row(
                               children: [
@@ -833,20 +827,17 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                                     },
                                   ),
                                   _spacer16,
-
                                   Text(
                                     'Pilih Dokter (${_filteredDoctors.length} dokter ditemukan)',
                                     style: theme.textTheme.titleMedium,
                                   ),
                                   _spacer8,
-
                                   _buildDoctorList(_filteredDoctors),
                                 ],
                               ),
                             ),
                           ],
                           _spacer24,
-
                           Row(
                             children: [
                               const Icon(
@@ -865,7 +856,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                             ],
                           ),
                           _spacer16,
-
                           AppCard(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -925,7 +915,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                                   const Divider(),
                                   _spacer16,
                                 ],
-
                                 AppTextField(
                                   controller: _productSearchController,
                                   hintText: 'Cari Produk',
@@ -938,7 +927,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                                   },
                                 ),
                                 _spacer16,
-
                                 Container(
                                   constraints:
                                       const BoxConstraints(maxHeight: 300),
@@ -970,171 +958,189 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                                   child: ValueListenableBuilder<
                                       List<EditScheduleProductModel>>(
                                     valueListenable: _filteredProductsNotifier,
-                                    builder: (context, filteredProducts, _) {
-                                      return ListView.separated(
-                                        shrinkWrap: true,
-                                        itemCount: filteredProducts.length,
-                                        separatorBuilder: (context, index) =>
-                                            Divider(
-                                          height: 1,
-                                          color: theme.colorScheme.outline
-                                              .withValues(
-                                            alpha: 25.0,
-                                            red: Theme.of(context)
-                                                .colorScheme
-                                                .outline
-                                                .red
-                                                .toDouble(),
-                                            green: Theme.of(context)
-                                                .colorScheme
-                                                .outline
-                                                .green
-                                                .toDouble(),
-                                            blue: Theme.of(context)
-                                                .colorScheme
-                                                .outline
-                                                .blue
-                                                .toDouble(),
-                                          ),
-                                        ),
-                                        itemBuilder: (context, index) {
-                                          final product =
-                                              filteredProducts[index];
-                                          final isSelected =
-                                              _selectedProducts.any((p) =>
-                                                  p.idProduct ==
-                                                  product.idProduct);
+                                    builder: (context, allProducts, _) {
+                                      // Filter products based on search query
+                                      final filteredProducts =
+                                          allProducts.where((product) {
+                                        final searchQuery =
+                                            _productSearchQuery.toLowerCase();
+                                        return product.namaProduct
+                                            .toLowerCase()
+                                            .contains(searchQuery);
+                                      }).toList();
 
-                                          return InkWell(
-                                            onTap: () {
-                                              setState(() {
-                                                if (isSelected) {
-                                                  _removeProduct(product);
-                                                } else {
-                                                  if (!_selectedProducts.any(
-                                                      (p) =>
-                                                          p.idProduct ==
-                                                          product.idProduct)) {
-                                                    _selectedProducts
-                                                        .add(product);
-                                                    _selectedProductIds.add(
-                                                        product.idProduct
-                                                            .toString());
-                                                    _selectedDivisiIds.addAll(
-                                                        product.idDivisiSales
-                                                            .map((id) =>
-                                                                int.parse(id))
-                                                            .toList());
-                                                    _selectedSpesialisIds
-                                                        .addAll(product
-                                                            .idSpesialis
-                                                            .map((id) =>
-                                                                int.parse(id))
-                                                            .toList());
+                                      return Scrollbar(
+                                        child: ListView.separated(
+                                          shrinkWrap: true,
+                                          itemCount: filteredProducts.length,
+                                          separatorBuilder: (context, index) =>
+                                              Divider(
+                                            height: 1,
+                                            color: theme.colorScheme.outline
+                                                .withValues(
+                                              alpha: 25.0,
+                                              red: Theme.of(context)
+                                                  .colorScheme
+                                                  .outline
+                                                  .red
+                                                  .toDouble(),
+                                              green: Theme.of(context)
+                                                  .colorScheme
+                                                  .outline
+                                                  .green
+                                                  .toDouble(),
+                                              blue: Theme.of(context)
+                                                  .colorScheme
+                                                  .outline
+                                                  .blue
+                                                  .toDouble(),
+                                            ),
+                                          ),
+                                          itemBuilder: (context, index) {
+                                            final product =
+                                                filteredProducts[index];
+                                            final isSelected =
+                                                _selectedProducts.any((p) =>
+                                                    p.idProduct ==
+                                                    product.idProduct);
+
+                                            return InkWell(
+                                              onTap: () {
+                                                setState(() {
+                                                  if (isSelected) {
+                                                    _removeProduct(product);
+                                                  } else {
+                                                    if (!_selectedProducts.any(
+                                                        (p) =>
+                                                            p.idProduct ==
+                                                            product
+                                                                .idProduct)) {
+                                                      _selectedProducts
+                                                          .add(product);
+                                                      _selectedProductIds.add(
+                                                          product.idProduct
+                                                              .toString());
+                                                      _selectedDivisiIds.addAll(
+                                                          product.idDivisiSales
+                                                              .map((id) =>
+                                                                  int.parse(id))
+                                                              .toList());
+                                                      _selectedSpesialisIds
+                                                          .addAll(product
+                                                              .idSpesialis
+                                                              .map((id) =>
+                                                                  int.parse(id))
+                                                              .toList());
+                                                    }
                                                   }
-                                                }
-                                              });
-                                            },
-                                            child: Container(
-                                              color: isSelected
-                                                  ? AppTheme
-                                                      .scheduleSelectedItemColor
-                                                  : AppTheme.scheduleCardColor,
-                                              padding: const EdgeInsets.all(16),
-                                              child: Row(
-                                                children: [
-                                                  Container(
-                                                    padding:
-                                                        const EdgeInsets.all(8),
-                                                    decoration: BoxDecoration(
-                                                      color: isSelected
-                                                          ? AppTheme
-                                                              .scheduleHighlightColor
-                                                              .withValues(
-                                                              alpha: 25.0,
-                                                              red: AppTheme
-                                                                  .scheduleHighlightColor
-                                                                  .red
-                                                                  .toDouble(),
-                                                              green: AppTheme
-                                                                  .scheduleHighlightColor
-                                                                  .green
-                                                                  .toDouble(),
-                                                              blue: AppTheme
-                                                                  .scheduleHighlightColor
-                                                                  .blue
-                                                                  .toDouble(),
-                                                            )
-                                                          : AppTheme
-                                                              .scheduleBackgroundColor,
-                                                      shape: BoxShape.circle,
-                                                    ),
-                                                    child: Icon(
-                                                      Icons
-                                                          .medical_services_outlined,
-                                                      color: isSelected
-                                                          ? AppTheme
-                                                              .scheduleHighlightColor
-                                                          : AppTheme
-                                                              .scheduleIconColor,
-                                                      size: 20,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 16),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(
-                                                          product.namaProduct,
-                                                          style: theme.textTheme
-                                                              .bodyLarge
-                                                              ?.copyWith(
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                            color: isSelected
-                                                                ? AppTheme
+                                                });
+                                              },
+                                              child: Container(
+                                                color: isSelected
+                                                    ? AppTheme
+                                                        .scheduleSelectedItemColor
+                                                    : AppTheme
+                                                        .scheduleCardColor,
+                                                padding:
+                                                    const EdgeInsets.all(16),
+                                                child: Row(
+                                                  children: [
+                                                    Container(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              8),
+                                                      decoration: BoxDecoration(
+                                                        color: isSelected
+                                                            ? AppTheme
+                                                                .scheduleHighlightColor
+                                                                .withValues(
+                                                                alpha: 25.0,
+                                                                red: AppTheme
                                                                     .scheduleHighlightColor
-                                                                : AppTheme
-                                                                    .scheduleTextColor,
-                                                          ),
-                                                        ),
-                                                        if (product.desc
-                                                                ?.isNotEmpty ??
-                                                            false) ...[
-                                                          const SizedBox(
-                                                              height: 4),
+                                                                    .red
+                                                                    .toDouble(),
+                                                                green: AppTheme
+                                                                    .scheduleHighlightColor
+                                                                    .green
+                                                                    .toDouble(),
+                                                                blue: AppTheme
+                                                                    .scheduleHighlightColor
+                                                                    .blue
+                                                                    .toDouble(),
+                                                              )
+                                                            : AppTheme
+                                                                .scheduleBackgroundColor,
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                      child: Icon(
+                                                        Icons
+                                                            .medical_services_outlined,
+                                                        color: isSelected
+                                                            ? AppTheme
+                                                                .scheduleHighlightColor
+                                                            : AppTheme
+                                                                .scheduleIconColor,
+                                                        size: 20,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 16),
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
                                                           Text(
-                                                            product.desc!,
+                                                            product.namaProduct,
                                                             style: theme
                                                                 .textTheme
-                                                                .bodySmall
+                                                                .bodyLarge
                                                                 ?.copyWith(
-                                                              color: AppTheme
-                                                                  .scheduleSubtextColor,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                              color: isSelected
+                                                                  ? AppTheme
+                                                                      .scheduleHighlightColor
+                                                                  : AppTheme
+                                                                      .scheduleTextColor,
                                                             ),
-                                                            maxLines: 2,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
                                                           ),
+                                                          if (product.desc
+                                                                  ?.isNotEmpty ??
+                                                              false) ...[
+                                                            const SizedBox(
+                                                                height: 4),
+                                                            Text(
+                                                              product.desc!,
+                                                              style: theme
+                                                                  .textTheme
+                                                                  .bodySmall
+                                                                  ?.copyWith(
+                                                                color: AppTheme
+                                                                    .scheduleSubtextColor,
+                                                              ),
+                                                              maxLines: 2,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                            ),
+                                                          ],
                                                         ],
-                                                      ],
+                                                      ),
                                                     ),
-                                                  ),
-                                                  if (isSelected)
-                                                    Icon(
-                                                      Icons.check_circle,
-                                                      color: AppTheme
-                                                          .scheduleHighlightColor,
-                                                    ),
-                                                ],
+                                                    if (isSelected)
+                                                      Icon(
+                                                        Icons.check_circle,
+                                                        color: AppTheme
+                                                            .scheduleHighlightColor,
+                                                      ),
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                          );
-                                        },
+                                            );
+                                          },
+                                        ),
                                       );
                                     },
                                   ),
@@ -1143,7 +1149,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                             ),
                           ),
                           _spacer24,
-
                           Row(
                             children: [
                               const Icon(
@@ -1168,7 +1173,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                             ],
                           ),
                           _spacer16,
-
                           AppCard(
                             child: AppTextField(
                               controller: _noteController,
@@ -1198,7 +1202,6 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
                             ),
                           ),
                           _spacer24,
-
                           AppButton(
                             text: 'Simpan',
                             onPressed: () => _submitForm(authState.user.idUser),
@@ -1311,87 +1314,100 @@ class _EditScheduleViewState extends State<_EditScheduleView> {
       ),
       child: ValueListenableBuilder<List<DoctorClinicBase>>(
         valueListenable: _filteredDoctorsNotifier,
-        builder: (context, filteredDoctors, _) {
-          return ListView.separated(
-            shrinkWrap: true,
-            itemCount: filteredDoctors.length,
-            separatorBuilder: (context, index) => Divider(
-              height: 1,
-              color: Theme.of(context).colorScheme.outline.withValues(
-                    alpha: 25.0,
-                    red: Theme.of(context).colorScheme.outline.red.toDouble(),
-                    green:
-                        Theme.of(context).colorScheme.outline.green.toDouble(),
-                    blue: Theme.of(context).colorScheme.outline.blue.toDouble(),
-                  ),
-            ),
-            itemBuilder: (context, index) {
-              final doctor = filteredDoctors[index];
-              final isSelected = _selectedDoctor?.id == doctor.id;
+        builder: (context, allDoctors, _) {
+          // Filter doctors based on search query
+          final filteredDoctors = allDoctors.where((doctor) {
+            final searchQuery = _doctorSearchQuery.toLowerCase();
+            return doctor.nama.toLowerCase().contains(searchQuery) ||
+                (doctor.alamat ?? '').toLowerCase().contains(searchQuery);
+          }).toList();
 
-              return InkWell(
-                onTap: () {
-                  setState(() {
-                    _selectedDoctor = doctor;
-                    _doctorSearchController.text = doctor.nama;
-                  });
-                },
-                child: Container(
-                  color: isSelected
-                      ? AppTheme.scheduleSelectedItemColor
-                      : AppTheme.scheduleCardColor,
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppTheme.scheduleHighlightColor.withValues(
-                                  alpha: 25.0,
-                                  red: AppTheme.scheduleHighlightColor.red
-                                      .toDouble(),
-                                  green: AppTheme.scheduleHighlightColor.green
-                                      .toDouble(),
-                                  blue: AppTheme.scheduleHighlightColor.blue
-                                      .toDouble(),
-                                )
-                              : AppTheme.scheduleBackgroundColor,
-                          shape: BoxShape.circle,
+          return Scrollbar(
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: filteredDoctors.length,
+              separatorBuilder: (context, index) => Divider(
+                height: 1,
+                color: Theme.of(context).colorScheme.outline.withValues(
+                      alpha: 25.0,
+                      red: Theme.of(context).colorScheme.outline.red.toDouble(),
+                      green: Theme.of(context)
+                          .colorScheme
+                          .outline
+                          .green
+                          .toDouble(),
+                      blue:
+                          Theme.of(context).colorScheme.outline.blue.toDouble(),
+                    ),
+              ),
+              itemBuilder: (context, index) {
+                final doctor = filteredDoctors[index];
+                final isSelected = _selectedDoctor?.id == doctor.id;
+
+                return InkWell(
+                  onTap: () {
+                    setState(() {
+                      _selectedDoctor = doctor;
+                      _doctorSearchController.text = doctor.nama;
+                    });
+                  },
+                  child: Container(
+                    color: isSelected
+                        ? AppTheme.scheduleSelectedItemColor
+                        : AppTheme.scheduleCardColor,
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppTheme.scheduleHighlightColor.withValues(
+                                    alpha: 25.0,
+                                    red: AppTheme.scheduleHighlightColor.red
+                                        .toDouble(),
+                                    green: AppTheme.scheduleHighlightColor.green
+                                        .toDouble(),
+                                    blue: AppTheme.scheduleHighlightColor.blue
+                                        .toDouble(),
+                                  )
+                                : AppTheme.scheduleBackgroundColor,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.person_outline,
+                            color: isSelected
+                                ? AppTheme.scheduleHighlightColor
+                                : AppTheme.scheduleIconColor,
+                            size: 20,
+                          ),
                         ),
-                        child: Icon(
-                          Icons.person_outline,
-                          color: isSelected
-                              ? AppTheme.scheduleHighlightColor
-                              : AppTheme.scheduleIconColor,
-                          size: 20,
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            doctor.nama,
+                            style:
+                                Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      color: isSelected
+                                          ? AppTheme.scheduleHighlightColor
+                                          : AppTheme.scheduleTextColor,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                    ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Text(
-                          doctor.nama,
-                          style:
-                              Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: isSelected
-                                        ? AppTheme.scheduleHighlightColor
-                                        : AppTheme.scheduleTextColor,
-                                    fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                        ),
-                      ),
-                      if (isSelected)
-                        Icon(
-                          Icons.check_circle,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                    ],
+                        if (isSelected)
+                          Icon(
+                            Icons.check_circle,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           );
         },
       ),

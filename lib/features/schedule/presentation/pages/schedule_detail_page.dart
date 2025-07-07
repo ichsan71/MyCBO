@@ -6,6 +6,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:image/image.dart' as img;
 import '../../domain/entities/schedule.dart';
+import '../utils/schedule_status_helper.dart';
 import '../../data/models/checkin_request_model.dart';
 import '../../data/models/checkout_request_model.dart';
 import '../bloc/schedule_bloc.dart';
@@ -56,8 +57,8 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
 
     final now = DateTime.now();
     return scheduleDate.year == now.year &&
-           scheduleDate.month == now.month &&
-           scheduleDate.day == now.day;
+        scheduleDate.month == now.month &&
+        scheduleDate.day == now.day;
   }
 
   String _formatDisplayDate(String dateStr) {
@@ -80,12 +81,13 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
         );
   }
 
-  void _showMessage(BuildContext context, String message, {bool isError = false}) {
+  void _showMessage(BuildContext context, String message,
+      {bool isError = false}) {
     if (!mounted) return;
-    
+
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     scaffoldMessenger.clearSnackBars();
-    
+
     if (isError) {
       scaffoldMessenger.showSnackBar(
         SnackBar(
@@ -168,12 +170,13 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
 
       // Tutup bottom sheet menggunakan navigator yang disimpan
       navigator.pop();
-      
+
       // Refresh jadwal
       _refreshSchedule();
     } catch (e) {
       if (!mounted) return;
-      _showMessage(context, 'Terjadi kesalahan: ${e.toString()}', isError: true);
+      _showMessage(context, 'Terjadi kesalahan: ${e.toString()}',
+          isError: true);
     }
   }
 
@@ -196,12 +199,13 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
 
       // Kembali ke halaman utama
       Navigator.popUntil(context, (route) => route.isFirst);
-      
+
       // Refresh jadwal
       _refreshSchedule();
     } catch (e) {
       if (!mounted) return;
-      _showMessage(context, 'Terjadi kesalahan: ${e.toString()}', isError: true);
+      _showMessage(context, 'Terjadi kesalahan: ${e.toString()}',
+          isError: true);
     }
   }
 
@@ -238,7 +242,8 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                 child: CheckinForm(
                   scheduleId: widget.schedule.id,
                   userId: widget.userId,
-                  onSubmit: (request) => _handleCheckin(builderContext, request),
+                  onSubmit: (request) =>
+                      _handleCheckin(builderContext, request),
                 ),
               ),
             ),
@@ -251,7 +256,8 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
     }).catchError((error) {
       if (!mounted) return;
       Logger.error('ScheduleDetailPage', 'Error on check-in form: $error');
-      _showMessage(context, 'Terjadi kesalahan: ${error.toString()}', isError: true);
+      _showMessage(context, 'Terjadi kesalahan: ${error.toString()}',
+          isError: true);
     });
   }
 
@@ -421,15 +427,19 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
             final isToday = _isScheduleToday();
 
             // Get the schedule type display value
-            final scheduleTypeDisplay = widget.schedule.namaTipeSchedule?.isNotEmpty == true
-                ? widget.schedule.namaTipeSchedule!
-                : widget.schedule.tipeSchedule.isNotEmpty
-                    ? widget.schedule.tipeSchedule
-                    : 'Tidak ada tipe';
+            final scheduleTypeDisplay =
+                widget.schedule.namaTipeSchedule?.isNotEmpty == true
+                    ? widget.schedule.namaTipeSchedule!
+                    : widget.schedule.tipeSchedule.isNotEmpty
+                        ? widget.schedule.tipeSchedule
+                        : 'Tidak ada tipe';
 
-            Logger.info('ScheduleDetailPage', 'tipeSchedule: ${widget.schedule.tipeSchedule}');
-            Logger.info('ScheduleDetailPage', 'namaTipeSchedule: ${widget.schedule.namaTipeSchedule}');
-            Logger.info('ScheduleDetailPage', 'scheduleTypeDisplay: $scheduleTypeDisplay');
+            Logger.info('ScheduleDetailPage',
+                'tipeSchedule: ${widget.schedule.tipeSchedule}');
+            Logger.info('ScheduleDetailPage',
+                'namaTipeSchedule: ${widget.schedule.namaTipeSchedule}');
+            Logger.info('ScheduleDetailPage',
+                'scheduleTypeDisplay: $scheduleTypeDisplay');
 
             return Container(
               color: theme.colorScheme.background,
@@ -510,7 +520,8 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                           Text(
                             'Produk',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                              color:
+                                  theme.colorScheme.onSurface.withOpacity(0.6),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -550,7 +561,8 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                                                   fontSize: 13,
                                                   height: 1.2,
                                                   fontWeight: FontWeight.w500,
-                                                  color: theme.colorScheme.primary,
+                                                  color:
+                                                      theme.colorScheme.primary,
                                                 ),
                                                 overflow: TextOverflow.ellipsis,
                                               ),
@@ -573,7 +585,8 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                           Text(
                             'Divisi',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                              color:
+                                  theme.colorScheme.onSurface.withOpacity(0.6),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -585,8 +598,8 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                                   theme.colorScheme.secondary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color:
-                                    theme.colorScheme.secondary.withOpacity(0.3),
+                                color: theme.colorScheme.secondary
+                                    .withOpacity(0.3),
                                 width: 1,
                               ),
                             ),
@@ -659,8 +672,8 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                           const SizedBox(height: 12),
                           _buildDetailRow(
                             label: 'Approver Realisasi',
-                            value: widget.schedule.realisasiApprove != null &&
-                                    widget.schedule.realisasiApprove! > 0
+                            value: ScheduleStatusHelper.isRealisasiApproved(
+                                    widget.schedule.realisasiApprove)
                                 ? widget.schedule.namaApprover ??
                                     'Tidak diketahui'
                                 : 'Belum disetujui',
@@ -739,8 +752,8 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                                     .toLowerCase()
                                     .trim() ==
                                 'selesai') &&
-                        (widget.schedule.realisasiApprove == null ||
-                            widget.schedule.realisasiApprove == 0))
+                        !ScheduleStatusHelper.isRealisasiApproved(
+                            widget.schedule.realisasiApprove))
                       Container(
                         margin: const EdgeInsets.symmetric(horizontal: 16),
                         padding: const EdgeInsets.all(16),
@@ -1039,8 +1052,8 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
       if ((lowerStatus == 'detail' ||
               lowerStatus == 'check-out' ||
               lowerStatus == 'selesai') &&
-          (schedule.realisasiApprove == null ||
-              schedule.realisasiApprove == 0)) {
+          !ScheduleStatusHelper.isRealisasiApproved(
+              schedule.realisasiApprove)) {
         statusText = 'Menunggu Persetujuan';
         statusColor = Colors.orange.shade700;
         statusIcon = Icons.pending_outlined;
@@ -1049,7 +1062,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
       else if ((lowerStatus == 'check-out' ||
               lowerStatus == 'selesai' ||
               lowerStatus == 'detail') &&
-          schedule.realisasiApprove == 1) {
+          ScheduleStatusHelper.isRealisasiApproved(schedule.realisasiApprove)) {
         statusText = 'Selesai';
         statusColor = Colors.teal.shade700;
         statusIcon = Icons.check_circle_outlined;
@@ -1125,7 +1138,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
         (lowerStatus == 'detail' ||
             lowerStatus == 'check-out' ||
             lowerStatus == 'selesai') &&
-        (schedule.realisasiApprove == null || schedule.realisasiApprove == 0)) {
+        !ScheduleStatusHelper.isRealisasiApproved(schedule.realisasiApprove)) {
       return _buildWarningCard(
         'Menunggu persetujuan realisasi kunjungan.',
         'Realisasi kunjungan Anda sedang dalam proses persetujuan.',

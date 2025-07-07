@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/schedule.dart';
+import '../utils/schedule_status_helper.dart';
 
 class ScheduleCard extends StatelessWidget {
   final Schedule schedule;
@@ -32,7 +33,7 @@ class ScheduleCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  _buildStatusChip(schedule.statusCheckin),
+                  _buildStatusChip(schedule),
                 ],
               ),
               const SizedBox(height: 8),
@@ -61,28 +62,37 @@ class ScheduleCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusChip(String status) {
-    Color chipColor;
-    switch (status.toLowerCase()) {
-      case 'pending':
-        chipColor = Colors.orange;
-        break;
-      case 'approved':
-        chipColor = Colors.green;
-        break;
-      case 'rejected':
-        chipColor = Colors.red;
-        break;
-      default:
-        chipColor = Colors.grey;
-    }
+  Widget _buildStatusChip(Schedule schedule) {
+    final statusText = ScheduleStatusHelper.getStatusText(schedule);
+    final statusColor = ScheduleStatusHelper.getStatusColor(schedule);
+    final statusIcon = ScheduleStatusHelper.getStatusIcon(schedule);
 
-    return Chip(
-      label: Text(
-        status,
-        style: const TextStyle(color: Colors.white),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: statusColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: statusColor.withOpacity(0.3)),
       ),
-      backgroundColor: chipColor,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            statusIcon,
+            size: 14,
+            color: statusColor,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            statusText,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: statusColor,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

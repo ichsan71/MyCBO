@@ -306,7 +306,7 @@ class ScheduleModel extends Schedule {
       namaDivisi: json['nama_divisi'],
       approved: parseIntValue(json['approved']),
       namaApprover: json['nama_approver'],
-      realisasiApprove: parseNullableIntValue(json['realisasi_approve']),
+      realisasiApprove: json['realisasi_approve'],
       idUser: parseIntValue(json['id_user']),
       productForIdDivisi: List<String>.from(json['product_for_id_divisi'] ?? []),
       productForIdSpesialis: List<String>.from(json['product_for_id_spesialis'] ?? []),
