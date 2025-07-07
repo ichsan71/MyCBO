@@ -62,6 +62,7 @@ class AddScheduleFormLoaded extends AddScheduleState {
   final List<DoctorClinicBase> doctorsAndClinics;
   final List<ScheduleType> scheduleTypes;
   final List<Product> products;
+  // TODO: Re-enable when suddenly limit validation is ready for deployment
   final bool isSuddenlyLimitReached;
   final int suddenlyCount;
   final String selectedDate;
@@ -70,6 +71,7 @@ class AddScheduleFormLoaded extends AddScheduleState {
     required this.doctorsAndClinics,
     required this.scheduleTypes,
     required this.products,
+    // TODO: Re-enable when suddenly limit validation is ready for deployment
     this.isSuddenlyLimitReached = false,
     this.suddenlyCount = 0,
     this.selectedDate = '',
@@ -79,6 +81,7 @@ class AddScheduleFormLoaded extends AddScheduleState {
     List<DoctorClinicBase>? doctorsAndClinics,
     List<ScheduleType>? scheduleTypes,
     List<Product>? products,
+    // TODO: Re-enable when suddenly limit validation is ready for deployment
     bool? isSuddenlyLimitReached,
     int? suddenlyCount,
     String? selectedDate,
@@ -87,6 +90,7 @@ class AddScheduleFormLoaded extends AddScheduleState {
       doctorsAndClinics: doctorsAndClinics ?? this.doctorsAndClinics,
       scheduleTypes: scheduleTypes ?? this.scheduleTypes,
       products: products ?? this.products,
+      // TODO: Re-enable when suddenly limit validation is ready for deployment
       isSuddenlyLimitReached:
           isSuddenlyLimitReached ?? this.isSuddenlyLimitReached,
       suddenlyCount: suddenlyCount ?? this.suddenlyCount,
@@ -99,6 +103,7 @@ class AddScheduleFormLoaded extends AddScheduleState {
         doctorsAndClinics,
         scheduleTypes,
         products,
+        // TODO: Re-enable when suddenly limit validation is ready for deployment
         isSuddenlyLimitReached,
         suddenlyCount,
         selectedDate

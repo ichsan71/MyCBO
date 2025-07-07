@@ -41,7 +41,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
   static const int _minimumNoteCharacters = 10;
   static const int _maximumNoteCharacters = 500;
   // Konstanta untuk batasan jadwal suddenly
-  static const int _maxSuddenlyPerDay = 4;
+  // TODO: Re-enable when ready for deployment
+  // static const int _maxSuddenlyPerDay = 4;
   String? _noteError;
 
   // Selected values
@@ -228,25 +229,26 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
 
   // Fungsi untuk validasi saat inisialisasi
   void _initValidation() {
-    if (_tanggalController.text.isNotEmpty) {
-      final context = this.context;
-      final authState = context.read<AuthBloc>().state;
+    // TODO: Re-enable when suddenly limit validation is ready for deployment
+    // if (_tanggalController.text.isNotEmpty) {
+    //   final context = this.context;
+    //   final authState = context.read<AuthBloc>().state;
 
-      if (authState is AuthAuthenticated) {
-        // Konversi format tanggal untuk API
-        final inputDate =
-            DateFormat('dd/MM/yyyy').parse(_tanggalController.text);
-        final apiFormattedDate = DateFormat('yyyy-MM-dd').format(inputDate);
+    //   if (authState is AuthAuthenticated) {
+    //     // Konversi format tanggal untuk API
+    //     final inputDate =
+    //         DateFormat('dd/MM/yyyy').parse(_tanggalController.text);
+    //     final apiFormattedDate = DateFormat('yyyy-MM-dd').format(inputDate);
 
-        // Kirim event untuk validasi jadwal pada tanggal yang sudah dipilih
-        context.read<AddScheduleBloc>().add(
-              DateChangedEvent(
-                userId: authState.user.idUser.toString(),
-                date: apiFormattedDate,
-              ),
-            );
-      }
-    }
+    //     // Kirim event untuk validasi jadwal pada tanggal yang sudah dipilih
+    //     context.read<AddScheduleBloc>().add(
+    //           DateChangedEvent(
+    //             userId: authState.user.idUser.toString(),
+    //             date: apiFormattedDate,
+    //           ),
+    //         );
+    //   }
+    // }
   }
 
   @override
@@ -278,13 +280,14 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
         _tanggalController.text = formattedDate;
       });
 
+      // TODO: Re-enable when suddenly limit validation is ready for deployment
       // Trigger validasi jadwal suddenly
-      context.read<AddScheduleBloc>().add(
-            DateChangedEvent(
-              userId: authState.user.idUser.toString(),
-              date: apiFormattedDate,
-            ),
-          );
+      // context.read<AddScheduleBloc>().add(
+      //       DateChangedEvent(
+      //         userId: authState.user.idUser.toString(),
+      //         date: apiFormattedDate,
+      //       ),
+      //     );
     }
   }
 
@@ -1428,48 +1431,53 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
   }
 
   Widget _buildSaveButton(AddScheduleFormLoaded state, AuthState authState) {
-    final bool isButtonDisabled = state.isSuddenlyLimitReached;
+    // TODO: Re-enable when suddenly limit validation is ready for deployment
+    // final bool isButtonDisabled = state.isSuddenlyLimitReached;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (state.isSuddenlyLimitReached) ...[
-          Container(
-            padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.amber.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.amber.shade400),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.warning_amber_rounded,
-                  color: Colors.amber.shade800,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Anda telah mencapai batas jadwal "suddenly" untuk tanggal ini (${state.suddenlyCount}/${_maxSuddenlyPerDay}). '
-                    'Silakan pilih tanggal lain.',
-                    style: TextStyle(
-                      color: Colors.amber.shade900,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        // if (state.isSuddenlyLimitReached) ...[
+        //   Container(
+        //     padding: const EdgeInsets.all(12),
+        //     margin: const EdgeInsets.only(bottom: 16),
+        //     decoration: BoxDecoration(
+        //       color: Colors.amber.shade50,
+        //       borderRadius: BorderRadius.circular(8),
+        //       border: Border.all(color: Colors.amber.shade400),
+        //     ),
+        //     child: Row(
+        //       children: [
+        //         Icon(
+        //           Icons.warning_amber_rounded,
+        //           color: Colors.amber.shade800,
+        //         ),
+        //         const SizedBox(width: 12),
+        //         Expanded(
+        //           child: Text(
+        //             'Anda telah mencapai batas jadwal "suddenly" untuk tanggal ini (${state.suddenlyCount}/${_maxSuddenlyPerDay}). '
+        //             'Silakan pilih tanggal lain.',
+        //             style: TextStyle(
+        //               color: Colors.amber.shade900,
+        //               fontSize: 14,
+        //             ),
+        //           ),
+        //         ),
+        //       ],
+        //     ),
+        //   ),
+        // ],
         AppButton(
           text: 'Simpan',
-          onPressed: isButtonDisabled
-              ? null // Tombol akan dinonaktifkan jika batas tercapai
-              : () {
-                  _submitForm(authState);
-                },
+          onPressed: () {
+            _submitForm(authState);
+          },
+          // TODO: Re-enable when suddenly limit validation is ready for deployment
+          // onPressed: isButtonDisabled
+          //     ? null // Tombol akan dinonaktifkan jika batas tercapai
+          //     : () {
+          //         _submitForm(authState);
+          //       },
         ),
       ],
     );

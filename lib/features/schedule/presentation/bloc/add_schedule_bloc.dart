@@ -25,14 +25,16 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
   static const String _tag = 'AddScheduleBloc';
 
   // Constant untuk batasan
-  static const int _maxSuddenlyPerDay = 4;
+  // TODO: Re-enable when suddenly limit validation is ready for deployment
+  // static const int _maxSuddenlyPerDay = 4;
 
   List<DoctorClinicBase> _doctorsAndClinics = [];
   List<ScheduleType> _scheduleTypes = [];
   List<Product> _products = [];
   String _currentDate = '';
-  bool _isSuddenlyLimitReached = false;
-  int _suddenlyCount = 0;
+  // TODO: Re-enable when suddenly limit validation is ready for deployment
+  // bool _isSuddenlyLimitReached = false;
+  // int _suddenlyCount = 0;
 
   AddScheduleBloc({
     required this.getDoctorsAndClinics,
@@ -46,8 +48,9 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
     on<GetScheduleTypesEvent>(_onGetScheduleTypes);
     on<GetProductsEvent>(_onGetProducts);
     on<SubmitScheduleEvent>(_onSubmitSchedule);
-    on<CheckDailyScheduleEvent>(_onCheckDailySchedule);
-    on<DateChangedEvent>(_onDateChanged);
+    // TODO: Re-enable when suddenly limit validation is ready for deployment
+    // on<CheckDailyScheduleEvent>(_onCheckDailySchedule);
+    // on<DateChangedEvent>(_onDateChanged);
   }
 
   Future<void> _onGetDoctorsAndClinics(
@@ -152,8 +155,9 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
         doctorsAndClinics: _doctorsAndClinics,
         scheduleTypes: _scheduleTypes,
         products: _products,
-        isSuddenlyLimitReached: _isSuddenlyLimitReached,
-        suddenlyCount: _suddenlyCount,
+        isSuddenlyLimitReached:
+            false, // Always false when suddenly limit is commented out
+        suddenlyCount: 0, // Always 0 when suddenly limit is commented out
         selectedDate: _currentDate,
       ));
     } else {
@@ -161,101 +165,102 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
     }
   }
 
-  Future<void> _onCheckDailySchedule(
-    CheckDailyScheduleEvent event,
-    Emitter<AddScheduleState> emit,
-  ) async {
-    _currentDate = event.date;
+  // TODO: Re-enable when suddenly limit validation is ready for deployment
+  // Future<void> _onCheckDailySchedule(
+  //   CheckDailyScheduleEvent event,
+  //   Emitter<AddScheduleState> emit,
+  // ) async {
+  //   _currentDate = event.date;
 
-    emit(DailyScheduleValidationLoading(date: event.date));
+  //   emit(DailyScheduleValidationLoading(date: event.date));
 
-    try {
-      final result = await getFilteredDailySchedule(
-        FilterDailyScheduleParams(
-          userId: int.parse(event.userId),
-          date: event.date,
-        ),
-      );
+  //   try {
+  //     final result = await getFilteredDailySchedule(
+  //       FilterDailyScheduleParams(
+  //         userId: int.parse(event.userId),
+  //         date: event.date,
+  //       ),
+  //     );
 
-      await result.fold(
-        (failure) async {
-          Logger.error(
-              _tag, 'Gagal mendapatkan jadwal harian: ${failure.message}');
-          _isSuddenlyLimitReached = false;
-          _suddenlyCount = 0;
+  //     await result.fold(
+  //       (failure) async {
+  //         Logger.error(
+  //             _tag, 'Gagal mendapatkan jadwal harian: ${failure.message}');
+  //         // _isSuddenlyLimitReached = false;
+  //         // _suddenlyCount = 0;
 
-          if (state is AddScheduleFormLoaded) {
-            final currentState = state as AddScheduleFormLoaded;
-            emit(currentState.copyWith(
-              isSuddenlyLimitReached: false,
-              suddenlyCount: 0,
-              selectedDate: event.date,
-            ));
-          }
-        },
-        (schedules) async {
-          Logger.success(
-              _tag, 'Berhasil mendapatkan ${schedules.length} jadwal harian');
+  //         if (state is AddScheduleFormLoaded) {
+  //           final currentState = state as AddScheduleFormLoaded;
+  //           emit(currentState.copyWith(
+  //             isSuddenlyLimitReached: false,
+  //             suddenlyCount: 0,
+  //             selectedDate: event.date,
+  //           ));
+  //         }
+  //       },
+  //       (schedules) async {
+  //         Logger.success(
+  //             _tag, 'Berhasil mendapatkan ${schedules.length} jadwal harian');
 
-          // Hitung jumlah jadwal dengan jenis "suddenly"
-          final suddenlySchedules = schedules
-              .where((schedule) => schedule.jenis == 'suddenly')
-              .toList();
-          _suddenlyCount = suddenlySchedules.length;
-          _isSuddenlyLimitReached = _suddenlyCount >= _maxSuddenlyPerDay;
+  //         // Hitung jumlah jadwal dengan jenis "suddenly"
+  //         // final suddenlySchedules = schedules
+  //         //     .where((schedule) => schedule.jenis == 'suddenly')
+  //         //     .toList();
+  //         // _suddenlyCount = suddenlySchedules.length;
+  //         // _isSuddenlyLimitReached = _suddenlyCount >= _maxSuddenlyPerDay;
 
-          Logger.info(_tag,
-              'Jumlah jadwal suddenly: $_suddenlyCount, limit tercapai: $_isSuddenlyLimitReached');
+  //         Logger.info(_tag,
+  //             'Jumlah jadwal suddenly: 0, limit tercapai: false (suddenly limit commented out)');
 
-          if (state is AddScheduleFormLoaded) {
-            final currentState = state as AddScheduleFormLoaded;
-            emit(currentState.copyWith(
-              isSuddenlyLimitReached: _isSuddenlyLimitReached,
-              suddenlyCount: _suddenlyCount,
-              selectedDate: event.date,
-            ));
-          } else if (_doctorsAndClinics.isNotEmpty &&
-              _scheduleTypes.isNotEmpty &&
-              _products.isNotEmpty) {
-            emit(AddScheduleFormLoaded(
-              doctorsAndClinics: _doctorsAndClinics,
-              scheduleTypes: _scheduleTypes,
-              products: _products,
-              isSuddenlyLimitReached: _isSuddenlyLimitReached,
-              suddenlyCount: _suddenlyCount,
-              selectedDate: event.date,
-            ));
-          }
-        },
-      );
-    } catch (e) {
-      Logger.error(_tag, 'Error saat memeriksa jadwal harian: $e');
-      _isSuddenlyLimitReached = false;
-      _suddenlyCount = 0;
+  //         if (state is AddScheduleFormLoaded) {
+  //           final currentState = state as AddScheduleFormLoaded;
+  //           emit(currentState.copyWith(
+  //             isSuddenlyLimitReached: false,
+  //             suddenlyCount: 0,
+  //             selectedDate: event.date,
+  //           ));
+  //         } else if (_doctorsAndClinics.isNotEmpty &&
+  //             _scheduleTypes.isNotEmpty &&
+  //             _products.isNotEmpty) {
+  //           emit(AddScheduleFormLoaded(
+  //             doctorsAndClinics: _doctorsAndClinics,
+  //             scheduleTypes: _scheduleTypes,
+  //             products: _products,
+  //             isSuddenlyLimitReached: false,
+  //             suddenlyCount: 0,
+  //             selectedDate: event.date,
+  //           ));
+  //         }
+  //       },
+  //     );
+  //   } catch (e) {
+  //     Logger.error(_tag, 'Error saat memeriksa jadwal harian: $e');
+  //     // _isSuddenlyLimitReached = false;
+  //     // _suddenlyCount = 0;
 
-      if (state is AddScheduleFormLoaded) {
-        final currentState = state as AddScheduleFormLoaded;
-        emit(currentState.copyWith(
-          isSuddenlyLimitReached: false,
-          suddenlyCount: 0,
-          selectedDate: event.date,
-        ));
-      }
-    }
-  }
+  //     if (state is AddScheduleFormLoaded) {
+  //       final currentState = state as AddScheduleFormLoaded;
+  //       emit(currentState.copyWith(
+  //         isSuddenlyLimitReached: false,
+  //         suddenlyCount: 0,
+  //         selectedDate: event.date,
+  //       ));
+  //     }
+  //   }
+  // }
 
-  Future<void> _onDateChanged(
-    DateChangedEvent event,
-    Emitter<AddScheduleState> emit,
-  ) async {
-    await _onCheckDailySchedule(
-      CheckDailyScheduleEvent(
-        userId: event.userId,
-        date: event.date,
-      ),
-      emit,
-    );
-  }
+  // Future<void> _onDateChanged(
+  //   DateChangedEvent event,
+  //   Emitter<AddScheduleState> emit,
+  // ) async {
+  //   await _onCheckDailySchedule(
+  //     CheckDailyScheduleEvent(
+  //       userId: event.userId,
+  //       date: event.date,
+  //     ),
+  //     emit,
+  //   );
+  // }
 
   Future<void> _onSubmitSchedule(
     SubmitScheduleEvent event,
