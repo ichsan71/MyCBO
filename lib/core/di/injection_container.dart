@@ -47,6 +47,8 @@ import '../../features/realisasi_visit/domain/usecases/approve_realisasi_visit.d
 import '../../features/realisasi_visit/domain/usecases/reject_realisasi_visit.dart';
 import '../../features/realisasi_visit/presentation/bloc/realisasi_visit_bloc.dart';
 import '../../features/chatbot/di/chatbot_injection.dart';
+import '../services/photo_storage_service.dart';
+import '../services/cleanup_scheduler_service.dart';
 
 /// Service locator instance
 final sl = GetIt.instance;
@@ -76,6 +78,11 @@ Future<void> _initCriticalDependencies() async {
 
   // Network info (critical)
   sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));
+
+  // Photo storage service (critical for restoring photos)
+  sl.registerLazySingleton<PhotoStorageService>(
+    () => PhotoStorageService(sl()),
+  );
 
   // Auth feature (critical for startup)
   injectAuth(sl);

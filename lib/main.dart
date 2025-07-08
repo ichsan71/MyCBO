@@ -30,6 +30,7 @@ import 'package:test_cbo/features/kpi/domain/entities/kpi_member.dart';
 import 'package:month_year_picker/month_year_picker.dart';
 import 'package:test_cbo/features/kpi/presentation/pages/kpi_member_detail_page.dart';
 import 'package:test_cbo/features/chatbot/presentation/pages/chatbot_page.dart';
+import 'package:test_cbo/core/services/cleanup_scheduler_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,7 +46,7 @@ Future<void> _initializeCriticalComponents() async {
   try {
     // Add small delay to prevent race conditions with splash screen
     await Future.delayed(const Duration(milliseconds: 50));
-    
+
     // Set preferred orientations first (fast operation)
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -90,6 +91,9 @@ Future<void> _initializeNonCriticalComponents() async {
     // Request notification permissions in background (non-blocking)
     final permissionsGranted = await notificationService.requestPermission();
     debugPrint('Notification permissions granted: $permissionsGranted');
+
+    // Initialize cleanup scheduler for photo auto-cleanup
+    await CleanupSchedulerService.initializeWithBackgroundSupport();
 
     if (kDebugMode) {
       print('Non-critical components initialized successfully');

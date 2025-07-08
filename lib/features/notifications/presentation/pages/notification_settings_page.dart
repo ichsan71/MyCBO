@@ -203,25 +203,45 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
           Icons.palette,
           AppTheme.getPrimaryColor(context),
           [
-            SwitchListTile(
-              title: Text(
-                l10n.darkMode,
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              value: themeProvider.themeMode == ThemeMode.dark,
-              onChanged: (value) {
-                themeProvider.setThemeMode(
-                  value ? ThemeMode.dark : ThemeMode.light,
-                );
-              },
-              secondary: Icon(
-                themeProvider.themeMode == ThemeMode.dark
-                    ? Icons.dark_mode
-                    : Icons.light_mode,
-                color: Theme.of(context).primaryColor,
+            // SwitchListTile(
+            //   title: Text(
+            //     l10n.darkMode,
+            //     style: GoogleFonts.poppins(
+            //       fontSize: 16,
+            //       fontWeight: FontWeight.w500,
+            //     ),
+            //   ),
+            //   value: themeProvider.themeMode == ThemeMode.dark,
+            //   onChanged: (value) {
+            //     themeProvider.setThemeMode(
+            //       value ? ThemeMode.dark : ThemeMode.light,
+            //     );
+            //   },
+            //   secondary: Icon(
+            //     themeProvider.themeMode == ThemeMode.dark
+            //         ? Icons.dark_mode
+            //         : Icons.light_mode,
+            //     color: Theme.of(context).primaryColor,
+            //   ),
+            // ),
+            // Catatan pengembangan:
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline,
+                      color: Theme.of(context).primaryColor),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Fitur mode gelap sedang dalam pengembangan dan sementara dinonaktifkan.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             // _buildLanguageSelector(context, l10n),

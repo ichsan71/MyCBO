@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -12,6 +13,8 @@ import '../bloc/schedule_event.dart';
 import '../bloc/schedule_state.dart';
 import 'package:test_cbo/core/presentation/widgets/shimmer_button_loading.dart';
 import 'package:test_cbo/core/presentation/theme/app_theme.dart';
+import 'package:test_cbo/core/services/photo_storage_service.dart';
+import 'package:test_cbo/core/di/injection_container.dart' as di;
 
 class CheckoutForm extends StatefulWidget {
   final Schedule schedule;
@@ -37,6 +40,9 @@ class _CheckoutFormState extends State<CheckoutForm> {
   String _selectedStatus = 'Done';
   String? _noteError;
   String? _imageError;
+  late PhotoStorageService _photoStorageService;
+  bool _isRestoringData = false;
+  Timer? _saveNoteTimer;
 
   // Constants for note validation
   static const int _minimumNoteCharacters = 100;
@@ -45,6 +51,8 @@ class _CheckoutFormState extends State<CheckoutForm> {
   @override
   void initState() {
     super.initState();
+    _photoStorageService = di.sl<PhotoStorageService>();
+
     // Add listener for text changes
     _noteController.addListener(() {
       setState(() {
@@ -60,21 +68,114 @@ class _CheckoutFormState extends State<CheckoutForm> {
 
       // Save form data when text changes
       _saveFormData();
+
+      // Save note changes to persistent storage with debouncing
+      _saveNoteChanges();
     });
 
-    // Restore form data if available
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final currentState = context.read<ScheduleBloc>().state;
-      if (currentState is CheckOutFormData &&
-          currentState.scheduleId == widget.schedule.id) {
+    // Restore persistent photo data first, then bloc form data
+    _restorePhotoData();
+  }
+
+  /// Restore saved photo data if exists
+  Future<void> _restorePhotoData() async {
+    try {
+      setState(() {
+        _isRestoringData = true;
+      });
+
+      final photoData = await _photoStorageService.getPhotoData(
+          widget.schedule.id, 'checkout');
+
+      if (photoData != null && mounted) {
+        // Check if photo file still exists
+        final file = File(photoData.photoPath);
+        if (await file.exists()) {
+          setState(() {
+            _imageFile = XFile(photoData.photoPath);
+            _compressedImagePath = photoData.photoPath;
+            _imageTimestamp = photoData.timestamp;
+            if (photoData.note != null) {
+              _noteController.text = photoData.note!;
+            }
+            if (photoData.status != null) {
+              _selectedStatus = photoData.status!;
+            }
+          });
+
+          developer.log(
+            'Restored check-out photo data for schedule ${widget.schedule.id}',
+            name: 'CheckoutForm',
+          );
+        } else {
+          // Photo file doesn't exist, clean up metadata
+          await _photoStorageService.deletePhotoData(widget.schedule.id);
+          developer.log(
+            'Photo file not found, cleaned up metadata for schedule ${widget.schedule.id}',
+            name: 'CheckoutForm',
+          );
+        }
+      }
+
+      // After restoring persistent data, restore bloc form data if available
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final currentState = context.read<ScheduleBloc>().state;
+        if (currentState is CheckOutFormData &&
+            currentState.scheduleId == widget.schedule.id) {
+          setState(() {
+            // Only override if persistent data doesn't exist
+            if (_imageFile == null && currentState.imagePath != null) {
+              _imageFile = XFile(currentState.imagePath!);
+              _imageTimestamp = currentState.imageTimestamp;
+            }
+            if (_noteController.text.isEmpty) {
+              _noteController.text = currentState.note;
+            }
+            _selectedStatus = currentState.status;
+          });
+        }
+      });
+    } catch (e) {
+      developer.log(
+        'Error restoring photo data: ${e.toString()}',
+        name: 'CheckoutForm',
+        error: e,
+      );
+    } finally {
+      if (mounted) {
         setState(() {
-          _noteController.text = currentState.note;
-          _selectedStatus = currentState.status;
-          if (currentState.imagePath != null) {
-            _imageFile = XFile(currentState.imagePath!);
-            _imageTimestamp = currentState.imageTimestamp;
-          }
+          _isRestoringData = false;
         });
+      }
+    }
+  }
+
+  /// Save note changes to persistent storage with debouncing
+  void _saveNoteChanges() {
+    // Cancel previous timer
+    _saveNoteTimer?.cancel();
+
+    // Set new timer with 1 second delay
+    _saveNoteTimer = Timer(const Duration(seconds: 1), () async {
+      try {
+        // Only save if photo exists
+        if (_imageFile != null) {
+          await _photoStorageService.savePhoto(
+            scheduleId: widget.schedule.id,
+            originalPhotoPath: _compressedImagePath ?? _imageFile!.path,
+            type: 'checkout',
+            timestamp: _imageTimestamp ??
+                DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            note: _noteController.text.trim(),
+            status: _selectedStatus,
+          );
+        }
+      } catch (e) {
+        developer.log(
+          'Error saving note changes: ${e.toString()}',
+          name: 'CheckoutForm',
+          error: e,
+        );
       }
     });
   }
@@ -82,10 +183,10 @@ class _CheckoutFormState extends State<CheckoutForm> {
   @override
   void dispose() {
     _noteController.dispose();
-    // Hapus file gambar sementara jika ada
-    if (_compressedImagePath != null) {
-      File(_compressedImagePath!).delete().ignore();
-    }
+    _saveNoteTimer?.cancel();
+
+    // Note: Don't delete persistent photos here as they should remain
+    // until successful check-out or auto cleanup
     super.dispose();
   }
 
@@ -162,11 +263,12 @@ class _CheckoutFormState extends State<CheckoutForm> {
 
       if (image != null) {
         final now = DateTime.now();
+        final timestamp = DateFormat('dd/MM/yyyy HH:mm:ss').format(now);
+
         setState(() {
           _imageFile = image;
-          _imageTimestamp = DateFormat('dd/MM/yyyy HH:mm:ss').format(now);
-          _compressedImagePath =
-              null; // Reset compressed path jika gambar baru diambil
+          _imageTimestamp = timestamp;
+          _compressedImagePath = null; // Reset compressed path
           _imageError = null;
         });
 
@@ -175,10 +277,28 @@ class _CheckoutFormState extends State<CheckoutForm> {
 
         // Kompres gambar secara asinkronus
         final compressedImagePath = await _compressImage(image.path);
-        if (compressedImagePath != null) {
+        final finalImagePath = compressedImagePath ?? image.path;
+
+        // Simpan foto dengan PhotoStorageService
+        final savedPhotoPath = await _photoStorageService.savePhoto(
+          scheduleId: widget.schedule.id,
+          originalPhotoPath: finalImagePath,
+          type: 'checkout',
+          timestamp: timestamp,
+          note: _noteController.text.trim(),
+          status: _selectedStatus,
+        );
+
+        if (savedPhotoPath != null && mounted) {
           setState(() {
-            _compressedImagePath = compressedImagePath;
+            _compressedImagePath = savedPhotoPath;
+            _imageFile = XFile(savedPhotoPath);
           });
+
+          developer.log(
+            'Photo saved to persistent storage: $savedPhotoPath',
+            name: 'CheckoutForm',
+          );
         }
       }
     } catch (e) {
@@ -241,6 +361,13 @@ class _CheckoutFormState extends State<CheckoutForm> {
       listener: (context, state) {
         if (state is CheckOutSuccess) {
           // Success handling is now done in parent widget (ScheduleDetailPage)
+          // Delete photo data after successful check-out
+          _photoStorageService.deletePhotoData(widget.schedule.id);
+          developer.log(
+            'Deleted photo data after successful check-out for schedule ${widget.schedule.id}',
+            name: 'CheckoutForm',
+          );
+
           // Reset loading state only
           setState(() {
             _isLoading = false;
@@ -279,6 +406,36 @@ class _CheckoutFormState extends State<CheckoutForm> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
+
+              // Show restore loading indicator
+              if (_isRestoringData) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.getPrimaryColor(context).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border:
+                        Border.all(color: AppTheme.getPrimaryColor(context)),
+                  ),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppTheme.getPrimaryColor(context),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text('Memulihkan data foto...'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Status dropdown
               Container(
@@ -336,6 +493,9 @@ class _CheckoutFormState extends State<CheckoutForm> {
                           setState(() {
                             _selectedStatus = newValue;
                           });
+
+                          // Save status changes to persistent storage
+                          _saveNoteChanges();
                         }
                       },
                     ),

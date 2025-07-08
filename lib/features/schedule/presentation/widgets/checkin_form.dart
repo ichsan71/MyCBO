@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
@@ -13,6 +14,8 @@ import '../bloc/schedule_bloc.dart';
 import '../bloc/schedule_state.dart';
 import 'package:test_cbo/core/presentation/widgets/shimmer_button_loading.dart';
 import 'package:test_cbo/core/presentation/theme/app_theme.dart';
+import 'package:test_cbo/core/services/photo_storage_service.dart';
+import 'package:test_cbo/core/di/injection_container.dart' as di;
 
 class CheckinForm extends StatefulWidget {
   final int scheduleId;
@@ -41,6 +44,9 @@ class _CheckinFormState extends State<CheckinForm> {
   String? _locationError;
   String? _imageError;
   String? _noteError;
+  late PhotoStorageService _photoStorageService;
+  bool _isRestoringData = false;
+  Timer? _saveNoteTimer;
 
   // Add minimum character constant
   static const int _minimumNoteCharacters = 10;
@@ -49,12 +55,97 @@ class _CheckinFormState extends State<CheckinForm> {
   @override
   void initState() {
     super.initState();
+    _photoStorageService = di.sl<PhotoStorageService>();
     _checkPermissions();
+    _restorePhotoData();
     // Add listener for text changes
     _noteController.addListener(() {
       setState(() {
         // This will trigger a rebuild to update the character count
       });
+
+      // Save note changes to persistent storage
+      _saveNoteChanges();
+    });
+  }
+
+  /// Restore saved photo data if exists
+  Future<void> _restorePhotoData() async {
+    try {
+      setState(() {
+        _isRestoringData = true;
+      });
+
+      final photoData =
+          await _photoStorageService.getPhotoData(widget.scheduleId, 'checkin');
+
+      if (photoData != null && mounted) {
+        // Check if photo file still exists
+        final file = File(photoData.photoPath);
+        if (await file.exists()) {
+          setState(() {
+            _imageFile = XFile(photoData.photoPath);
+            _compressedImagePath = photoData.photoPath;
+            _imageTimestamp = photoData.timestamp;
+            if (photoData.note != null) {
+              _noteController.text = photoData.note!;
+            }
+          });
+
+          developer.log(
+            'Restored check-in photo data for schedule ${widget.scheduleId}',
+            name: 'CheckinForm',
+          );
+        } else {
+          // Photo file doesn't exist, clean up metadata
+          await _photoStorageService.deletePhotoData(widget.scheduleId);
+          developer.log(
+            'Photo file not found, cleaned up metadata for schedule ${widget.scheduleId}',
+            name: 'CheckinForm',
+          );
+        }
+      }
+    } catch (e) {
+      developer.log(
+        'Error restoring photo data: ${e.toString()}',
+        name: 'CheckinForm',
+        error: e,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRestoringData = false;
+        });
+      }
+    }
+  }
+
+  /// Save note changes to persistent storage with debouncing
+  void _saveNoteChanges() {
+    // Cancel previous timer
+    _saveNoteTimer?.cancel();
+
+    // Set new timer with 1 second delay
+    _saveNoteTimer = Timer(const Duration(seconds: 1), () async {
+      try {
+        // Only save if photo exists
+        if (_imageFile != null) {
+          await _photoStorageService.savePhoto(
+            scheduleId: widget.scheduleId,
+            originalPhotoPath: _compressedImagePath ?? _imageFile!.path,
+            type: 'checkin',
+            timestamp: _imageTimestamp ??
+                DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            note: _noteController.text.trim(),
+          );
+        }
+      } catch (e) {
+        developer.log(
+          'Error saving note changes: ${e.toString()}',
+          name: 'CheckinForm',
+          error: e,
+        );
+      }
     });
   }
 
@@ -233,19 +324,37 @@ class _CheckinFormState extends State<CheckinForm> {
 
       if (image != null) {
         final now = DateTime.now();
+        final timestamp = DateFormat('dd/MM/yyyy HH:mm:ss').format(now);
+
         setState(() {
           _imageFile = image;
-          _imageTimestamp = DateFormat('dd/MM/yyyy HH:mm:ss').format(now);
-          _compressedImagePath =
-              null; // Reset compressed path jika gambar baru diambil
+          _imageTimestamp = timestamp;
+          _compressedImagePath = null; // Reset compressed path
         });
 
         // Kompres gambar secara asinkronus
         final compressedImagePath = await _compressImage(image.path);
-        if (compressedImagePath != null) {
+        final finalImagePath = compressedImagePath ?? image.path;
+
+        // Simpan foto dengan PhotoStorageService
+        final savedPhotoPath = await _photoStorageService.savePhoto(
+          scheduleId: widget.scheduleId,
+          originalPhotoPath: finalImagePath,
+          type: 'checkin',
+          timestamp: timestamp,
+          note: _noteController.text.trim(),
+        );
+
+        if (savedPhotoPath != null && mounted) {
           setState(() {
-            _compressedImagePath = compressedImagePath;
+            _compressedImagePath = savedPhotoPath;
+            _imageFile = XFile(savedPhotoPath);
           });
+
+          developer.log(
+            'Photo saved to persistent storage: $savedPhotoPath',
+            name: 'CheckinForm',
+          );
         }
       }
     } catch (e) {
@@ -352,6 +461,13 @@ class _CheckinFormState extends State<CheckinForm> {
       listener: (context, state) {
         if (state is CheckInSuccess) {
           // Success handling is now done in parent widget (ScheduleDetailPage)
+          // Delete photo data after successful check-in
+          _photoStorageService.deletePhotoData(widget.scheduleId);
+          developer.log(
+            'Deleted photo data after successful check-in for schedule ${widget.scheduleId}',
+            name: 'CheckinForm',
+          );
+
           // Reset loading state only
           setState(() {
             _isLoading = false;
@@ -384,6 +500,35 @@ class _CheckinFormState extends State<CheckinForm> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
+
+            // Show restore loading indicator
+            if (_isRestoringData) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.getPrimaryColor(context).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppTheme.getPrimaryColor(context)),
+                ),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppTheme.getPrimaryColor(context),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text('Memulihkan data foto...'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
 
             // Location section dengan error message
             if (_currentPosition != null && _currentAddress != null) ...[
@@ -684,10 +829,10 @@ class _CheckinFormState extends State<CheckinForm> {
   @override
   void dispose() {
     _noteController.dispose();
-    // Hapus file gambar sementara jika ada
-    if (_compressedImagePath != null) {
-      File(_compressedImagePath!).delete().ignore();
-    }
+    _saveNoteTimer?.cancel();
+
+    // Note: Don't delete persistent photos here as they should remain
+    // until successful check-in or auto cleanup
     super.dispose();
   }
 }
