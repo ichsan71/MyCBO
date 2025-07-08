@@ -756,17 +756,37 @@ class AddScheduleRemoteDataSourceImpl implements AddScheduleRemoteDataSource {
     required List<String> spesialisNames,
   }) async {
     try {
-      Logger.debug(_tag, 'Data yang akan dikirim ke API:');
+      // Pre-validation of data
+      if (product.isEmpty) {
+        throw ServerException(message: 'Daftar produk tidak boleh kosong');
+      }
+
+      if (productNames.isEmpty) {
+        throw ServerException(message: 'Nama produk tidak boleh kosong');
+      }
+
+      // Validate data consistency
+      if (product.length != productNames.length) {
+        Logger.warning(_tag,
+            'Product count mismatch: ${product.length} products vs ${productNames.length} names');
+      }
+
+      Logger.debug(_tag, 'Pre-validation passed, preparing data for API:');
       Logger.divider();
       Logger.debug(_tag, 'Type Schedule: $typeSchedule');
       Logger.debug(_tag, 'Tujuan: $tujuan');
       Logger.debug(_tag, 'Tanggal Visit: $tglVisit');
-      Logger.debug(_tag, 'Product IDs: $product');
-      Logger.debug(_tag, 'Product Names: $productNames');
-      Logger.debug(_tag, 'Divisi IDs: $productForIdDivisi');
-      Logger.debug(_tag, 'Divisi Names: $divisiNames');
-      Logger.debug(_tag, 'Spesialis IDs: $productForIdSpesialis');
-      Logger.debug(_tag, 'Spesialis Names: $spesialisNames');
+      Logger.debug(_tag, 'Product IDs: $product (${product.length} items)');
+      Logger.debug(
+          _tag, 'Product Names: $productNames (${productNames.length} items)');
+      Logger.debug(_tag,
+          'Divisi IDs: $productForIdDivisi (${productForIdDivisi.length} items)');
+      Logger.debug(
+          _tag, 'Divisi Names: $divisiNames (${divisiNames.length} items)');
+      Logger.debug(_tag,
+          'Spesialis IDs: $productForIdSpesialis (${productForIdSpesialis.length} items)');
+      Logger.debug(_tag,
+          'Spesialis Names: $spesialisNames (${spesialisNames.length} items)');
       Logger.debug(_tag, 'Note: $note');
       Logger.debug(_tag, 'User ID: $idUser');
       Logger.debug(_tag, 'Dokter ID: $dokter');
@@ -787,6 +807,16 @@ class AddScheduleRemoteDataSourceImpl implements AddScheduleRemoteDataSource {
       final spesialisJson =
           productForIdSpesialis.map((id) => id.toString()).toList();
 
+      // Check if converted data is valid
+      if (productJson.isEmpty) {
+        throw ServerException(message: 'Error: Product JSON conversion failed');
+      }
+
+      Logger.debug(_tag, 'Data conversion completed:');
+      Logger.debug(_tag, '  Product JSON: $productJson');
+      Logger.debug(_tag, '  Divisi JSON: $divisiJson');
+      Logger.debug(_tag, '  Spesialis JSON: $spesialisJson');
+
       final formData = FormData.fromMap({
         'type-schedule': typeSchedule.toString(),
         'tujuan': tujuan,
@@ -805,9 +835,22 @@ class AddScheduleRemoteDataSourceImpl implements AddScheduleRemoteDataSource {
         'nama_spesialis': spesialisNames.join(', '),
       });
 
+      // Validate FormData before sending
+      final formFields = formData.fields;
+      for (final field in formFields) {
+        if (field.key == 'product' && field.value.isEmpty) {
+          throw ServerException(
+              message: 'Error: Product data is empty in FormData');
+        }
+        if (field.key == 'nama_product' && field.value.isEmpty) {
+          throw ServerException(
+              message: 'Error: Product names are empty in FormData');
+        }
+      }
+
       // Tambahkan log untuk memeriksa data yang dikirim
       Logger.debug(_tag, '''
-Data yang akan dikirim dalam FormData:
+FormData yang akan dikirim:
 ${formData.fields.map((field) => '${field.key}: ${field.value}').join('\n')}
 ''');
 
@@ -845,7 +888,7 @@ ${formData.fields.map((field) => '${field.key}: ${field.value}').join('\n')}
       }
 
       final errorMessage = response.data['desc'] ?? 'Gagal menambahkan jadwal';
-      Logger.error(_tag, 'Error: $errorMessage');
+      Logger.error(_tag, 'Error response: $errorMessage');
       throw ServerException(message: errorMessage);
     } catch (e) {
       Logger.error(_tag, 'Exception caught: ${e.runtimeType}', e);
@@ -862,6 +905,11 @@ ${formData.fields.map((field) => '${field.key}: ${field.value}').join('\n')}
             e.response?.statusMessage ??
             'Gagal menambahkan jadwal';
         throw ServerException(message: errorMessage);
+      }
+
+      // Re-throw ServerException as is
+      if (e is ServerException) {
+        rethrow;
       }
 
       throw ServerException(

@@ -107,89 +107,190 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
         _selectedProductNames.removeAt(index);
 
         // Hapus divisi dan spesialis terkait
-        if (product.idDivisiSales != null) {
-          try {
-            final List<dynamic> divisiIds = jsonDecode(product.idDivisiSales!);
-            for (final divisiId in divisiIds) {
-              final intDivisiId = int.parse(divisiId.toString());
-              if (_selectedProductDivisiIds.contains(intDivisiId)) {
-                _selectedProductDivisiIds.remove(intDivisiId);
-                // Hapus nama divisi
-                final divisiName = _getDivisionName(intDivisiId);
-                _selectedDivisiNames.remove(divisiName);
-              }
-            }
-          } catch (e) {
-            Logger.error(_tag, 'Error parsing division IDs: $e');
-          }
-        }
-
-        if (product.idSpesialis != null) {
-          try {
-            final List<dynamic> spesialisIds = jsonDecode(product.idSpesialis!);
-            for (final spesialisId in spesialisIds) {
-              final intSpesialisId = int.parse(spesialisId.toString());
-              if (_selectedProductSpesialisIds.contains(intSpesialisId)) {
-                _selectedProductSpesialisIds.remove(intSpesialisId);
-                // Hapus nama spesialis
-                final spesialisName = _getSpesialisName(intSpesialisId);
-                _selectedSpesialisNames.remove(spesialisName);
-              }
-            }
-          } catch (e) {
-            Logger.error(_tag, 'Error parsing specialist IDs: $e');
-          }
-        }
+        _removeDivisiAndSpesialisForProduct(product);
       } else {
         // Tambah produk dan data terkait
         _selectedProducts.add(product);
         _selectedProductNames.add(product.nama);
 
         // Tambah divisi dan spesialis terkait
-        if (product.idDivisiSales != null) {
-          try {
-            final List<dynamic> divisiIds = jsonDecode(product.idDivisiSales!);
-            for (final divisiId in divisiIds) {
-              final intDivisiId = int.parse(divisiId.toString());
-              if (!_selectedProductDivisiIds.contains(intDivisiId)) {
-                _selectedProductDivisiIds.add(intDivisiId);
-                // Tambah nama divisi
-                final divisiName = _getDivisionName(intDivisiId);
-                if (!_selectedDivisiNames.contains(divisiName)) {
-                  _selectedDivisiNames.add(divisiName);
-                }
-              }
-            }
-          } catch (e) {
-            Logger.error(_tag, 'Error parsing division IDs: $e');
-          }
-        }
-
-        if (product.idSpesialis != null) {
-          try {
-            final List<dynamic> spesialisIds = jsonDecode(product.idSpesialis!);
-            for (final spesialisId in spesialisIds) {
-              final intSpesialisId = int.parse(spesialisId.toString());
-              if (!_selectedProductSpesialisIds.contains(intSpesialisId)) {
-                _selectedProductSpesialisIds.add(intSpesialisId);
-                // Tambah nama spesialis
-                final spesialisName = _getSpesialisName(intSpesialisId);
-                if (!_selectedSpesialisNames.contains(spesialisName)) {
-                  _selectedSpesialisNames.add(spesialisName);
-                }
-              }
-            }
-          } catch (e) {
-            Logger.error(_tag, 'Error parsing specialist IDs: $e');
-          }
-        }
+        _addDivisiAndSpesialisForProduct(product);
       }
 
       // Debug log for final verification
       Logger.debug(_tag, 'Selected Divisi IDs: $_selectedProductDivisiIds');
       Logger.debug(
           _tag, 'Selected Spesialis IDs: $_selectedProductSpesialisIds');
+      Logger.debug(_tag, 'Selected Product Names: $_selectedProductNames');
+      Logger.debug(_tag, 'Selected Divisi Names: $_selectedDivisiNames');
+      Logger.debug(_tag, 'Selected Spesialis Names: $_selectedSpesialisNames');
     });
+  }
+
+  void _removeDivisiAndSpesialisForProduct(Product product) {
+    if (product.idDivisiSales != null && product.idDivisiSales!.isNotEmpty) {
+      try {
+        final List<dynamic> divisiIds = _parseJsonArray(product.idDivisiSales!);
+        for (final divisiId in divisiIds) {
+          final intDivisiId = _parseToInt(divisiId);
+          if (intDivisiId != null &&
+              _selectedProductDivisiIds.contains(intDivisiId)) {
+            _selectedProductDivisiIds.remove(intDivisiId);
+            // Hapus nama divisi
+            final divisiName = _getDivisionName(intDivisiId);
+            _selectedDivisiNames.remove(divisiName);
+          }
+        }
+      } catch (e) {
+        Logger.error(_tag,
+            'Error removing division IDs for product ${product.nama}: $e');
+      }
+    }
+
+    if (product.idSpesialis != null && product.idSpesialis!.isNotEmpty) {
+      try {
+        final List<dynamic> spesialisIds =
+            _parseJsonArray(product.idSpesialis!);
+        for (final spesialisId in spesialisIds) {
+          final intSpesialisId = _parseToInt(spesialisId);
+          if (intSpesialisId != null &&
+              _selectedProductSpesialisIds.contains(intSpesialisId)) {
+            _selectedProductSpesialisIds.remove(intSpesialisId);
+            // Hapus nama spesialis
+            final spesialisName = _getSpesialisName(intSpesialisId);
+            _selectedSpesialisNames.remove(spesialisName);
+          }
+        }
+      } catch (e) {
+        Logger.error(_tag,
+            'Error removing specialist IDs for product ${product.nama}: $e');
+      }
+    }
+  }
+
+  void _addDivisiAndSpesialisForProduct(Product product) {
+    // Debug logging untuk melihat nilai actual dari product
+    Logger.debug(_tag, 'Processing product: ${product.nama}');
+    Logger.debug(_tag, '  idDivisiSales: "${product.idDivisiSales}"');
+    Logger.debug(_tag, '  idSpesialis: "${product.idSpesialis}"');
+
+    if (product.idDivisiSales != null && product.idDivisiSales!.isNotEmpty) {
+      try {
+        Logger.debug(
+            _tag, 'Parsing division string: "${product.idDivisiSales}"');
+        final List<dynamic> divisiIds = _parseJsonArray(product.idDivisiSales!);
+        Logger.debug(_tag, 'Parsed division IDs: $divisiIds');
+
+        for (final divisiId in divisiIds) {
+          final intDivisiId = _parseToInt(divisiId);
+          Logger.debug(
+              _tag, 'Converting division ID "$divisiId" to int: $intDivisiId');
+
+          if (intDivisiId != null &&
+              !_selectedProductDivisiIds.contains(intDivisiId)) {
+            _selectedProductDivisiIds.add(intDivisiId);
+            // Tambah nama divisi
+            final divisiName = _getDivisionName(intDivisiId);
+            if (!_selectedDivisiNames.contains(divisiName)) {
+              _selectedDivisiNames.add(divisiName);
+            }
+            Logger.debug(_tag, 'Added division: $intDivisiId ($divisiName)');
+          }
+        }
+      } catch (e) {
+        Logger.error(
+            _tag, 'Error adding division IDs for product ${product.nama}: $e');
+      }
+    } else {
+      Logger.warning(
+          _tag, 'Product ${product.nama} has null or empty idDivisiSales');
+    }
+
+    if (product.idSpesialis != null && product.idSpesialis!.isNotEmpty) {
+      try {
+        Logger.debug(
+            _tag, 'Parsing specialist string: "${product.idSpesialis}"');
+        final List<dynamic> spesialisIds =
+            _parseJsonArray(product.idSpesialis!);
+        Logger.debug(_tag, 'Parsed specialist IDs: $spesialisIds');
+
+        for (final spesialisId in spesialisIds) {
+          final intSpesialisId = _parseToInt(spesialisId);
+          Logger.debug(_tag,
+              'Converting specialist ID "$spesialisId" to int: $intSpesialisId');
+
+          if (intSpesialisId != null &&
+              !_selectedProductSpesialisIds.contains(intSpesialisId)) {
+            _selectedProductSpesialisIds.add(intSpesialisId);
+            // Tambah nama spesialis
+            final spesialisName = _getSpesialisName(intSpesialisId);
+            if (!_selectedSpesialisNames.contains(spesialisName)) {
+              _selectedSpesialisNames.add(spesialisName);
+            }
+            Logger.debug(
+                _tag, 'Added specialist: $intSpesialisId ($spesialisName)');
+          }
+        }
+      } catch (e) {
+        Logger.error(_tag,
+            'Error adding specialist IDs for product ${product.nama}: $e');
+      }
+    } else {
+      Logger.warning(
+          _tag, 'Product ${product.nama} has null or empty idSpesialis');
+    }
+  }
+
+  List<dynamic> _parseJsonArray(String jsonString) {
+    Logger.debug(_tag, '_parseJsonArray called with: "$jsonString"');
+
+    try {
+      // Coba parse sebagai JSON array
+      final result = jsonDecode(jsonString) as List<dynamic>;
+      Logger.debug(_tag, 'JSON parse successful: $result');
+      return result;
+    } catch (e) {
+      Logger.warning(_tag,
+          'Failed to parse as JSON array: $jsonString, error: $e, trying alternative parsing');
+
+      // Fallback: coba parsing manual jika bukan format JSON yang valid
+      try {
+        // Bersihkan string dari karakter yang tidak diinginkan
+        String cleanString = jsonString
+            .replaceAll('[', '')
+            .replaceAll(']', '')
+            .replaceAll('"', '')
+            .replaceAll(' ', '');
+
+        Logger.debug(_tag, 'Cleaned string: "$cleanString"');
+
+        if (cleanString.isEmpty) {
+          Logger.debug(_tag, 'Cleaned string is empty, returning empty list');
+          return [];
+        }
+
+        // Split berdasarkan koma
+        final result =
+            cleanString.split(',').where((e) => e.isNotEmpty).toList();
+        Logger.debug(_tag, 'Alternative parse successful: $result');
+        return result;
+      } catch (e2) {
+        Logger.error(
+            _tag, 'Failed to parse JSON string: $jsonString, error: $e2');
+        return [];
+      }
+    }
+  }
+
+  int? _parseToInt(dynamic value) {
+    try {
+      if (value is int) return value;
+      if (value is String) return int.parse(value);
+      return int.parse(value.toString());
+    } catch (e) {
+      Logger.error(_tag, 'Failed to parse to int: $value, error: $e');
+      return null;
+    }
   }
 
   // Mapping ID divisi ke nama divisi
@@ -324,28 +425,63 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
         return;
       }
 
+      // Validation untuk memastikan data product tidak null
+      final productIds = _selectedProducts.map((p) => p.id.toString()).toList();
+      if (productIds.isEmpty) {
+        Logger.error(_tag, 'Product IDs list is empty');
+        CustomSnackBar.show(
+          context: context,
+          message:
+              'Error: Data produk tidak valid. Silakan pilih ulang produk.',
+          isError: true,
+        );
+        return;
+      }
+
+      // Pastikan divisi dan spesialis IDs tidak null
+      final divisiIds =
+          _selectedProductDivisiIds.map((id) => id.toString()).toList();
+      final spesialisIds =
+          _selectedProductSpesialisIds.map((id) => id.toString()).toList();
+
+      // Log data sebelum dikirim untuk debugging
+      Logger.info(_tag, 'Submitting schedule with data:');
+      Logger.info(_tag, '  Product IDs: $productIds');
+      Logger.info(_tag, '  Product Names: $_selectedProductNames');
+      Logger.info(_tag, '  Divisi IDs: $divisiIds');
+      Logger.info(_tag, '  Divisi Names: $_selectedDivisiNames');
+      Logger.info(_tag, '  Spesialis IDs: $spesialisIds');
+      Logger.info(_tag, '  Spesialis Names: $_selectedSpesialisNames');
+
+      // Warning jika divisi atau spesialis kosong
+      if (divisiIds.isEmpty) {
+        Logger.warning(
+            _tag, 'Divisi IDs list is empty - this might cause issues');
+      }
+      if (spesialisIds.isEmpty) {
+        Logger.warning(
+            _tag, 'Spesialis IDs list is empty - this might cause issues');
+      }
+
       // Final verification of the division and specialist IDs before submission
       Logger.debug(_tag, 'Final data verification:');
-      Logger.debug(_tag, '  Divisi IDs: $_selectedProductDivisiIds');
-      Logger.debug(_tag, '  Spesialis IDs: $_selectedProductSpesialisIds');
+      Logger.debug(_tag, '  Divisi IDs: $divisiIds');
+      Logger.debug(_tag, '  Spesialis IDs: $spesialisIds');
 
       context.read<AddScheduleBloc>().add(
             SubmitScheduleEvent(
               typeSchedule: _selectedScheduleType!.id.toString(),
               tujuan: _selectedDestinationType,
               tglVisit: _tanggalController.text,
-              product: _selectedProducts.map((p) => p.id.toString()).toList(),
+              product: productIds,
               note: note,
               idUser: authState.user.idUser.toString(),
               dokter: _selectedDoctor!.id.toString(),
               klinik: _selectedDestinationType == 'klinik'
                   ? _selectedDoctor!.nama
                   : '',
-              productForIdDivisi:
-                  _selectedProductDivisiIds.map((id) => id.toString()).toList(),
-              productForIdSpesialis: _selectedProductSpesialisIds
-                  .map((id) => id.toString())
-                  .toList(),
+              productForIdDivisi: divisiIds,
+              productForIdSpesialis: spesialisIds,
               shift: _selectedShift,
               jenis: _selectedJenis,
               productNames: _selectedProductNames,
@@ -1271,15 +1407,33 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                                               context),
                                         ),
                                       ),
-                                      if (product.kode != null) ...[
+                                      if (product.keterangan != null &&
+                                          product.keterangan!.isNotEmpty) ...[
                                         const SizedBox(height: 4),
                                         Text(
-                                          'Kode: ${product.kode}',
+                                          product.keterangan!,
                                           style: TextStyle(
                                             fontSize: 12,
                                             color:
                                                 AppTheme.getSecondaryTextColor(
                                                     context),
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                      if (product.kode != null &&
+                                          product.kode!.isNotEmpty) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Kode: ${product.kode}',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color:
+                                                AppTheme.getSecondaryTextColor(
+                                                        context)
+                                                    .withOpacity(0.8),
+                                            fontStyle: FontStyle.italic,
                                           ),
                                         ),
                                       ],

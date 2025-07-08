@@ -42,8 +42,9 @@ class AppDatabase {
 
       final db = await openDatabase(
         path,
-        version: 1,
+        version: 3,
         onCreate: _createDB,
+        onUpgrade: _onUpgrade,
         onOpen: (db) async {
           // Try to optimize database settings (safe fallback approach)
           try {
@@ -137,6 +138,47 @@ class AppDatabase {
     }
   }
 
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (kDebugMode) {
+      print('Upgrading database from version $oldVersion to $newVersion');
+    }
+
+    if (oldVersion < 2) {
+      // Add new columns for division_id_json and specialist_id_json
+      try {
+        await db
+            .execute('ALTER TABLE products ADD COLUMN division_id_json TEXT');
+        await db
+            .execute('ALTER TABLE products ADD COLUMN specialist_id_json TEXT');
+        if (kDebugMode) {
+          print(
+              'Successfully added division_id_json and specialist_id_json columns');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error adding new columns (might already exist): $e');
+        }
+        // Continue anyway - columns might already exist
+      }
+    }
+    
+    if (oldVersion < 3) {
+      // Add new columns for code and description
+      try {
+        await db.execute('ALTER TABLE products ADD COLUMN code TEXT');
+        await db.execute('ALTER TABLE products ADD COLUMN description TEXT');
+        if (kDebugMode) {
+          print('Successfully added code and description columns');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error adding code/description columns (might already exist): $e');
+        }
+        // Continue anyway - columns might already exist
+      }
+    }
+  }
+
   Future<void> _createDB(Database db, int version) async {
     try {
       if (kDebugMode) {
@@ -166,8 +208,12 @@ class AppDatabase {
           CREATE TABLE products (
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
+            code TEXT,
+            description TEXT,
             division_id INTEGER,
             specialist_id INTEGER,
+            division_id_json TEXT,
+            specialist_id_json TEXT,
             last_updated INTEGER
           )
         ''');

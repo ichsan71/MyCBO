@@ -277,42 +277,97 @@ class AddScheduleBloc extends Bloc<AddScheduleEvent, AddScheduleState> {
         throw const FormatException('Semua field wajib harus diisi');
       }
 
+      // Additional validation for product-related data
+      if (event.product.isEmpty) {
+        throw const FormatException('Minimal satu produk harus dipilih');
+      }
+
+      // Validate product division and specialist data
+      if (event.productForIdDivisi.isEmpty &&
+          event.productForIdSpesialis.isEmpty) {
+        Logger.warning(
+            _tag, 'Warning: Both division and specialist IDs are empty');
+        // This is a warning, not necessarily an error, as some products might not have these associations
+      }
+
       // Parse and format the date
       final inputFormat = DateFormat('dd/MM/yyyy');
       final outputFormat = DateFormat('yyyy-MM-dd');
       final date = inputFormat.parse(event.tglVisit);
       final formattedDate = outputFormat.format(date);
 
-      // Log the request data
+      // Log the request data for debugging
       Logger.debug(_tag, '''
 Data yang akan dikirim:
 - Type Schedule: ${event.typeSchedule}
 - Tujuan: ${event.tujuan}
 - Tanggal Visit: $formattedDate (original: ${event.tglVisit})
-- Product: ${event.product}
+- Product: ${event.product} (${event.product.length} items)
+- Product Names: ${event.productNames} (${event.productNames.length} items)
 - Note: ${event.note}
 - ID User: ${event.idUser}
 - Dokter: ${event.dokter}
 - Klinik: ${event.klinik}
-- Product For ID Divisi: ${event.productForIdDivisi}
-- Product For ID Spesialis: ${event.productForIdSpesialis}
+- Product For ID Divisi: ${event.productForIdDivisi} (${event.productForIdDivisi.length} items)
+- Divisi Names: ${event.divisiNames} (${event.divisiNames.length} items)
+- Product For ID Spesialis: ${event.productForIdSpesialis} (${event.productForIdSpesialis.length} items)
+- Spesialis Names: ${event.spesialisNames} (${event.spesialisNames.length} items)
 - Shift: ${event.shift}
 - Jenis: ${event.jenis}
 ''');
+
+      // Additional validation: Check if we can parse product IDs to integers
+      final List<int> productIds = [];
+      for (final productIdStr in event.product) {
+        try {
+          productIds.add(int.parse(productIdStr));
+        } catch (e) {
+          Logger.error(_tag, 'Invalid product ID: $productIdStr');
+          emit(AddScheduleError(
+              message: 'ID produk tidak valid: $productIdStr'));
+          return;
+        }
+      }
+
+      // Validate division IDs
+      final List<int> divisionIds = [];
+      for (final divisionIdStr in event.productForIdDivisi) {
+        try {
+          divisionIds.add(int.parse(divisionIdStr));
+        } catch (e) {
+          Logger.error(_tag, 'Invalid division ID: $divisionIdStr');
+          emit(AddScheduleError(
+              message: 'ID divisi tidak valid: $divisionIdStr'));
+          return;
+        }
+      }
+
+      // Validate specialist IDs
+      final List<int> specialistIds = [];
+      for (final specialistIdStr in event.productForIdSpesialis) {
+        try {
+          specialistIds.add(int.parse(specialistIdStr));
+        } catch (e) {
+          Logger.error(_tag, 'Invalid specialist ID: $specialistIdStr');
+          emit(AddScheduleError(
+              message: 'ID spesialis tidak valid: $specialistIdStr'));
+          return;
+        }
+      }
+
+      Logger.info(_tag, 'All validations passed, proceeding with API call');
 
       final result = await addSchedule(AddScheduleParams(
         typeSchedule: int.parse(event.typeSchedule),
         tujuan: event.tujuan,
         tglVisit: formattedDate,
-        product: event.product.map((p) => int.parse(p)).toList(),
+        product: productIds,
         note: event.note,
         idUser: int.parse(event.idUser),
         dokter: int.parse(event.dokter),
         klinik: event.klinik,
-        productForIdDivisi:
-            event.productForIdDivisi.map((id) => int.parse(id)).toList(),
-        productForIdSpesialis:
-            event.productForIdSpesialis.map((id) => int.parse(id)).toList(),
+        productForIdDivisi: divisionIds,
+        productForIdSpesialis: specialistIds,
         shift: event.shift,
         jenis: event.jenis,
         productNames: event.productNames,

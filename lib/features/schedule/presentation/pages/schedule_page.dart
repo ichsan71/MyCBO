@@ -114,9 +114,8 @@ class _SchedulePageState extends State<SchedulePage> {
             ),
           ),
           floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              // Handle add schedule
-            },
+            onPressed: () => _navigateToAddSchedule(),
+            backgroundColor: AppTheme.getPrimaryColor(context),
             child: const Icon(Icons.add),
           ),
         );
@@ -222,5 +221,17 @@ class _SchedulePageState extends State<SchedulePage> {
     if (range == null) return '';
     final formatter = DateFormat('MM/dd/yyyy');
     return '${formatter.format(range.start)} - ${formatter.format(range.end)}';
+  }
+
+  // Fungsi untuk navigasi ke halaman tambah jadwal
+  Future<void> _navigateToAddSchedule() async {
+    // Navigasi ke halaman tambah jadwal dan tunggu hasil
+    final result = await Navigator.pushNamed(context, '/add_schedule');
+
+    // Jika kembali dengan hasil sukses, refresh jadwal
+    if (result == true) {
+      if (!mounted) return;
+      _loadInitialData(); // Refresh data setelah menambah jadwal
+    }
   }
 }

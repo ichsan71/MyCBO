@@ -121,8 +121,16 @@ class ProductModel extends Product {
       String? idDivisiSales = json['id_divisi_sales']?.toString();
       String? idSpesialis = json['id_spesialis']?.toString();
 
+      // Handle string "null" values from API
+      if (idDivisiSales == 'null') idDivisiSales = null;
+      if (idSpesialis == 'null') idSpesialis = null;
+
+      Logger.debug('ProductModel',
+          'After null check - idDivisiSales: $idDivisiSales, idSpesialis: $idSpesialis');
+
       // If API doesn't provide division/specialist data, provide default values based on product type
-      if (idDivisiSales == null && idSpesialis == null) {
+      if ((idDivisiSales == null || idDivisiSales.isEmpty) &&
+          (idSpesialis == null || idSpesialis.isEmpty)) {
         // Provide default division and specialist mapping based on product name patterns
         if (nama.toLowerCase().contains('cream') ||
             nama.toLowerCase().contains('gel') ||
@@ -138,8 +146,8 @@ class ProductModel extends Product {
           idSpesialis = '[1]'; // General specialist
         }
 
-        Logger.debug(
-            'ProductModel', 'Applied fallback division/specialist for: $nama');
+        Logger.debug('ProductModel',
+            'Applied fallback division/specialist for: $nama - idDivisiSales: $idDivisiSales, idSpesialis: $idSpesialis');
       }
 
       return ProductModel(

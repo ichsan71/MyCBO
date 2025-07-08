@@ -99,16 +99,30 @@ class AddScheduleLocalDataSourceImpl implements AddScheduleLocalDataSource {
           'Berhasil mengambil ${productsData.length} produk dari database lokal');
 
       return productsData.map((json) {
-        // Konversi dari format database ke model
-        return ProductModel(
-          idProduct: json['id'] as int,
-          namaProduct: json['name'] as String,
-          desc: '',
-          kode: '',
-          nama: json['name'] as String,
-          keterangan: '',
-          id: json['id'] as int,
-        );
+        // Handle backward compatibility - check if new fields exist
+        final divisionIdJson = json['division_id_json']?.toString();
+        final specialistIdJson = json['specialist_id_json']?.toString();
+        
+        // Buat fake JSON untuk ProductModel.fromJson agar fallback mechanism berjalan
+        final fakeJson = {
+          'id': json['id'],
+          'nama': json['name'] as String,
+          'nama_product': json['name'] as String,
+          'id_divisi_sales': divisionIdJson, // Dari database (bisa null untuk data lama)
+          'id_spesialis': specialistIdJson, // Dari database (bisa null untuk data lama)
+          'keterangan': json['description'] ?? '',
+          'desc': json['description'] ?? '',
+          'kode': json['code'] ?? json['product_code'], // Ambil dari database jika ada (bisa null)
+        };
+
+        Logger.debug(_tag,
+            'Creating ProductModel from local cache for: ${json['name']}');
+        Logger.debug(_tag, '  division_id_json: $divisionIdJson');
+        Logger.debug(
+            _tag, '  specialist_id_json: $specialistIdJson');
+
+        // Gunakan fromJson untuk memicu fallback mechanism
+        return ProductModel.fromJson(fakeJson);
       }).toList();
     } catch (e) {
       Logger.error(
@@ -153,11 +167,20 @@ class AddScheduleLocalDataSourceImpl implements AddScheduleLocalDataSource {
 
       final List<Map<String, dynamic>> productsToInsert =
           products.map((product) {
+        // Simpan division dan specialist data sebagai JSON string
+        Logger.debug(_tag, 'Caching product: ${product.nama}');
+        Logger.debug(_tag, '  idDivisiSales: ${product.idDivisiSales}');
+        Logger.debug(_tag, '  idSpesialis: ${product.idSpesialis}');
+        
         return {
           'id': product.idProduct,
           'name': product.namaProduct,
-          'division_id': 0, // Default value, sesuaikan jika ada data tambahan
-          'specialist_id': 0, // Default value, sesuaikan jika ada data tambahan
+          'code': product.kode, // Store product code (can be null)
+          'description': product.keterangan, // Store product description (non-null)
+          'division_id': 0, // Keep for backward compatibility
+          'specialist_id': 0, // Keep for backward compatibility
+          'division_id_json': product.idDivisiSales, // Store original JSON string
+          'specialist_id_json': product.idSpesialis, // Store original JSON string
         };
       }).toList();
 
@@ -250,8 +273,35 @@ class AddScheduleLocalDataSourceImpl implements AddScheduleLocalDataSource {
       print('Time difference: ${Duration(milliseconds: diff).inHours} hours');
     }
 
+    // Check if this is the first time after schema upgrade
+    final needsSchemaRefresh = await _needsSchemaRefresh();
+    if (needsSchemaRefresh) {
+      Logger.info(_tag, 'Schema upgrade detected, forcing products sync');
+      return true;
+    }
+
     // Cek apakah sudah lewat interval sinkronisasi atau belum ada data
     return lastUpdate == 0 || diff > syncInterval;
+  }
+
+  Future<bool> _needsSchemaRefresh() async {
+    try {
+      final productsData = await database.getProducts();
+      if (productsData.isEmpty) return true;
+      
+      // Check if any product has the new fields (from both v2 and v3 schema updates)
+      final hasNewFields = productsData.any((product) => 
+        product.containsKey('division_id_json') || 
+        product.containsKey('specialist_id_json') ||
+        product.containsKey('code') ||
+        product.containsKey('description'));
+      
+      // If no products have new fields, force refresh
+      return !hasNewFields;
+    } catch (e) {
+      Logger.error(_tag, 'Error checking schema refresh need: $e');
+      return true; // Force refresh on error
+    }
   }
 
   @override
