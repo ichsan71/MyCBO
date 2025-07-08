@@ -157,21 +157,11 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
     if (!mounted) return;
 
     try {
-      // Simpan navigator sebelum operasi asynchronous
-      final navigator = Navigator.of(context);
-
       context.read<ScheduleBloc>().add(
             CheckInEvent(request: request),
           );
 
-      // Tunggu sebentar untuk memastikan state sudah terupdate
-      await Future.delayed(const Duration(seconds: 2));
-
-      if (!mounted) return;
-
-      // Tutup bottom sheet menggunakan navigator yang disimpan
-      navigator.pop();
-
+      // Navigation will be handled by BlocListener when CheckInSuccess is received
       // Refresh jadwal
       _refreshSchedule();
     } catch (e) {
@@ -193,14 +183,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
             ),
           );
 
-      // Tunggu sebentar untuk memastikan state sudah terupdate
-      await Future.delayed(const Duration(seconds: 2));
-
-      if (!mounted) return;
-
-      // Kembali ke halaman utama
-      Navigator.popUntil(context, (route) => route.isFirst);
-
+      // Navigation will be handled by BlocListener when CheckOutSuccess is received
       // Refresh jadwal
       _refreshSchedule();
     } catch (e) {
@@ -401,12 +384,16 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
               Future.microtask(() {
                 if (mounted) {
                   _showMessage(context, 'Check-in berhasil!');
+                  // Kembali ke halaman utama setelah check-in berhasil
+                  Navigator.popUntil(context, (route) => route.isFirst);
                 }
               });
             } else if (state is CheckOutSuccess) {
               Future.microtask(() {
                 if (mounted) {
                   _showMessage(context, 'Check-out berhasil!');
+                  // Kembali ke halaman utama setelah check-out berhasil
+                  Navigator.popUntil(context, (route) => route.isFirst);
                 }
               });
             } else if (state is ScheduleError) {

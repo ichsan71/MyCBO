@@ -80,3 +80,31 @@
 -keep class **.R$* {
     <fields>;
 } 
+
+# === ANTI-GLITCH RULES FOR ANDROID 10 ===
+# Prevent splash screen rendering issues
+-keep class androidx.core.splashscreen.** { *; }
+-keep class android.view.** { *; }
+-keep class android.graphics.** { *; }
+-keep class android.widget.** { *; }
+
+# Prevent Flutter UI rendering glitches
+-keep class io.flutter.embedding.** { *; }
+-keep class io.flutter.embedding.android.** { *; }
+-keep class io.flutter.embedding.engine.** { *; }
+
+# Keep activity lifecycle methods
+-keepclassmembers class * extends android.app.Activity {
+    public void onCreate(android.os.Bundle);
+    public void onResume();
+    public void onPause();
+}
+
+# Prevent theme and drawable resources from being obfuscated
+-keep class android.content.res.** { *; }
+-keepclassmembers class **.R$drawable {
+    public static final int *;
+}
+-keepclassmembers class **.R$style {
+    public static final int *;
+} 

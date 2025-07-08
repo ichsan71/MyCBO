@@ -46,17 +46,18 @@ class MonthlyApprovalBloc
     result.fold(
       (failure) => emit(MonthlyApprovalError(message: failure.message)),
       (message) {
+        // Navigate back to approval list page immediately
+        Navigator.of(event.context).popUntil((route) {
+          return route.settings.name == '/approval_list' || route.isFirst;
+        });
+
         // Show success message
         SuccessMessage.show(
           context: event.context,
-          message: event.isRejected 
+          message: event.isRejected
               ? 'Penolakan berhasil dikirim'
               : 'Persetujuan berhasil dikirim',
           onDismissed: () {
-            // Navigate back to approval list page
-            Navigator.of(event.context).popUntil((route) {
-              return route.settings.name == '/approval_list' || route.isFirst;
-            });
             // Refresh the list after showing success message
             add(GetMonthlyApprovals(userId: event.userId));
           },

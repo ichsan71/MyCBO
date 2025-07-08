@@ -59,11 +59,13 @@ android {
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             ndk {
-                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
+                abiFilters 'armeabi-v7a', 'arm64-v8a'
             }
         }
         debug {
             debuggable true
+            minifyEnabled false
+            shrinkResources false
         }
     }
 

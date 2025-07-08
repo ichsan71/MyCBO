@@ -191,6 +191,8 @@ class _CheckoutFormState extends State<CheckoutForm> {
   }
 
   void _handleSubmit() {
+    if (_isLoading) return;
+
     // Validate note
     if (_noteController.text.trim().length < _minimumNoteCharacters) {
       setState(() {
@@ -238,16 +240,11 @@ class _CheckoutFormState extends State<CheckoutForm> {
     return BlocListener<ScheduleBloc, ScheduleState>(
       listener: (context, state) {
         if (state is CheckOutSuccess) {
-          // Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Check-out berhasil!'),
-              backgroundColor: AppTheme.getSuccessColor(context),
-            ),
-          );
-
-          // Navigate back to schedule list page
-          Navigator.of(context).popUntil((route) => route.isFirst);
+          // Success handling is now done in parent widget (ScheduleDetailPage)
+          // Reset loading state only
+          setState(() {
+            _isLoading = false;
+          });
         } else if (state is ScheduleError) {
           // Show error message
           ScaffoldMessenger.of(context).showSnackBar(

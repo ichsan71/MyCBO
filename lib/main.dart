@@ -43,16 +43,19 @@ void main() async {
 /// Initialize only critical components needed for app startup
 Future<void> _initializeCriticalComponents() async {
   try {
+    // Add small delay to prevent race conditions with splash screen
+    await Future.delayed(const Duration(milliseconds: 50));
+    
     // Set preferred orientations first (fast operation)
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
 
-    // Set system UI overlay style (fast operation)
+    // Set system UI overlay style with stable configuration
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
+      statusBarIconBrightness: Brightness.dark,
       systemNavigationBarColor: Colors.white,
       systemNavigationBarIconBrightness: Brightness.dark,
     ));

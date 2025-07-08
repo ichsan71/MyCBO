@@ -351,15 +351,11 @@ class _CheckinFormState extends State<CheckinForm> {
     return BlocListener<ScheduleBloc, ScheduleState>(
       listener: (context, state) {
         if (state is CheckInSuccess) {
-          // Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Check-in berhasil!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          // Pop back to schedule page
-          Navigator.of(context).pop();
+          // Success handling is now done in parent widget (ScheduleDetailPage)
+          // Reset loading state only
+          setState(() {
+            _isLoading = false;
+          });
         } else if (state is ScheduleError) {
           // Show error message
           ScaffoldMessenger.of(context).showSnackBar(

@@ -77,14 +77,15 @@ class ApprovalBloc extends Bloc<ApprovalEvent, ApprovalState> {
     result.fold(
       (failure) => emit(ApprovalError(message: failure.message)),
       (_) {
+        // Navigate back to approval list page immediately
+        Navigator.of(event.context).popUntil((route) {
+          return route.settings.name == '/approval_list' || route.isFirst;
+        });
+
         SuccessMessage.show(
           context: event.context,
           message: 'Persetujuan berhasil dikirim',
           onDismissed: () {
-            // Navigate back to approval list page
-            Navigator.of(event.context).popUntil((route) {
-              return route.settings.name == '/approval_list' || route.isFirst;
-            });
             // Refresh the list after showing success message
             if (state is ApprovalLoaded) {
               final currentState = state as ApprovalLoaded;
@@ -114,14 +115,15 @@ class ApprovalBloc extends Bloc<ApprovalEvent, ApprovalState> {
     result.fold(
       (failure) => emit(ApprovalError(message: failure.message)),
       (_) {
+        // Navigate back to approval list page immediately
+        Navigator.of(event.context).popUntil((route) {
+          return route.settings.name == '/approval_list' || route.isFirst;
+        });
+
         SuccessMessage.show(
           context: event.context,
           message: 'Penolakan berhasil dikirim',
           onDismissed: () {
-            // Navigate back to approval list page
-            Navigator.of(event.context).popUntil((route) {
-              return route.settings.name == '/approval_list' || route.isFirst;
-            });
             // Refresh the list after showing success message
             add(GetApprovals(userId: int.parse(event.idRejecter)));
           },
@@ -164,18 +166,20 @@ class ApprovalBloc extends Bloc<ApprovalEvent, ApprovalState> {
     result.fold(
       (failure) => emit(ApprovalError(message: failure.message)),
       (_) {
+        // Navigate back to approval list page immediately
+        Navigator.of(event.context).popUntil((route) {
+          return route.settings.name == '/approval_list' || route.isFirst;
+        });
+
         SuccessMessage.show(
           context: event.context,
           message: 'Persetujuan berhasil dikirim',
           onDismissed: () {
-            // Navigate back to approval list page
-            Navigator.of(event.context).popUntil((route) {
-              return route.settings.name == '/approval_list' || route.isFirst;
-            });
+            // Keep onDismissed for any future refresh logic if needed
           },
         );
         // Don't emit loading immediately, let success message handle navigation
-        emit(const ApprovalSuccess(message: 'Persetujuan berhasil dikirim')); 
+        emit(const ApprovalSuccess(message: 'Persetujuan berhasil dikirim'));
       },
     );
   }
@@ -202,17 +206,19 @@ class ApprovalBloc extends Bloc<ApprovalEvent, ApprovalState> {
       }
 
       // All rejections successful
+      // Navigate back to approval list page immediately
+      Navigator.of(event.context).popUntil((route) {
+        return route.settings.name == '/approval_list' || route.isFirst;
+      });
+
       SuccessMessage.show(
         context: event.context,
         message: 'Penolakan berhasil dikirim',
         onDismissed: () {
-          // Navigate back to approval list page
-          Navigator.of(event.context).popUntil((route) {
-            return route.settings.name == '/approval_list' || route.isFirst;
-          });
+          // Keep onDismissed for any future refresh logic if needed
         },
       );
-      emit(const ApprovalSuccess(message: 'Penolakan berhasil dikirim')); 
+      emit(const ApprovalSuccess(message: 'Penolakan berhasil dikirim'));
     } catch (e) {
       emit(ApprovalError(message: 'Gagal menolak: $e'));
     }

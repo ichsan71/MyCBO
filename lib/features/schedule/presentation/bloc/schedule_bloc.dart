@@ -287,7 +287,6 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
     Emitter<ScheduleState> emit,
   ) async {
     try {
-      emit(const ScheduleLoading());
       Logger.info('ScheduleBloc', 'Processing check-out request...');
 
       final result = await checkInRepository.checkOut(event.request);
@@ -300,7 +299,10 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
         (_) async {
           Logger.success('ScheduleBloc', 'Check-out successful');
 
-          // Refresh schedules after successful check-out
+          // Emit CheckOutSuccess state first
+          emit(const CheckOutSuccess());
+
+          // Then refresh schedules
           try {
             final scheduleResult = await getSchedulesUseCase(
               get_schedules_usecase.ScheduleParams(userId: event.userId),

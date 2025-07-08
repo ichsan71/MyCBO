@@ -1,12 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item>
-        <bitmap android:gravity="fill" android:src="@drawable/background"/>
+    <!-- White background -->
+    <item android:drawable="@android:color/white" />
+    
+    <!-- Main splash logo - properly scaled and centered -->
+    <item 
+        android:width="240dp"
+        android:height="240dp"
+        android:gravity="center">
+        <bitmap
+            android:src="@drawable/splash"
+            android:gravity="fill_horizontal|fill_vertical"
+            android:filter="true"
+            android:antialias="true" />
     </item>
-    <item>
-        <bitmap android:gravity="center" android:src="@drawable/splash"/>
-    </item>
-    <item android:bottom="0dp">
-        <bitmap android:gravity="bottom" android:src="@drawable/branding"/>
+    
+    <!-- Bottom branding logo -->
+    <item 
+        android:width="160dp"
+        android:height="50dp"
+        android:gravity="bottom|center_horizontal"
+        android:bottom="60dp">
+        <bitmap
+            android:src="@drawable/branding"
+            android:gravity="fill_horizontal|fill_vertical"
+            android:filter="true"
+            android:antialias="true" />
     </item>
 </layer-list>
