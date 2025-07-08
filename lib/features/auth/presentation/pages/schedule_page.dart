@@ -57,6 +57,13 @@ class _SchedulePageState extends State<SchedulePage> {
     // Pastikan scroll controller attached dan memiliki posisi
     if (!_scrollController.hasClients) return;
 
+    // Debug logging
+    print('AuthSchedulePage: Scroll triggered');
+    print('- Selected date range: ${_selectedDateRange != null}');
+    print('- Is loading more filter: $_isLoadingMoreFilter');
+    print('- Has more filter data: $_hasMoreFilterData');
+    print('- Filtered schedules count: ${_filteredRangeSchedules.length}');
+
     // Cek kondisi untuk load more data
     if (_selectedDateRange != null &&
         !_isLoadingMoreFilter &&
@@ -66,9 +73,17 @@ class _SchedulePageState extends State<SchedulePage> {
       final maxScroll = _scrollController.position.maxScrollExtent;
       final currentScroll = _scrollController.position.pixels;
 
+      print('AuthSchedulePage: Scroll position check');
+      print('- Current scroll: $currentScroll');
+      print('- Max scroll: $maxScroll');
+      print('- Threshold: ${maxScroll * threshold}');
+
       if (currentScroll >= maxScroll * threshold) {
         final authState = context.read<AuthBloc>().state;
         if (authState is AuthAuthenticated) {
+          print('AuthSchedulePage: Triggering load more...');
+          print('- Current page: $_currentFilterPage');
+
           // Prevent multiple calls
           if (!_isLoadingMoreFilter) {
             setState(() {
@@ -77,6 +92,8 @@ class _SchedulePageState extends State<SchedulePage> {
 
             // Increment page and fetch data
             _currentFilterPage++;
+            print('AuthSchedulePage: Requesting page $_currentFilterPage');
+
             context.read<ScheduleBloc>().add(
                   GetSchedulesByRangeDateEvent(
                     userId: authState.user.idUser,
@@ -84,9 +101,19 @@ class _SchedulePageState extends State<SchedulePage> {
                     page: _currentFilterPage,
                   ),
                 );
+          } else {
+            print('AuthSchedulePage: Already loading more, skipping');
           }
         }
+      } else {
+        print('AuthSchedulePage: Scroll threshold not reached');
       }
+    } else {
+      print('AuthSchedulePage: Load more conditions not met');
+      if (_selectedDateRange == null) print('- No date range selected');
+      if (_isLoadingMoreFilter) print('- Already loading more');
+      if (!_hasMoreFilterData) print('- No more data available');
+      if (_filteredRangeSchedules.isEmpty) print('- No filtered schedules');
     }
   }
 
@@ -308,35 +335,64 @@ Page: 1
     final l10n = AppLocalizations.of(context)!;
     return BlocListener<ScheduleBloc, ScheduleState>(
       listener: (context, state) {
+        // Debug logging untuk state transitions
+        print('AuthSchedulePage: State changed to ${state.runtimeType}');
+
         if (state is ScheduleLoaded) {
+          print('AuthSchedulePage: ScheduleLoaded received');
+          print('- Schedules count: ${state.schedules.length}');
+          print('- Has more data: ${state.hasMoreData}');
+          print('- Current page: ${state.currentPage}');
+
           if (_selectedDateRange != null) {
+            print('AuthSchedulePage: Processing range date mode');
+            print('- Current filter page: $_currentFilterPage');
+            print(
+                '- Current original schedules: ${_originalRangeSchedules.length}');
+
             setState(() {
               if (_currentFilterPage == 1) {
                 // Reset data untuk rentang tanggal baru
+                print('AuthSchedulePage: Resetting data for page 1');
                 _originalRangeSchedules = List<Schedule>.from(state.schedules);
                 _filteredRangeSchedules = List<Schedule>.from(state.schedules);
               } else {
-                // Tambahkan data baru ke list yang ada
-                final newSchedules = List<Schedule>.from(state.schedules);
-                _originalRangeSchedules.addAll(newSchedules);
+                // PERBAIKAN: Jangan tambahkan data lagi karena state.schedules sudah berisi semua data
+                // Yang lama sudah ada di bloc, yang baru sudah digabung dan deduplicated di bloc
+                print(
+                    'AuthSchedulePage: Updating data for page $_currentFilterPage');
+                print(
+                    'AuthSchedulePage: Using bloc data directly (already deduplicated)');
+                _originalRangeSchedules = List<Schedule>.from(state.schedules);
 
-                // Terapkan filter yang ada ke data baru
+                // Terapkan filter yang ada ke data yang sudah lengkap
                 _applyFilters();
               }
 
               _isLoadingMoreFilter = false;
               _hasMoreFilterData = state.hasMoreData;
+
+              print('AuthSchedulePage: Final counts:');
+              print('- Original schedules: ${_originalRangeSchedules.length}');
+              print('- Filtered schedules: ${_filteredRangeSchedules.length}');
+              print('- Has more data: $_hasMoreFilterData');
             });
           } else {
             // Mode default tanpa rentang tanggal
+            print('AuthSchedulePage: Processing default mode');
             setState(() {
               _isLoadingMore = false;
             });
           }
         } else if (state is ScheduleError) {
+          print('AuthSchedulePage: ScheduleError received: ${state.message}');
           setState(() {
             _isLoadingMoreFilter = false;
-            if (_currentFilterPage > 1) _currentFilterPage--;
+            if (_currentFilterPage > 1) {
+              _currentFilterPage--;
+              print(
+                  'AuthSchedulePage: Rolled back to page $_currentFilterPage');
+            }
           });
 
           if (mounted) {
@@ -347,6 +403,10 @@ Page: 1
               ),
             );
           }
+        } else if (state is ScheduleLoadingMore) {
+          print('AuthSchedulePage: ScheduleLoadingMore received');
+          print('- Current schedules: ${state.currentSchedules.length}');
+          // Tidak perlu setState di sini karena loading indicator sudah ditangani di UI
         }
       },
       child: Scaffold(
@@ -525,15 +585,30 @@ Page: 1
                                         context,
                                         _filteredRangeSchedules[index],
                                       );
-                                    } else if (_isLoadingMoreFilter) {
-                                      return const Center(
-                                        child: Padding(
-                                          padding: EdgeInsets.all(8.0),
-                                          child: CircularProgressIndicator(),
-                                        ),
-                                      );
                                     } else {
-                                      return const SizedBox.shrink();
+                                      // Tampilkan loading indicator jika ada more data dan sedang loading
+                                      // atau placeholder jika ada more data tapi belum loading
+                                      if (_hasMoreFilterData) {
+                                        print(
+                                            'AuthSchedulePage: Showing loading indicator - isLoading: $_isLoadingMoreFilter');
+                                        return _isLoadingMoreFilter
+                                            ? const Center(
+                                                child: Padding(
+                                                  padding: EdgeInsets.all(16.0),
+                                                  child:
+                                                      CircularProgressIndicator(),
+                                                ),
+                                              )
+                                            : const Center(
+                                                child: Padding(
+                                                  padding: EdgeInsets.all(16.0),
+                                                  child: Text(
+                                                      'Scroll untuk load more...'),
+                                                ),
+                                              );
+                                      } else {
+                                        return const SizedBox.shrink();
+                                      }
                                     }
                                   },
                                 ),

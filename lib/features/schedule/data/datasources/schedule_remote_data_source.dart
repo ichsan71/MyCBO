@@ -194,8 +194,10 @@ Raw Response: ${response.data}
         throw ServerException(message: 'Response data is null');
       }
 
-      if (response.data is String && response.data.toString().contains('Redirecting to')) {
-        throw UnauthorizedException(message: 'Sesi login telah berakhir. Silakan login kembali.');
+      if (response.data is String &&
+          response.data.toString().contains('Redirecting to')) {
+        throw UnauthorizedException(
+            message: 'Sesi login telah berakhir. Silakan login kembali.');
       }
 
       // Handle the response structure
@@ -214,36 +216,41 @@ Data type: ${responseData['data']?.runtimeType}
 
         // Case 1: Response format {"status": true, "data": [...]}
         if (responseData.containsKey('status') &&
-            responseData.containsKey('data') && 
+            responseData.containsKey('data') &&
             responseData['data'] is List) {
           scheduleData = responseData['data'];
         }
         // Case 2: Response format {"status": true, "data": {"data": [...], "current_page": X, ...}}
-        else if (responseData.containsKey('status') && 
+        else if (responseData.containsKey('status') &&
             responseData.containsKey('data') &&
             responseData['data'] is Map<String, dynamic> &&
             responseData['data'].containsKey('data')) {
           scheduleData = responseData['data']['data'];
         }
         // Case 3: Response format {"data": [...]}
-        else if (responseData.containsKey('data') && responseData['data'] is List) {
+        else if (responseData.containsKey('data') &&
+            responseData['data'] is List) {
           scheduleData = responseData['data'];
-        }
-        else {
-          Logger.error('ScheduleRemoteDataSource', 'Unexpected response structure: $responseData');
+        } else {
+          Logger.error('ScheduleRemoteDataSource',
+              'Unexpected response structure: $responseData');
           throw ServerException(message: 'Format response tidak sesuai');
         }
 
-          Logger.info('ScheduleRemoteDataSource',
-              'Successfully processed ${scheduleData.length} schedules');
+        Logger.info('ScheduleRemoteDataSource',
+            'Successfully processed ${scheduleData.length} schedules');
 
-        return scheduleData.map((item) => ScheduleModel.fromJson(item)).toList();
+        return scheduleData
+            .map((item) => ScheduleModel.fromJson(item))
+            .toList();
       }
 
-      Logger.error('ScheduleRemoteDataSource', 'Response is not a Map: ${response.data}');
+      Logger.error('ScheduleRemoteDataSource',
+          'Response is not a Map: ${response.data}');
       throw ServerException(message: 'Format response tidak sesuai');
     } catch (e) {
-      Logger.error('ScheduleRemoteDataSource', '❌ Error in _handleResponse: $e');
+      Logger.error(
+          'ScheduleRemoteDataSource', '❌ Error in _handleResponse: $e');
       rethrow;
     }
   }
@@ -270,11 +277,17 @@ Data type: ${responseData['data']?.runtimeType}
       final startDate = dateFormat.parse(dates[0].trim());
       final endDate = dateFormat.parse(dates[1].trim());
 
+      // Deteksi apakah ini kasus hari yang sama
+      final isSameDay = startDate.year == endDate.year &&
+          startDate.month == endDate.month &&
+          startDate.day == endDate.day;
+
       Logger.info('ScheduleRemoteDataSource', '''
 ====== Date Range Validation ======
 Input Range: $rangeDate
 Parsed Start: ${startDate.toIso8601String()}
 Parsed End: ${endDate.toIso8601String()}
+Is Same Day: $isSameDay
 ''');
 
       if (endDate.isBefore(startDate)) {
@@ -312,11 +325,13 @@ FormData:
 - page: $page
 ''');
 
-      final response = await dio.post(
-        '${Constants.baseUrl}/filter-schedule',
-        data: formData,
-        options: options,
-      ).timeout(timeoutDuration);
+      final response = await dio
+          .post(
+            '${Constants.baseUrl}/filter-schedule',
+            data: formData,
+            options: options,
+          )
+          .timeout(timeoutDuration);
 
       if (response.data != null && response.data is Map) {
         Logger.info('ScheduleRemoteDataSource', '''
@@ -335,31 +350,54 @@ Date Range Requested: $rangeDate
 Sample Dates: ${schedules.take(3).map((s) => s['tgl_visit']).join(', ')}
 ''');
 
-          // Validasi tanggal yang diterima
+          // Validasi tanggal yang diterima dengan akurasi hari
           int invalidDates = 0;
           for (var schedule in schedules) {
             if (schedule['tgl_visit'] != null) {
               try {
-                final visitDate = DateTime.parse(schedule['tgl_visit'].toString());
-                if (visitDate.isAfter(endDate) || visitDate.isBefore(startDate)) {
+                final visitDate =
+                    DateTime.parse(schedule['tgl_visit'].toString());
+
+                // Normalisasi tanggal ke awal hari untuk perbandingan yang akurat
+                final visitDateNormalized =
+                    DateTime(visitDate.year, visitDate.month, visitDate.day);
+                final startDateNormalized =
+                    DateTime(startDate.year, startDate.month, startDate.day);
+                final endDateNormalized =
+                    DateTime(endDate.year, endDate.month, endDate.day);
+
+                // Untuk kasus hari yang sama, pastikan validasi yang tepat
+                bool isOutsideRange;
+                if (isSameDay) {
+                  // Untuk hari yang sama, hanya terima jadwal pada hari itu
+                  isOutsideRange = visitDateNormalized != startDateNormalized;
+                } else {
+                  // Untuk range biasa, cek apakah di luar range
+                  isOutsideRange =
+                      visitDateNormalized.isAfter(endDateNormalized) ||
+                          visitDateNormalized.isBefore(startDateNormalized);
+                }
+
+                if (isOutsideRange) {
                   invalidDates++;
                   Logger.warning('ScheduleRemoteDataSource', '''
 WARNING: Schedule date outside requested range
-Visit Date: ${schedule['tgl_visit']}
-Requested Range: $rangeDate (${startDate.toIso8601String()} - ${endDate.toIso8601String()})
+Visit Date: ${schedule['tgl_visit']} (normalized: $visitDateNormalized)
+Requested Range: $rangeDate (normalized: $startDateNormalized - $endDateNormalized)
+Is Same Day Request: $isSameDay
 Schedule ID: ${schedule['id']}
 ''');
                 }
               } catch (e) {
-                Logger.error('ScheduleRemoteDataSource', 
-                  'Error parsing visit date: ${schedule['tgl_visit']} - $e');
+                Logger.error('ScheduleRemoteDataSource',
+                    'Error parsing visit date: ${schedule['tgl_visit']} - $e');
               }
             }
           }
 
           if (invalidDates > 0) {
-            Logger.warning('ScheduleRemoteDataSource', 
-              'Found $invalidDates schedules outside the requested date range');
+            Logger.warning('ScheduleRemoteDataSource',
+                'Found $invalidDates schedules outside the requested date range for ${isSameDay ? 'same day' : 'date range'} request');
           }
         }
       }
@@ -371,7 +409,8 @@ Schedule ID: ${schedule['id']}
 
       if (response.statusCode != 200) {
         throw ServerException(
-            message: 'Terjadi kesalahan saat mengambil data jadwal. Status: ${response.statusCode}');
+            message:
+                'Terjadi kesalahan saat mengambil data jadwal. Status: ${response.statusCode}');
       }
 
       return _handleResponse(response);

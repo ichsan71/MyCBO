@@ -119,13 +119,22 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
     result.fold(
       (failure) => emit(ScheduleError(failure.message)),
       (schedules) {
+        // Update current page untuk pagination
+        _currentPage = event.page;
+
         if (event.page == 1) {
+          // Reset untuk page pertama
           _allSchedules = schedules;
         } else {
+          // Untuk page berikutnya, tambahkan dengan deduplication
           _allSchedules.addAll(schedules);
         }
 
-        if (schedules.isEmpty) {
+        // Selalu lakukan deduplication untuk memastikan tidak ada duplikat
+        _allSchedules = _deduplicateSchedules(_allSchedules);
+
+        // Update hasMoreData - jika hasil kosong atau kurang dari limit, berarti sudah habis
+        if (schedules.isEmpty || schedules.length < 5) {
           _hasMoreData = false;
         }
 
@@ -148,11 +157,12 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
   ) async {
     if (!_hasMoreData || _isLoading) return;
 
-    _currentPage++;
+    // Increment page untuk load more
+    final nextPage = _currentPage + 1;
     add(GetSchedulesByRangeDateEvent(
       userId: event.userId,
       rangeDate: event.rangeDate,
-      page: _currentPage,
+      page: nextPage,
     ));
   }
 
@@ -169,6 +179,40 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
     _hasMoreData = true;
     _allSchedules = [];
     _isLoading = false;
+  }
+
+  // Helper function untuk deduplication schedules berdasarkan ID
+  List<Schedule> _deduplicateSchedules(List<Schedule> schedules) {
+    final Map<int, Schedule> uniqueSchedules = {};
+    for (var schedule in schedules) {
+      // Prioritaskan schedule yang lebih baru jika ada duplikasi
+      if (!uniqueSchedules.containsKey(schedule.id)) {
+        uniqueSchedules[schedule.id] = schedule;
+      } else {
+        // Bandingkan berdasarkan createdAt jika tersedia, fallback ke ID
+        final existing = uniqueSchedules[schedule.id]!;
+        final currentCreatedAt = schedule.createdAt ?? '';
+        final existingCreatedAt = existing.createdAt ?? '';
+
+        if (currentCreatedAt.isNotEmpty && existingCreatedAt.isNotEmpty) {
+          if (currentCreatedAt.compareTo(existingCreatedAt) > 0) {
+            uniqueSchedules[schedule.id] = schedule;
+          }
+        } else if (schedule.id > existing.id) {
+          // Fallback: gunakan ID yang lebih besar sebagai indikator yang lebih baru
+          uniqueSchedules[schedule.id] = schedule;
+        }
+      }
+    }
+
+    // Sort berdasarkan tanggal visit (terbaru di atas)
+    final deduplicatedList = uniqueSchedules.values.toList();
+    deduplicatedList.sort((a, b) => b.tglVisit.compareTo(a.tglVisit));
+
+    Logger.info('ScheduleBloc',
+        'Deduplication: ${schedules.length} -> ${deduplicatedList.length} schedules');
+
+    return deduplicatedList;
   }
 
   Future<void> _onUpdateScheduleStatusEvent(
@@ -394,23 +438,27 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
                   ))
               .toList();
 
-          // Gabungkan dan hilangkan duplikasi berdasarkan id
-          final allSchedules = <int, Schedule>{};
-          for (var s in schedules) {
-            allSchedules[s.id] = s;
-          }
-          for (var s in rejectedMapped) {
-            allSchedules[s.id] = s;
-          }
-          final combined = allSchedules.values.toList();
+          // Gabungkan schedules regular dan rejected
+          final combined = <Schedule>[];
+          combined.addAll(schedules);
+          combined.addAll(rejectedMapped);
 
-          // Sort schedules by date (newest first)
-          combined.sort((a, b) => b.tglVisit.compareTo(a.tglVisit));
+          // Gunakan helper deduplication untuk menghilangkan duplikat
+          final deduplicatedSchedules = _deduplicateSchedules(combined);
 
-          if (combined.isEmpty) {
+          // Reset pagination state untuk fresh data
+          _resetPaginationState();
+
+          if (deduplicatedSchedules.isEmpty) {
             emit(const ScheduleEmpty());
           } else {
-            emit(ScheduleLoaded(schedules: combined));
+            _allSchedules = deduplicatedSchedules;
+            emit(ScheduleLoaded(
+              schedules: deduplicatedSchedules,
+              currentPage: 1,
+              hasMoreData:
+                  false, // Untuk getSchedules biasa, tidak ada pagination
+            ));
           }
         },
       );
