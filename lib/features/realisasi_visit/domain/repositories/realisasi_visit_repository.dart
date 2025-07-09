@@ -10,13 +10,13 @@ abstract class RealisasiVisitRepository {
 
   /// Menyetujui realisasi visit
   Future<Either<Failure, String>> approveRealisasiVisit({
-    required int idRealisasiVisit,
+    required List<int> idRealisasiVisits,
     required int idUser,
   });
 
   /// Menolak realisasi visit
   Future<Either<Failure, String>> rejectRealisasiVisit({
-    required int idRealisasiVisit,
+    required List<int> idRealisasiVisits,
     required int idUser,
     required String reason,
   });

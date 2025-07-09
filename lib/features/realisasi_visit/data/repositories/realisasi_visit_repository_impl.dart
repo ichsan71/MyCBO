@@ -78,13 +78,13 @@ class RealisasiVisitRepositoryImpl implements RealisasiVisitRepository {
 
   @override
   Future<Either<Failure, String>> approveRealisasiVisit({
-    required int idRealisasiVisit,
+    required List<int> idRealisasiVisits,
     required int idUser,
   }) async {
     if (await networkInfo.isConnected) {
       try {
         final result = await remoteDataSource.approveRealisasiVisit(
-          idRealisasiVisit: idRealisasiVisit,
+          idRealisasiVisits: idRealisasiVisits,
           idUser: idUser,
         );
         return Right(result);
@@ -102,14 +102,14 @@ class RealisasiVisitRepositoryImpl implements RealisasiVisitRepository {
 
   @override
   Future<Either<Failure, String>> rejectRealisasiVisit({
-    required int idRealisasiVisit,
+    required List<int> idRealisasiVisits,
     required int idUser,
     required String reason,
   }) async {
     if (await networkInfo.isConnected) {
       try {
         final result = await remoteDataSource.rejectRealisasiVisit(
-          idRealisasiVisit: idRealisasiVisit,
+          idRealisasiVisits: idRealisasiVisits,
           idUser: idUser,
           reason: reason,
         );

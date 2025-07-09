@@ -23,14 +23,14 @@ abstract class RealisasiVisitRemoteDataSource {
   /// Menyetujui realisasi visit
   /// Throws [ServerException] jika terjadi error pada server
   Future<String> approveRealisasiVisit({
-    required int idRealisasiVisit,
+    required List<int> idRealisasiVisits,
     required int idUser,
   });
 
   /// Menolak realisasi visit
   /// Throws [ServerException] jika terjadi error pada server
   Future<String> rejectRealisasiVisit({
-    required int idRealisasiVisit,
+    required List<int> idRealisasiVisits,
     required int idUser,
     required String reason,
   });
@@ -278,7 +278,7 @@ class RealisasiVisitRemoteDataSourceImpl
 
   @override
   Future<String> approveRealisasiVisit({
-    required int idRealisasiVisit,
+    required List<int> idRealisasiVisits,
     required int idUser,
   }) async {
     try {
@@ -293,12 +293,12 @@ class RealisasiVisitRemoteDataSourceImpl
       );
 
       Logger.info(_tag,
-          'Menyetujui realisasi visit - idRealisasiVisit: $idRealisasiVisit, idUser: $idUser');
+          'Menyetujui realisasi visit - idRealisasiVisits: $idRealisasiVisits, idUser: $idUser');
       Logger.info(_tag, 'URL: $uri');
 
       final formData = {
         'id_atasan': idUser.toString(),
-        'id_schedule': json.encode(['$idRealisasiVisit']),
+        'id_schedule': json.encode(idRealisasiVisits),
       };
 
       Logger.info(_tag, 'Form Data: $formData');
@@ -347,7 +347,7 @@ class RealisasiVisitRemoteDataSourceImpl
 
   @override
   Future<String> rejectRealisasiVisit({
-    required int idRealisasiVisit,
+    required List<int> idRealisasiVisits,
     required int idUser,
     required String reason,
   }) async {
@@ -363,12 +363,12 @@ class RealisasiVisitRemoteDataSourceImpl
       );
 
       Logger.info(_tag,
-          'Menolak realisasi visit - idRealisasiVisit: $idRealisasiVisit, idUser: $idUser, reason: $reason');
+          'Menolak realisasi visit - idRealisasiVisits: $idRealisasiVisits, idUser: $idUser, reason: $reason');
       Logger.info(_tag, 'URL: $uri');
 
       final formData = {
         'id_atasan': idUser.toString(),
-        'id_schedule': json.encode(['$idRealisasiVisit']),
+        'id_schedule': json.encode(idRealisasiVisits),
         'reason': reason,
       };
 

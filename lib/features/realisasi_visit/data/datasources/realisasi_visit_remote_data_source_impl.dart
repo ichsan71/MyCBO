@@ -209,7 +209,7 @@ class RealisasiVisitRemoteDataSourceImpl
 
   @override
   Future<String> approveRealisasiVisit({
-    required int idRealisasiVisit,
+    required List<int> idRealisasiVisits,
     required int idUser,
   }) async {
     try {
@@ -226,7 +226,7 @@ class RealisasiVisitRemoteDataSourceImpl
         },
         body: json.encode({
           'id_atasan': idUser.toString(),
-          'id_schedule': ['$idRealisasiVisit'],
+          'id_schedule': idRealisasiVisits.map((id) => id.toString()).toList(),
         }),
       );
 
@@ -257,7 +257,7 @@ class RealisasiVisitRemoteDataSourceImpl
 
   @override
   Future<String> rejectRealisasiVisit({
-    required int idRealisasiVisit,
+    required List<int> idRealisasiVisits,
     required int idUser,
     required String reason,
   }) async {
@@ -275,7 +275,7 @@ class RealisasiVisitRemoteDataSourceImpl
         },
         body: json.encode({
           'id_atasan': idUser.toString(),
-          'id_schedule': ['$idRealisasiVisit'],
+          'id_schedule': idRealisasiVisits.map((id) => id.toString()).toList(),
           'reason': reason,
         }),
       );

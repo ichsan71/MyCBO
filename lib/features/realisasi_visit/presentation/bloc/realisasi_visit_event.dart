@@ -39,16 +39,16 @@ class GetRealisasiVisitsGMDetailsEvent extends RealisasiVisitEvent {
 }
 
 class ApproveRealisasiVisitEvent extends RealisasiVisitEvent {
-  final int idRealisasiVisit;
+  final List<int> idRealisasiVisits;
   final int idUser;
 
   const ApproveRealisasiVisitEvent({
-    required this.idRealisasiVisit,
+    required this.idRealisasiVisits,
     required this.idUser,
   });
 
   @override
-  List<Object?> get props => [idRealisasiVisit, idUser];
+  List<Object?> get props => [idRealisasiVisits, idUser];
 }
 
 class ApproveRealisasiVisitGMEvent extends RealisasiVisitEvent {
@@ -65,16 +65,16 @@ class ApproveRealisasiVisitGMEvent extends RealisasiVisitEvent {
 }
 
 class RejectRealisasiVisitEvent extends RealisasiVisitEvent {
-  final int idRealisasiVisit;
+  final List<int> idRealisasiVisits;
   final int idUser;
   final String reason;
 
   const RejectRealisasiVisitEvent({
-    required this.idRealisasiVisit,
+    required this.idRealisasiVisits,
     required this.idUser,
     required this.reason,
   });
 
   @override
-  List<Object?> get props => [idRealisasiVisit, idUser, reason];
+  List<Object?> get props => [idRealisasiVisits, idUser, reason];
 }

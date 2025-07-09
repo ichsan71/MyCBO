@@ -14,21 +14,21 @@ class ApproveRealisasiVisitUseCase
   Future<Either<Failure, String>> call(
       ApproveRealisasiVisitParams params) async {
     return await repository.approveRealisasiVisit(
-      idRealisasiVisit: params.idRealisasiVisit,
+      idRealisasiVisits: params.idRealisasiVisits,
       idUser: params.idUser,
     );
   }
 }
 
 class ApproveRealisasiVisitParams extends Equatable {
-  final int idRealisasiVisit;
+  final List<int> idRealisasiVisits;
   final int idUser;
 
   const ApproveRealisasiVisitParams({
-    required this.idRealisasiVisit,
+    required this.idRealisasiVisits,
     required this.idUser,
   });
 
   @override
-  List<Object?> get props => [idRealisasiVisit, idUser];
+  List<Object?> get props => [idRealisasiVisits, idUser];
 }

@@ -95,14 +95,16 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
       body: BlocConsumer<RealisasiVisitBloc, RealisasiVisitState>(
         listener: (context, state) {
           if (state is RealisasiVisitApproved) {
-            setState(() => _isProcessing = false);
+            setState(() {
+              _isProcessing = false;
+              // Clear selections after successful approval
+              _selectedScheduleIds.clear();
+              _selectAll = false;
+            });
 
-            // Refresh data setelah approval berhasil
-            context.read<RealisasiVisitBloc>().add(
-                  GetRealisasiVisitsEvent(
-                    idAtasan: widget.userId,
-                  ),
-                );
+            // Navigate back immediately
+            Navigator.pop(
+                context, true); // Pass true untuk menandakan perubahan berhasil
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -114,19 +116,17 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                 ),
               ),
             );
-          } else if (state is RealisasiVisitLoaded) {
-            // Data sudah diperbarui, sekarang kita bisa menutup halaman
+          } else if (state is RealisasiVisitRejected) {
+            setState(() {
+              _isProcessing = false;
+              // Clear selections after successful rejection
+              _selectedScheduleIds.clear();
+              _selectAll = false;
+            });
+
+            // Navigate back immediately
             Navigator.pop(
                 context, true); // Pass true untuk menandakan perubahan berhasil
-          } else if (state is RealisasiVisitRejected) {
-            setState(() => _isProcessing = false);
-
-            // Refresh data setelah reject berhasil
-            context.read<RealisasiVisitBloc>().add(
-                  GetRealisasiVisitsEvent(
-                    idAtasan: widget.userId,
-                  ),
-                );
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -1693,9 +1693,14 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
     }
 
     setState(() => _isProcessing = true);
+
+    // Convert selected IDs to list of integers
+    final List<int> selectedIds =
+        _selectedScheduleIds.map((id) => int.parse(id)).toList();
+
     context.read<RealisasiVisitBloc>().add(
           ApproveRealisasiVisitEvent(
-            idRealisasiVisit: int.parse(_selectedScheduleIds.first),
+            idRealisasiVisits: selectedIds,
             idUser: widget.userId,
           ),
         );
@@ -1717,9 +1722,14 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
     }
 
     setState(() => _isProcessing = true);
+
+    // Convert selected IDs to list of integers
+    final List<int> selectedIds =
+        _selectedScheduleIds.map((id) => int.parse(id)).toList();
+
     context.read<RealisasiVisitBloc>().add(
           RejectRealisasiVisitEvent(
-            idRealisasiVisit: int.parse(_selectedScheduleIds.first),
+            idRealisasiVisits: selectedIds,
             idUser: widget.userId,
             reason: 'Ditolak oleh atasan', // Add default reason
           ),

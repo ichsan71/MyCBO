@@ -13,7 +13,8 @@ import '../../domain/usecases/reject_realisasi_visit.dart';
 part 'realisasi_visit_event.dart';
 part 'realisasi_visit_state.dart';
 
-class RealisasiVisitBloc extends Bloc<RealisasiVisitEvent, RealisasiVisitState> {
+class RealisasiVisitBloc
+    extends Bloc<RealisasiVisitEvent, RealisasiVisitState> {
   final GetRealisasiVisits getRealisasiVisits;
   final GetRealisasiVisitsGM getRealisasiVisitsGM;
   final GetRealisasiVisitsGMDetails getRealisasiVisitsGMDetails;
@@ -72,24 +73,28 @@ class RealisasiVisitBloc extends Bloc<RealisasiVisitEvent, RealisasiVisitState> 
   ) async {
     Logger.info('realisasi_visit_bloc', '=== FETCHING BCO DETAILS ===');
     Logger.info('realisasi_visit_bloc', 'BCO ID: ${event.idBCO}');
-    
+
     emit(RealisasiVisitLoading());
 
     try {
       final result = await getRealisasiVisitsGMDetails(event.idBCO);
-      
+
       result.fold(
         (failure) {
           Logger.error('realisasi_visit_bloc', 'Error: ${failure.toString()}');
           emit(RealisasiVisitError(message: _mapFailureToMessage(failure)));
         },
         (realisasiVisitsGM) {
-          Logger.info('realisasi_visit_bloc', 'Success! Received ${realisasiVisitsGM.length} items');
+          Logger.info('realisasi_visit_bloc',
+              'Success! Received ${realisasiVisitsGM.length} items');
           for (var item in realisasiVisitsGM) {
-            Logger.info('realisasi_visit_bloc', '- Item: ${item.name} (${item.id})');
-            Logger.info('realisasi_visit_bloc', '  Details count: ${item.details.length}');
+            Logger.info(
+                'realisasi_visit_bloc', '- Item: ${item.name} (${item.id})');
+            Logger.info('realisasi_visit_bloc',
+                '  Details count: ${item.details.length}');
           }
-          emit(RealisasiVisitGMDetailsLoaded(realisasiVisitsGM: realisasiVisitsGM));
+          emit(RealisasiVisitGMDetailsLoaded(
+              realisasiVisitsGM: realisasiVisitsGM));
         },
       );
     } catch (e) {
@@ -107,7 +112,7 @@ class RealisasiVisitBloc extends Bloc<RealisasiVisitEvent, RealisasiVisitState> 
     emit(RealisasiVisitLoading());
     final result = await approveRealisasiVisit(
       ApproveRealisasiVisitParams(
-        idRealisasiVisit: event.idRealisasiVisit,
+        idRealisasiVisits: event.idRealisasiVisits,
         idUser: event.idUser,
       ),
     );
@@ -126,7 +131,7 @@ class RealisasiVisitBloc extends Bloc<RealisasiVisitEvent, RealisasiVisitState> 
     emit(RealisasiVisitLoading());
     final result = await rejectRealisasiVisit(
       RejectRealisasiVisitParams(
-        idRealisasiVisit: event.idRealisasiVisit,
+        idRealisasiVisits: event.idRealisasiVisits,
         idUser: event.idUser,
         reason: event.reason,
       ),

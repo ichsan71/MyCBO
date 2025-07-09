@@ -585,7 +585,14 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
                     .idUser,
               ),
             ),
-          );
+          ).then((result) {
+            // Jika ada perubahan (approval/reject berhasil), refresh data
+            if (result == true) {
+              if (_selectedBCO != null) {
+                _loadBCODetails(_selectedBCO!.id);
+              }
+            }
+          });
         },
         child: Card(
           elevation: 2,
@@ -764,7 +771,14 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
                             .idUser,
                   ),
                 ),
-              );
+              ).then((result) {
+                // Jika ada perubahan (approval/reject berhasil), refresh data
+                if (result == true) {
+                  if (_selectedBCO != null) {
+                    _loadBCODetails(_selectedBCO!.id);
+                  }
+                }
+              });
             },
           );
         },

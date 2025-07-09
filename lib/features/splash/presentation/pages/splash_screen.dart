@@ -162,6 +162,15 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final screenSize = MediaQuery.of(context).size;
+    final screenWidth = screenSize.width;
+    final screenHeight = screenSize.height;
+
+    // Debug info
+    if (kDebugMode) {
+      print('Screen size: ${screenWidth}x${screenHeight}');
+      print('Device pixel ratio: ${MediaQuery.of(context).devicePixelRatio}');
+    }
 
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
@@ -207,69 +216,172 @@ class _SplashScreenState extends State<SplashScreen>
       },
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: Center(
+        body: Container(
+          width: screenWidth,
+          height: screenHeight,
+          color: Colors.white,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // Logo dengan ukuran yang sangat terbatas
               ScaleTransition(
                 scale: _animation,
                 child: FadeTransition(
                   opacity: _animation,
-                  child: Image.asset(
-                    'assets/images/mazta_logo.png',
-                    width: 200,
-                    height: 200,
-                    errorBuilder: (context, error, stackTrace) {
-                      if (kDebugMode) {
-                        print('Error loading image: $error');
-                      }
-                      return Container(
-                        width: 200,
-                        height: 200,
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      // TEMPORARY: Gunakan icon dulu untuk test
+                      child: Container(
+                        width: 80,
+                        height: 80,
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(12),
+                          color: const Color(0xFF0277BD),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
-                          Icons.business,
-                          size: 80,
-                          color: Colors.grey,
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.business,
+                              size: 24,
+                              color: Colors.white,
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'MAZTA',
+                              style: TextStyle(
+                                fontSize: 8,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
-                      );
-                    },
+                      ),
+                      // UNCOMMENT INI JIKA INGIN COBA LOGO PNG LAGI
+                      // child: Image.asset(
+                      //   'assets/images/mazta_logo.png',
+                      //   width: 80,
+                      //   height: 80,
+                      //   fit: BoxFit.contain,
+                      //   filterQuality: FilterQuality.medium,
+                      //   errorBuilder: (context, error, stackTrace) {
+                      //     if (kDebugMode) {
+                      //       print('Error loading logo: $error');
+                      //     }
+                      //     // Fallback dengan icon yang lebih kecil
+                      //     return Container(
+                      //       width: 80,
+                      //       height: 80,
+                      //       decoration: BoxDecoration(
+                      //         color: const Color(0xFF0277BD),
+                      //         borderRadius: BorderRadius.circular(8),
+                      //       ),
+                      //       child: const Icon(
+                      //         Icons.business,
+                      //         size: 30,
+                      //         color: Colors.white,
+                      //       ),
+                      //     );
+                      //   },
+                      // ),
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 24),
+              // Teks Loading
               FadeTransition(
                 opacity: _animation,
                 child: Text(
                   l10n.loading,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
               const SizedBox(height: 16),
+              // Progress Indicator
               FadeTransition(
                 opacity: _animation,
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
+                child: const SizedBox(
+                  width: 18,
+                  height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).primaryColor,
+                      Color(0xFF0277BD),
                     ),
                   ),
                 ),
               ),
+              // Debug info (hanya di debug mode)
+              if (kDebugMode) ...[
+                const SizedBox(height: 20),
+                Text(
+                  'Debug: ${screenWidth.toInt()}x${screenHeight.toInt()}',
+                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                ),
+              ],
             ],
           ),
         ),
       ),
     );
   }
+
+  // Simplified helper methods (tidak perlu lagi karena menggunakan fixed size)
+  double _calculateLogoSize(double screenWidth, double screenHeight) {
+    return 100.0; // Fixed size
+  }
+
+  double _calculateFontSize(double screenWidth) {
+    return 16.0; // Fixed size
+  }
+
+  double _calculateProgressSize(double screenWidth) {
+    return 20.0; // Fixed size
+  }
+
+  double _calculateStrokeWidth(double screenWidth) {
+    return 2.0; // Fixed size
+  }
+
+  _Spacing _calculateSpacing(double screenHeight) {
+    return _Spacing(
+      vertical: 16.0,
+      horizontal: 16.0,
+      small: 8.0,
+    );
+  }
+}
+
+// Helper class for spacing values
+class _Spacing {
+  final double vertical;
+  final double horizontal;
+  final double small;
+
+  _Spacing({
+    required this.vertical,
+    required this.horizontal,
+    required this.small,
+  });
 }
