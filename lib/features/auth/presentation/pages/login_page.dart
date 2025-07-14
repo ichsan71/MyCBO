@@ -70,7 +70,7 @@ class _LoginPageState extends State<LoginPage> {
                                   height: MediaQuery.of(context).size.height *
                                       0.05),
                               Image.asset(
-                                'assets/images/mazta_logo.png',
+                                'assets/images/mazta_splash.png',
                                 width: 120,
                                 height: 120,
                               ),

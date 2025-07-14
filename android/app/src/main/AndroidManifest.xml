@@ -20,17 +20,25 @@
     <application
         android:label="My BCO"
         android:name="${applicationName}"
-        android:icon="@mipmap/mazta_icon"
+        android:icon="@mipmap/mazta_logo"
         android:enableOnBackInvokedCallback="true"
         android:hardwareAccelerated="true">
         <!-- Notification Receivers -->
-        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
-        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"/>
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
             <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
-                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+                <action
+                    android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action
+                    android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action
+                    android:name="android.intent.action.QUICKBOOT_POWERON"/>
+                <action
+                    android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
             </intent-filter>
         </receiver>
         <activity

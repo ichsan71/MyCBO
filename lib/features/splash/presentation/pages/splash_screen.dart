@@ -332,14 +332,6 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
               ),
-              // Debug info (hanya di debug mode)
-              if (kDebugMode) ...[
-                const SizedBox(height: 20),
-                Text(
-                  'Debug: ${screenWidth.toInt()}x${screenHeight.toInt()}',
-                  style: const TextStyle(fontSize: 10, color: Colors.grey),
-                ),
-              ],
             ],
           ),
         ),

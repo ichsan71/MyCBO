@@ -57,16 +57,27 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
   // final _animatedListKey = GlobalKey<AnimatedListState>();
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchFocused = false;
-  String _selectedFilter = 'Semua';
+  String _selectedStatusFilter = 'Semua';
   bool _selectAll = false;
 
-  // Gunakan metode untuk mendapatkan filter options
-  List<Map<String, dynamic>> get filterOptions => [
-        {'name': 'Semua', 'icon': Icons.filter_list},
-        {'name': 'Dokter', 'icon': Icons.person},
-        {'name': 'Tanggal', 'icon': Icons.calendar_today},
-        {'name': 'Status', 'icon': Icons.info},
-        {'name': 'Produk', 'icon': Icons.medication},
+  // Filter status options
+  List<Map<String, dynamic>> get statusFilterOptions => [
+        {'name': 'Semua', 'icon': Icons.filter_list, 'color': Colors.grey},
+        {
+          'name': 'Selesai',
+          'icon': Icons.check_circle_outline,
+          'color': Colors.green
+        },
+        {
+          'name': 'Pending',
+          'icon': Icons.pending_outlined,
+          'color': Colors.orange
+        },
+        {
+          'name': 'Tidak Selesai',
+          'icon': Icons.cancel_outlined,
+          'color': Colors.red
+        },
       ];
 
   @override
@@ -573,14 +584,14 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
-            children: filterOptions.map((filter) {
-              final bool isSelected = _selectedFilter == filter['name'];
+            children: statusFilterOptions.map((filter) {
+              final bool isSelected = _selectedStatusFilter == filter['name'];
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: InkWell(
                   onTap: () {
                     setState(() {
-                      _selectedFilter = filter['name'];
+                      _selectedStatusFilter = filter['name'];
                     });
                   },
                   borderRadius: BorderRadius.circular(20),
@@ -646,15 +657,9 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
   }
 
   Widget _buildSearchResultInfo() {
-    final int pendingCount = widget.realisasiVisit.details
-        .where((detail) => detail.realisasiVisitApproved == null)
-        .where(_filterSchedule)
-        .length;
-    final int approvedCount = widget.realisasiVisit.details
-        .where((detail) => detail.realisasiVisitApproved != null)
-        .where(_filterSchedule)
-        .length;
-    final int totalCount = pendingCount + approvedCount;
+    final filteredSchedules =
+        widget.realisasiVisit.details.where(_filterSchedule).toList();
+    final int totalCount = filteredSchedules.length;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -676,9 +681,9 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
               fontWeight: FontWeight.w500,
             ),
           ),
-          if (_selectedFilter != 'Semua') ...[
+          if (_selectedStatusFilter != 'Semua') ...[
             Text(
-              ' (Filter: $_selectedFilter)',
+              ' (Filter: $_selectedStatusFilter)',
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 color: Colors.blue[700],
@@ -692,18 +697,23 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
   }
 
   Widget _buildScheduleList() {
-    final pendingSchedules = widget.realisasiVisit.details
-        .where((detail) => detail.realisasiVisitApproved == null)
-        .where(_filterSchedule)
+    // Filter semua jadwal berdasarkan status filter dan search query
+    final filteredSchedules =
+        widget.realisasiVisit.details.where(_filterSchedule).toList();
+
+    // Kelompokkan berdasarkan status category
+    final pendingSchedules = filteredSchedules
+        .where((detail) => _getScheduleStatusCategory(detail) == 'Pending')
         .toList();
-    final approvedSchedules = widget.realisasiVisit.details
-        .where((detail) => detail.realisasiVisitApproved != null)
-        .where(_filterSchedule)
+    final approvedSchedules = filteredSchedules
+        .where((detail) => _getScheduleStatusCategory(detail) == 'Selesai')
+        .toList();
+    final notCompletedSchedules = filteredSchedules
+        .where(
+            (detail) => _getScheduleStatusCategory(detail) == 'Tidak Selesai')
         .toList();
 
-    if (_searchQuery.isNotEmpty &&
-        pendingSchedules.isEmpty &&
-        approvedSchedules.isEmpty) {
+    if (filteredSchedules.isEmpty) {
       return AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: Center(
@@ -732,7 +742,9 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Coba kata kunci pencarian lain',
+                _selectedStatusFilter != 'Semua'
+                    ? 'Tidak ada jadwal dengan status "$_selectedStatusFilter"'
+                    : 'Coba kata kunci pencarian lain',
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   color: AppTheme.getSecondaryTextColor(context),
@@ -740,11 +752,12 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
               ),
               const SizedBox(height: 20),
               AppButton(
-                text: 'Hapus Pencarian',
+                text: 'Reset Filter',
                 onPressed: () {
                   setState(() {
                     _searchController.clear();
                     _searchQuery = '';
+                    _selectedStatusFilter = 'Semua';
                   });
                 },
                 type: AppButtonType.outline,
@@ -763,7 +776,7 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
       duration: const Duration(milliseconds: 300),
       child: Column(
         key: ValueKey(
-            'results-${pendingSchedules.length}-${approvedSchedules.length}'),
+            'results-${pendingSchedules.length}-${approvedSchedules.length}-${notCompletedSchedules.length}'),
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (pendingSchedules.isNotEmpty) ...[
@@ -829,6 +842,47 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                     }
                   },
                 );
+              },
+            ),
+            const SizedBox(height: 24),
+          ],
+          if (notCompletedSchedules.isNotEmpty) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppTheme.errorColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppTheme.errorColor.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.cancel_outlined,
+                    size: 16,
+                    color: AppTheme.errorColor,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Tidak Selesai (${notCompletedSchedules.length})',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.errorColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: notCompletedSchedules.length,
+              itemBuilder: (context, index) {
+                final schedule = notCompletedSchedules[index];
+                return _buildScheduleCard(schedule, false, false);
               },
             ),
             const SizedBox(height: 24),
@@ -1000,64 +1054,128 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                const Divider(),
-                const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
                   decoration: BoxDecoration(
                     color: AppTheme.getBackgroundColor(context),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppTheme.getBorderColor(context)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.02),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Shift dan Jenis dalam satu baris
+                      // Shift & Jenis
                       Row(
                         children: [
                           Expanded(
-                            child: _buildDetailRowCompact(
-                                'Shift', schedule.shift, Icons.access_time),
+                            child: Row(
+                              children: [
+                                Icon(Icons.access_time,
+                                    size: 18, color: AppTheme.primaryColor),
+                                const SizedBox(width: 6),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Shift',
+                                        style: GoogleFonts.poppins(
+                                            fontSize: 11,
+                                            color:
+                                                AppTheme.getSecondaryTextColor(
+                                                    context))),
+                                    Text(schedule.shift,
+                                        style: GoogleFonts.poppins(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                          const SizedBox(width: 16),
                           Expanded(
-                            child: _buildDetailRowCompact(
-                                'Jenis', schedule.jenis, Icons.category),
+                            child: Row(
+                              children: [
+                                Icon(Icons.category,
+                                    size: 18, color: AppTheme.primaryColor),
+                                const SizedBox(width: 6),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Jenis',
+                                        style: GoogleFonts.poppins(
+                                            fontSize: 11,
+                                            color:
+                                                AppTheme.getSecondaryTextColor(
+                                                    context))),
+                                    Text(schedule.jenis,
+                                        style: GoogleFonts.poppins(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      // Status
-                      _buildDetailRowCompact(
-                          'Status', schedule.statusTerrealisasi, Icons.info),
+                      const SizedBox(height: 12),
+                      // Status (text only)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(Icons.info_outline,
+                              size: 18, color: AppTheme.primaryColor),
+                          const SizedBox(width: 6),
+                          Text('Status',
+                              style: GoogleFonts.poppins(
+                                  fontSize: 11,
+                                  color:
+                                      AppTheme.getSecondaryTextColor(context))),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              schedule.statusTerrealisasi,
+                              style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.primaryColor),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                       if (schedule.lokasi != null &&
                           schedule.lokasi!.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        // Lokasi dengan text wrapping
+                        const SizedBox(height: 12),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Icon(Icons.location_on,
-                                size: 14, color: AppTheme.primaryColor),
-                            const SizedBox(width: 4),
+                                size: 18, color: AppTheme.primaryColor),
+                            const SizedBox(width: 6),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    'Lokasi:',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      color: AppTheme.getSecondaryTextColor(
-                                          context),
-                                    ),
-                                  ),
+                                  Text('Lokasi',
+                                      style: GoogleFonts.poppins(
+                                          fontSize: 11,
+                                          color: AppTheme.getSecondaryTextColor(
+                                              context))),
                                   Text(
                                     schedule.lokasi!,
                                     style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w500),
+                                    softWrap: true,
                                   ),
                                 ],
                               ),
@@ -1065,21 +1183,81 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                           ],
                         ),
                       ],
-                      if (isDone) ...[
-                        const SizedBox(height: 8),
-                        const Divider(),
-                        const SizedBox(height: 8),
-                        // Check-in dan Check-out dalam satu baris
+                      if (isDone ||
+                          (schedule.checkin != null &&
+                              schedule.checkin!.isNotEmpty)) ...[
+                        const SizedBox(height: 14),
+                        Divider(
+                            color: AppTheme.getBorderColor(context),
+                            thickness: 0.7,
+                            height: 1),
+                        const SizedBox(height: 10),
                         Row(
                           children: [
                             Expanded(
-                              child: _buildDetailRowCompact('Check-in',
-                                  schedule.checkin ?? '-', Icons.login),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(Icons.login,
+                                      size: 18, color: AppTheme.primaryColor),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Check-in',
+                                            style: GoogleFonts.poppins(
+                                                fontSize: 11,
+                                                color: AppTheme
+                                                    .getSecondaryTextColor(
+                                                        context))),
+                                        Text(
+                                          schedule.checkin ?? '-',
+                                          style: GoogleFonts.poppins(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            const SizedBox(width: 16),
+                            const SizedBox(width: 10),
                             Expanded(
-                              child: _buildDetailRowCompact('Check-out',
-                                  schedule.checkout ?? '-', Icons.logout),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(Icons.logout,
+                                      size: 18, color: AppTheme.primaryColor),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Check-out',
+                                            style: GoogleFonts.poppins(
+                                                fontSize: 11,
+                                                color: AppTheme
+                                                    .getSecondaryTextColor(
+                                                        context))),
+                                        Text(
+                                          schedule.checkout ?? '-',
+                                          style: GoogleFonts.poppins(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -1580,30 +1758,38 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-        actionsPadding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: AppTheme.borderRadiusLarge,
+        ),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         title: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppTheme.successColor.withOpacity(0.1),
+                color: isApprove
+                    ? AppTheme.successColor.withOpacity(0.12)
+                    : AppTheme.errorColor.withOpacity(0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.check_circle,
-                color: AppTheme.successColor,
-                size: 18,
+                isApprove ? Icons.check_circle : Icons.cancel,
+                color: isApprove ? AppTheme.successColor : AppTheme.errorColor,
+                size: 28,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 16),
             Expanded(
               child: Text(
-                isApprove ? 'Setujui Jadwal' : 'Tolak Jadwal',
+                isApprove
+                    ? 'Konfirmasi Setujui Jadwal'
+                    : 'Konfirmasi Tolak Jadwal',
                 style: GoogleFonts.poppins(
                   fontSize: 18,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
@@ -1613,64 +1799,83 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SizedBox(height: 8),
             Text(
-              'Yakin menyetujui ${_selectedScheduleIds.length} jadwal?',
+              isApprove
+                  ? 'Anda akan menyetujui ${_selectedScheduleIds.length} jadwal realisasi visit.'
+                  : 'Anda akan menolak ${_selectedScheduleIds.length} jadwal realisasi visit.',
               style: GoogleFonts.poppins(
-                fontSize: 14,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade200),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.blue.shade100),
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info, color: Colors.blue.shade700, size: 16),
-                  const SizedBox(width: 8),
+                  Icon(Icons.info_outline,
+                      color: Colors.blue.shade700, size: 20),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Tindakan ini tidak dapat dibatalkan.',
+                      'Tindakan ini tidak dapat dibatalkan. Pastikan data sudah benar sebelum melanjutkan.',
                       style: GoogleFonts.poppins(
-                        fontSize: 14,
+                        fontSize: 13.5,
                         color: Colors.blue.shade900,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 8),
           ],
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: AppTheme.borderRadiusMedium,
-        ),
+        actionsAlignment: MainAxisAlignment.end,
         actions: [
-          AppButton(
-            text: 'Batal',
-            onPressed: () => Navigator.pop(context),
-            type: AppButtonType.outline,
-            prefixIcon: const Icon(Icons.close, size: 14),
-            fontSize: 12,
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-          ),
-          AppButton(
-            text: 'Setujui',
-            onPressed: () {
-              Navigator.pop(context);
-              _handleApproveSelected();
-            },
-            type: AppButtonType.success,
-            prefixIcon: const Icon(
-              Icons.check,
-              size: 14,
-              color: Colors.white,
-            ),
-            fontSize: 12,
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          Row(
+            children: [
+              Expanded(
+                child: AppButton(
+                  text: 'Batal',
+                  onPressed: () => Navigator.pop(context),
+                  type: AppButtonType.outline,
+                  prefixIcon: const Icon(Icons.close, size: 16),
+                  fontSize: 14,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: AppButton(
+                  text: isApprove ? 'Setujui' : 'Tolak',
+                  onPressed: () {
+                    Navigator.pop(context);
+                    if (isApprove) {
+                      _handleApproveSelected();
+                    } else {
+                      _handleRejectSelected();
+                    }
+                  },
+                  type: isApprove ? AppButtonType.success : AppButtonType.error,
+                  prefixIcon: Icon(
+                    isApprove ? Icons.check : Icons.cancel,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                  fontSize: 14,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -1736,11 +1941,43 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
         );
   }
 
+  String _getScheduleStatusCategory(RealisasiVisitDetail schedule) {
+    final status = schedule.statusTerrealisasi.toLowerCase().trim();
+    final isApproved = schedule.realisasiVisitApproved != null;
+
+    // Selesai: status "done" dan sudah disetujui (realisasi_visit_approved tidak null)
+    if (status == 'done' && isApproved) {
+      return 'Selesai';
+    }
+
+    // Pending: status "done" tapi belum disetujui
+    if (status == 'done' && !isApproved) {
+      return 'Pending';
+    }
+
+    // Tidak Selesai: status "not done" atau status lainnya
+    if (status == 'not done' || status == 'notdone' || status == 'not_done') {
+      return 'Tidak Selesai';
+    }
+
+    // Default untuk status lainnya
+    return 'Tidak Selesai';
+  }
+
   bool _filterSchedule(RealisasiVisitDetail schedule) {
+    // Filter berdasarkan status category terlebih dahulu
+    final String statusCategory = _getScheduleStatusCategory(schedule);
+    if (_selectedStatusFilter != 'Semua' &&
+        statusCategory != _selectedStatusFilter) {
+      return false;
+    }
+
+    // Jika tidak ada search query, return true (sudah difilter berdasarkan status)
     if (_searchQuery.isEmpty) {
       return true;
     }
 
+    // Search functionality untuk semua field
     final String query = _searchQuery.toLowerCase();
     final String doctorName = schedule.tujuanData.namaDokter.toLowerCase();
     final DateTime? visitDate = _parseVisitDate(schedule.tglVisit);
@@ -1752,25 +1989,12 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
     final String jenis = schedule.jenis.toLowerCase();
     final String products = schedule.formattedProductNames.toLowerCase();
 
-    switch (_selectedFilter) {
-      case 'Dokter':
-        return doctorName.contains(query);
-      case 'Tanggal':
-        return formattedDate.contains(query);
-      case 'Status':
-        return status.contains(query) ||
-            shift.contains(query) ||
-            jenis.contains(query);
-      case 'Produk':
-        return products.contains(query);
-      default: // 'Semua'
-        return doctorName.contains(query) ||
-            formattedDate.contains(query) ||
-            status.contains(query) ||
-            shift.contains(query) ||
-            jenis.contains(query) ||
-            products.contains(query);
-    }
+    return doctorName.contains(query) ||
+        formattedDate.contains(query) ||
+        status.contains(query) ||
+        shift.contains(query) ||
+        jenis.contains(query) ||
+        products.contains(query);
   }
 }
 

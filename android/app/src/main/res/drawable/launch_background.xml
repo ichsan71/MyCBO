@@ -1,30 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- White background -->
     <item android:drawable="@android:color/white" />
-    
-    <!-- Main splash logo - properly scaled and centered -->
-    <item 
-        android:width="240dp"
-        android:height="240dp"
-        android:gravity="center">
+    <item>
         <bitmap
-            android:src="@drawable/splash"
-            android:gravity="fill_horizontal|fill_vertical"
-            android:filter="true"
-            android:antialias="true" />
-    </item>
-    
-    <!-- Bottom branding logo -->
-    <item 
-        android:width="160dp"
-        android:height="50dp"
-        android:gravity="bottom|center_horizontal"
-        android:bottom="60dp">
-        <bitmap
-            android:src="@drawable/branding"
-            android:gravity="fill_horizontal|fill_vertical"
-            android:filter="true"
-            android:antialias="true" />
+            android:gravity="center"
+            android:src="@drawable/mazta_logo" />
     </item>
 </layer-list>

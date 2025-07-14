@@ -216,16 +216,47 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
   }
 
   Widget _buildSearchField() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      decoration: BoxDecoration(
+        color: AppTheme.getCardBackgroundColor(context),
+        border: Border(
+          bottom: BorderSide(
+            color: AppTheme.getBorderColor(context),
+            width: 1.0,
+          ),
+        ),
+      ),
       child: TextField(
         controller: _searchController,
         onChanged: (value) => setState(() => _searchQuery = value),
         decoration: InputDecoration(
           hintText: 'Cari berdasarkan nama...',
           prefixIcon: const Icon(Icons.search),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 20),
+                  onPressed: () {
+                    setState(() {
+                      _searchController.clear();
+                      _searchQuery = '';
+                    });
+                  },
+                  color: AppTheme.getSecondaryTextColor(context),
+                )
+              : null,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(
+              color: AppTheme.getBorderColor(context),
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(
+              color: AppTheme.primaryColor,
+              width: 1.5,
+            ),
           ),
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
         ),
@@ -402,7 +433,8 @@ class _RealisasiVisitListViewState extends State<RealisasiVisitListView> {
                                   'Tidak ada data realisasi visit',
                                   style: GoogleFonts.poppins(
                                     fontSize: 16,
-                                    color: AppTheme.getSecondaryTextColor(context),
+                                    color:
+                                        AppTheme.getSecondaryTextColor(context),
                                   ),
                                 ),
                               )

@@ -15,14 +15,26 @@ class RealisasiVisitCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int totalDone = realisasiVisit.details
-        .where((detail) => detail.statusTerrealisasi == 'Done')
+    // Selesai: status "Done" dan sudah disetujui (realisasi_visit_approved tidak null)
+    final int totalSelesai = realisasiVisit.details
+        .where((detail) =>
+            detail.statusTerrealisasi.toLowerCase() == 'done' &&
+            detail.realisasiVisitApproved != null)
         .length;
-    final int totalNotDone = realisasiVisit.details
-        .where((detail) => detail.statusTerrealisasi == 'Not Done')
-        .length;
+
+    // Pending: status "Done" tapi belum disetujui
     final int totalPending = realisasiVisit.details
-        .where((detail) => detail.realisasiVisitApproved == null)
+        .where((detail) =>
+            detail.statusTerrealisasi.toLowerCase() == 'done' &&
+            detail.realisasiVisitApproved == null)
+        .length;
+
+    // Tidak Selesai: status "Not Done" atau status lainnya
+    final int totalTidakSelesai = realisasiVisit.details
+        .where((detail) =>
+            detail.statusTerrealisasi.toLowerCase() == 'not done' ||
+            detail.statusTerrealisasi.toLowerCase() == 'notdone' ||
+            detail.statusTerrealisasi.toLowerCase() == 'not_done')
         .length;
 
     return Card(
@@ -39,34 +51,26 @@ class RealisasiVisitCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          realisasiVisit.namaBawahan,
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Role: ${realisasiVisit.role}',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: AppTheme.getSecondaryTextColor(context),
-                          ),
-                        ),
-                      ],
+                  Text(
+                    realisasiVisit.namaBawahan,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Role: ${realisasiVisit.role}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: AppTheme.getSecondaryTextColor(context),
                     ),
                   ),
-                  _buildStatusBadge(totalPending),
                 ],
               ),
               const SizedBox(height: 12),
@@ -100,40 +104,31 @@ class RealisasiVisitCard extends StatelessWidget {
                 context,
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  _buildStatusIndicator('Selesai', totalDone, AppTheme.getSuccessColor(context), context),
-                  const SizedBox(width: 16),
-                  _buildStatusIndicator(
-                      'Belum Selesai', totalNotDone, AppTheme.getErrorColor(context), context),
-                  const SizedBox(width: 16),
-                  _buildStatusIndicator(
-                      'Menunggu', totalPending, AppTheme.getWarningColor(context), context),
-                ],
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.getCardBackgroundColor(context),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppTheme.getBorderColor(context),
+                    width: 0.5,
+                  ),
+                ),
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  children: [
+                    _buildStatusIndicator(
+                        'Selesai', totalSelesai, Colors.green, context),
+                    _buildStatusIndicator('Tidak Selesai', totalTidakSelesai,
+                        Colors.red, context),
+                    _buildStatusIndicator(
+                        'Menunggu', totalPending, Colors.orange, context),
+                  ],
+                ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(int totalPending) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: totalPending > 0
-            ? AppTheme.warningColor.withOpacity(0.15)
-            : AppTheme.successColor.withOpacity(0.15),
-        borderRadius: AppTheme.borderRadiusSmall,
-      ),
-      child: Text(
-        totalPending > 0 ? 'Menunggu' : 'Diproses',
-        style: GoogleFonts.poppins(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color:
-              totalPending > 0 ? AppTheme.warningColor : AppTheme.successColor,
         ),
       ),
     );
@@ -168,32 +163,36 @@ class RealisasiVisitCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusIndicator(String label, int count, Color color, BuildContext context) {
-    return Expanded(
-      child: Row(
-        children: [
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Text(
-              '$label: $count',
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: AppTheme.getPrimaryTextColor(context),
+  Widget _buildStatusIndicator(
+      String label, int count, Color color, BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.3),
+                blurRadius: 2,
+                offset: const Offset(0, 1),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          '$label: $count',
+          style: GoogleFonts.poppins(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: AppTheme.getPrimaryTextColor(context),
+          ),
+        ),
+      ],
     );
   }
 }
