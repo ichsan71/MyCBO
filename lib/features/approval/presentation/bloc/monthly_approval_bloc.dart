@@ -57,10 +57,7 @@ class MonthlyApprovalBloc
           message: event.isRejected
               ? 'Penolakan berhasil dikirim'
               : 'Persetujuan berhasil dikirim',
-          onDismissed: () {
-            // Refresh the list after showing success message
-            add(GetMonthlyApprovals(userId: event.userId));
-          },
+          // onDismissed: () {},
         );
         // Emit loading state while refreshing
         emit(MonthlyApprovalLoading());

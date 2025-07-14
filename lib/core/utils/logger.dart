@@ -12,7 +12,7 @@ class Logger {
 
   Logger._internal();
 
-  static void info(String tag, String message) {
+  static void info(String tag, String message, [param2]) {
     if (kDebugMode) {
       print('ℹ️ $tag: $message');
     }

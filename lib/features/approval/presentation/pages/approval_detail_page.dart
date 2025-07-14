@@ -443,10 +443,14 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
   Widget _buildHeaderSection() {
     return SliverToBoxAdapter(
       child: Container(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         decoration: BoxDecoration(
           color: AppTheme.getCardBackgroundColor(context),
           boxShadow: AppTheme.defaultShadow,
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -454,12 +458,12 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
             Text(
               'Ringkasan',
               style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
                 color: AppTheme.getPrimaryTextColor(context),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
             Row(
               children: [
                 Expanded(
@@ -476,7 +480,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
                     AppTheme.getPrimaryColor(context),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
                   child: _buildInfoCard(
                     'Dokter',
@@ -493,50 +497,30 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _selectedScheduleIds.isEmpty || _isLoading
+                  child: _buildActionCard(
+                    context,
+                    icon: Icons.check_circle_outline,
+                    label: 'Setujui yang Dipilih',
+                    color: AppTheme.getSuccessColor(context),
+                    onTap: _selectedScheduleIds.isEmpty || _isLoading
                         ? null
                         : () => _handleApprove(),
-                    label: Text(
-                      'Setujui yang Dipilih',
-                      style: GoogleFonts.poppins(),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.getSuccessColor(context),
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor:
-                          AppTheme.getSuccessColor(context).withOpacity(0.3),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 14),
                 Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _selectedScheduleIds.isEmpty || _isLoading
+                  child: _buildActionCard(
+                    context,
+                    icon: Icons.cancel_outlined,
+                    label: 'Tolak yang Dipilih',
+                    color: AppTheme.getErrorColor(context),
+                    onTap: _selectedScheduleIds.isEmpty || _isLoading
                         ? null
                         : () => _handleReject(),
-                    label: Text(
-                      'Tolak yang Dipilih',
-                      style: GoogleFonts.poppins(),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.getErrorColor(context),
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor:
-                          AppTheme.getErrorColor(context).withOpacity(0.3),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
                   ),
                 ),
               ],
@@ -552,22 +536,32 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
+      margin: const EdgeInsets.symmetric(horizontal: 2),
       decoration: BoxDecoration(
-        color: isDark ? color.withOpacity(0.15) : color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: isDark ? color.withOpacity(0.13) : color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withOpacity(0.18),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 icon,
-                size: 20,
+                size: 22,
                 color: color,
               ),
               const SizedBox(width: 8),
@@ -576,20 +570,84 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   color: AppTheme.getSecondaryTextColor(context),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-              color: color,
+          const SizedBox(height: 10),
+          Center(
+            child: Text(
+              value,
+              style: GoogleFonts.poppins(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildActionCard(BuildContext context,
+      {required IconData icon,
+      required String label,
+      required Color color,
+      required VoidCallback? onTap}) {
+    final isDisabled = onTap == null;
+    final isHighlighted = _selectedScheduleIds.isNotEmpty && !isDisabled;
+    return InkWell(
+      onTap: isDisabled ? null : onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 10),
+        decoration: BoxDecoration(
+          color: isHighlighted
+              ? color
+              : isDisabled
+                  ? color.withOpacity(0.13)
+                  : color.withOpacity(0.18),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.18)),
+          boxShadow: isHighlighted
+              ? [
+                  BoxShadow(
+                    color: color.withOpacity(0.18),
+                    blurRadius: 12,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: color.withOpacity(0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: isHighlighted ? Colors.white : color, size: 22),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  color: isHighlighted ? Colors.white : color,
+                  fontSize: 15,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -632,32 +690,47 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Card(
-                  child: CheckboxListTile(
-                    title: Text(
-                      'Pilih Semua',
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w500,
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                    child: CheckboxListTile(
+                      title: Text(
+                        'Pilih Semua',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
                       ),
+                      value: details.every((detail) => _selectedScheduleIds
+                          .contains(detail is monthly.MonthlyScheduleDetail
+                              ? detail.id
+                              : detail.id)),
+                      onChanged: (bool? value) {
+                        setState(() {
+                          if (value == true) {
+                            // Select all
+                            _selectedScheduleIds.addAll(details.map((detail) =>
+                                detail is monthly.MonthlyScheduleDetail
+                                    ? detail.id
+                                    : detail.id));
+                          } else {
+                            // Deselect all
+                            _selectedScheduleIds.clear();
+                          }
+                        });
+                      },
+                      controlAffinity: ListTileControlAffinity.leading,
+                      activeColor: AppTheme.getPrimaryColor(context),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                      checkboxShape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 0),
                     ),
-                    value: details.every((detail) => _selectedScheduleIds
-                        .contains(detail is monthly.MonthlyScheduleDetail
-                            ? detail.id
-                            : detail.id)),
-                    onChanged: (bool? value) {
-                      setState(() {
-                        if (value == true) {
-                          // Select all
-                          _selectedScheduleIds.addAll(details.map((detail) =>
-                              detail is monthly.MonthlyScheduleDetail
-                                  ? detail.id
-                                  : detail.id));
-                        } else {
-                          // Deselect all
-                          _selectedScheduleIds.clear();
-                        }
-                      });
-                    },
-                    controlAffinity: ListTileControlAffinity.leading,
                   ),
                 ),
               );

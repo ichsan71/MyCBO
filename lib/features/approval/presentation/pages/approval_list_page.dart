@@ -130,7 +130,7 @@ class _ApprovalListViewState extends State<ApprovalListView>
                         Tab(text: 'Extra'),
                       ],
                       labelStyle: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                       unselectedLabelStyle: GoogleFonts.poppins(
                         fontWeight: FontWeight.w400,
@@ -138,11 +138,22 @@ class _ApprovalListViewState extends State<ApprovalListView>
                       indicator: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryColor.withOpacity(0.10),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      labelColor: Theme.of(context).primaryColor,
+                      indicatorColor: Colors.transparent,
+                      indicatorWeight: 0,
+                      labelColor: AppTheme.primaryColor,
                       unselectedLabelColor: Colors.white70,
                       indicatorSize: TabBarIndicatorSize.tab,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
+                      overlayColor:
+                          MaterialStateProperty.all(Colors.transparent),
                     ),
                   ],
                 ),
@@ -269,11 +280,13 @@ class _ApprovalListViewState extends State<ApprovalListView>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.search_off, size: 48, color: AppTheme.getSecondaryTextColor(context)),
+                  Icon(Icons.search_off,
+                      size: 48, color: AppTheme.getSecondaryTextColor(context)),
                   const SizedBox(height: 16),
                   Text(
                     'Tidak ada hasil pencarian',
-                    style: GoogleFonts.poppins(color: AppTheme.getSecondaryTextColor(context)),
+                    style: GoogleFonts.poppins(
+                        color: AppTheme.getSecondaryTextColor(context)),
                   ),
                 ],
               ),

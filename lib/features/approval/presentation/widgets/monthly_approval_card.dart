@@ -22,15 +22,16 @@ class MonthlyApprovalCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppTheme.getBorderColor(context)),
+        borderRadius: BorderRadius.circular(16),
       ),
-      elevation: 0,
+      elevation: 3,
+      shadowColor: AppTheme.primaryColor.withOpacity(0.10),
+      color: AppTheme.getCardBackgroundColor(context),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -43,8 +44,8 @@ class MonthlyApprovalCard extends StatelessWidget {
                         Text(
                           approval.namaBawahan,
                           style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
                             color: AppTheme.primaryColor,
                           ),
                           maxLines: 1,
@@ -63,23 +64,37 @@ class MonthlyApprovalCard extends StatelessWidget {
                   ),
                   Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      gradient: LinearGradient(
+                        colors: [
+                          AppTheme.primaryColor.withOpacity(0.18),
+                          AppTheme.primaryColor.withOpacity(0.10),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(
-                      'Call Plan',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: AppTheme.primaryColor,
-                      ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.calendar_month,
+                            color: AppTheme.primaryColor, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Call Plan',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
               Row(
                 children: [
                   _buildInfoItem(
@@ -88,14 +103,14 @@ class MonthlyApprovalCard extends StatelessWidget {
                     'Total Jadwal',
                     approval.totalSchedule.toString(),
                   ),
-                  const SizedBox(width: 24),
+                  _verticalDivider(context),
                   _buildInfoItem(
                     context,
                     Icons.medical_services,
                     'Dokter',
                     approval.jumlahDokter,
                   ),
-                  const SizedBox(width: 24),
+                  _verticalDivider(context),
                   _buildInfoItem(
                     context,
                     Icons.local_hospital,
@@ -111,17 +126,27 @@ class MonthlyApprovalCard extends StatelessWidget {
     );
   }
 
+  Widget _verticalDivider(BuildContext context) {
+    return Container(
+      height: 36,
+      width: 1.2,
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      color: AppTheme.getBorderColor(context).withOpacity(0.25),
+    );
+  }
+
   Widget _buildInfoItem(
       BuildContext context, IconData icon, String label, String value) {
     return Expanded(
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Icon(
             icon,
-            size: 16,
-            color: AppTheme.getSecondaryTextColor(context),
+            size: 18,
+            color: AppTheme.primaryColor,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 6),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,7 +161,8 @@ class MonthlyApprovalCard extends StatelessWidget {
                 Text(
                   value,
                   style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.getPrimaryTextColor(context),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

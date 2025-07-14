@@ -64,72 +64,76 @@ class _ScheduleCardState extends State<ScheduleCard> {
         statusText = 'Menunggu';
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: AppTheme.getCardBackgroundColor(context),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.getSecondaryTextColor(context).withOpacity(0.1),
-            blurRadius: 15,
-            offset: const Offset(0, 2),
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: approvedStatus == 0
+          ? () => widget.onSelect(!widget.isSelected)
+          : null,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: AppTheme.getCardBackgroundColor(context),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.getSecondaryTextColor(context).withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 2),
+            ),
+          ],
+          border: Border.all(
+            color: widget.isJoinVisit
+                ? AppTheme.getSuccessColor(context)
+                : widget.isSelected
+                    ? AppTheme.getPrimaryColor(context)
+                    : approvedStatus == 2
+                        ? AppTheme.getErrorColor(context).withOpacity(0.3)
+                        : approvedStatus == 1
+                            ? AppTheme.getSuccessColor(context).withOpacity(0.3)
+                            : AppTheme.getBorderColor(context),
+            width: widget.isJoinVisit ? 2 : 1,
           ),
-        ],
-        border: Border.all(
-          color: widget.isJoinVisit
-              ? AppTheme.getSuccessColor(context)
-              : widget.isSelected
-                  ? AppTheme.getPrimaryColor(context)
-                  : approvedStatus == 2
-                      ? AppTheme.getErrorColor(context).withOpacity(0.3)
-                      : approvedStatus == 1
-                          ? AppTheme.getSuccessColor(context).withOpacity(0.3)
-                          : AppTheme.getBorderColor(context),
-          width: widget.isJoinVisit ? 2 : 1,
         ),
-      ),
-      child: Material(
-        color: widget.isJoinVisit
-            ? AppTheme.getSuccessColor(context).withOpacity(0.05)
-            : widget.isSelected
-                ? AppTheme.getPrimaryColor(context).withOpacity(0.05)
-                : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: approvedStatus == 0
-              ? () => widget.onSelect(!widget.isSelected)
-              : null,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    if (approvedStatus == 0)
-                      SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: Checkbox(
-                          value: widget.isSelected,
-                          onChanged: (value) => widget.onSelect(value ?? false),
-                          activeColor: AppTheme.getPrimaryColor(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Container(
+              decoration: BoxDecoration(
+                color: AppTheme.getPrimaryColor(context).withOpacity(0.07),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      if (approvedStatus == 0)
+                        SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: Checkbox(
+                            value: widget.isSelected,
+                            onChanged: (value) =>
+                                widget.onSelect(value ?? false),
+                            activeColor: AppTheme.getPrimaryColor(context),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4)),
+                          ),
                         ),
-                      ),
-                    if (approvedStatus == 0) const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
+                      if (approvedStatus == 0) const SizedBox(width: 8),
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             doctorName,
                             style: GoogleFonts.poppins(
                               fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w700,
                               color: AppTheme.getPrimaryTextColor(context),
                             ),
                           ),
@@ -138,191 +142,192 @@ class _ScheduleCardState extends State<ScheduleCard> {
                             Text(
                               clinicName,
                               style: GoogleFonts.poppins(
-                                fontSize: 14,
+                                fontSize: 13,
                                 color: AppTheme.getSecondaryTextColor(context),
                               ),
                             ),
                           ],
                         ],
                       ),
+                    ],
+                  ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: backgroundColor,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: borderColor, width: 1.0),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
+                        Icon(
+                          approvedStatus == 0
+                              ? Icons.hourglass_empty
+                              : approvedStatus == 1
+                                  ? Icons.check_circle
+                                  : Icons.cancel,
+                          size: 13,
+                          color: statusColor,
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          statusText,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: statusColor,
                           ),
-                          decoration: BoxDecoration(
-                            color: backgroundColor,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: borderColor, width: 1.0),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                approvedStatus == 0
-                                    ? Icons.hourglass_empty
-                                    : approvedStatus == 1
-                                        ? Icons.check_circle
-                                        : Icons.cancel,
-                                size: 14,
-                                color: statusColor,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                statusText,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: statusColor,
-                                ),
-                              ),
-                            ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, thickness: 1),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        size: 16,
+                        color: AppTheme.getPrimaryColor(context),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        visitDate,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: AppTheme.getPrimaryTextColor(context),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Icon(
+                        Icons.access_time,
+                        size: 16,
+                        color: AppTheme.getPrimaryColor(context),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        shift,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: AppTheme.getPrimaryTextColor(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (hasProductData) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.medical_services,
+                          size: 16,
+                          color: AppTheme.getPrimaryColor(context),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: widget.schedule.productData
+                                .map((e) => Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 5),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.getPrimaryColor(context)
+                                            .withOpacity(0.10),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        e.namaProduct,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 13,
+                                          color: AppTheme.getPrimaryTextColor(
+                                              context),
+                                        ),
+                                      ),
+                                    ))
+                                .toList(),
                           ),
                         ),
                       ],
                     ),
                   ],
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.getSurfaceColor(context),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.getBorderColor(context)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_today,
-                            size: 16,
-                            color: AppTheme.getSecondaryTextColor(context),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            visitDate,
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: AppTheme.getPrimaryTextColor(context),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Icon(
-                            Icons.access_time,
-                            size: 16,
-                            color: AppTheme.getSecondaryTextColor(context),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            shift,
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: AppTheme.getPrimaryTextColor(context),
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (hasProductData) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.medical_services,
-                              size: 16,
-                              color: AppTheme.getSecondaryTextColor(context),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                widget.schedule.productData
-                                    .map((e) => e.namaProduct)
-                                    .join(', '),
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: AppTheme.getPrimaryTextColor(context),
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                      if (note.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.note,
-                              size: 16,
-                              color: AppTheme.getSecondaryTextColor(context),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                note,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: AppTheme.getPrimaryTextColor(context),
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                if (widget.isMonthlyTab && widget.isSelected) ...[
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Switch(
-                        value: widget.isJoinVisit,
-                        onChanged: widget.canJoinVisit
-                            ? widget.onJoinVisitChanged
-                            : null,
-                        activeColor: AppTheme.getSuccessColor(context),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Join Visit',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: widget.isJoinVisit
-                              ? AppTheme.getSuccessColor(context)
-                              : widget.canJoinVisit
-                                  ? AppTheme.getPrimaryTextColor(context)
-                                  : AppTheme.getSecondaryTextColor(context)
-                                      .withOpacity(0.5),
-                          fontWeight: widget.isJoinVisit
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                        ),
-                      ),
-                      if (widget.isJoinVisit) ...[
-                        const SizedBox(width: 8),
+                  if (note.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
                         Icon(
-                          Icons.group,
+                          Icons.note,
                           size: 16,
-                          color: AppTheme.getSuccessColor(context),
+                          color: AppTheme.getPrimaryColor(context),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            note,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: AppTheme.getPrimaryTextColor(context),
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
-                    ],
-                  ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
+            if (widget.isMonthlyTab && widget.isSelected) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Switch(
+                    value: widget.isJoinVisit,
+                    onChanged:
+                        widget.canJoinVisit ? widget.onJoinVisitChanged : null,
+                    activeColor: AppTheme.getSuccessColor(context),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Join Visit',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: widget.isJoinVisit
+                          ? AppTheme.getSuccessColor(context)
+                          : widget.canJoinVisit
+                              ? AppTheme.getPrimaryTextColor(context)
+                              : AppTheme.getSecondaryTextColor(context)
+                                  .withOpacity(0.5),
+                      fontWeight: widget.isJoinVisit
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                    ),
+                  ),
+                  if (widget.isJoinVisit) ...[
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.group,
+                      size: 16,
+                      color: AppTheme.getSuccessColor(context),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ],
         ),
       ),
     );
