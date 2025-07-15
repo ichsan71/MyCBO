@@ -855,7 +855,7 @@ class _ApprovalDetailViewState extends State<ApprovalDetailView>
                 userId: monthlyApproval.idBawahan,
                 userAtasanId: int.parse(widget.userId),
                 isRejected: true,
-                comment: result,
+                comment: result,  
                 context: context,
               ),
             );

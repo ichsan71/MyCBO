@@ -971,86 +971,81 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          if (canApprove)
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? AppTheme.primaryColor.withOpacity(0.1)
-                                    : Colors.transparent,
+                    Row(
+                      children: [
+                        if (canApprove)
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppTheme.primaryColor.withOpacity(0.1)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Checkbox(
+                              value: isSelected,
+                              onChanged: (value) {
+                                if (onToggleSelection != null) {
+                                  onToggleSelection();
+                                }
+                              },
+                              activeColor: AppTheme.primaryColor,
+                              shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: Checkbox(
-                                value: isSelected,
-                                onChanged: (value) {
-                                  if (onToggleSelection != null) {
-                                    onToggleSelection();
-                                  }
-                                },
-                                activeColor: AppTheme.primaryColor,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                            ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(Icons.person,
-                                        size: 14, color: AppTheme.primaryColor),
-                                    const SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        schedule.tujuanData.namaDokter.isEmpty
-                                            ? 'Dokter (ID: ${schedule.idTujuan})'
-                                            : schedule.tujuanData.namaDokter,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    Icon(Icons.event,
-                                        size: 14,
-                                        color: AppTheme.getSecondaryTextColor(
-                                            context)),
-                                    const SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        'Tanggal: $formattedDate',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          color: AppTheme.getSecondaryTextColor(
-                                              context),
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
                             ),
                           ),
-                        ],
-                      ),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Icon(Icons.person,
+                                  size: 14, color: AppTheme.primaryColor),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  schedule.tujuanData.namaDokter.isEmpty
+                                      ? 'Dokter (ID: ${schedule.idTujuan})'
+                                      : schedule.tujuanData.namaDokter,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  softWrap: true,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    _buildStatusBadge(schedule),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        if (canApprove)
+                          const SizedBox(width: 24), // Align with checkbox
+                        Icon(Icons.event,
+                            size: 14,
+                            color: AppTheme.getSecondaryTextColor(context)),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            'Tanggal: $formattedDate',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: AppTheme.getSecondaryTextColor(context),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        _buildStatusBadge(schedule),
+                      ],
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
