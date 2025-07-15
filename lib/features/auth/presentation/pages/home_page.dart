@@ -10,6 +10,9 @@ import 'package:test_cbo/features/kpi/presentation/widgets/kpi_chart_new.dart';
 import 'package:test_cbo/features/kpi/presentation/bloc/kpi_bloc.dart';
 import 'package:test_cbo/features/kpi/presentation/widgets/kpi_chart_shimmer.dart';
 import 'package:test_cbo/features/kpi/data/models/kpi_model.dart';
+import 'package:test_cbo/features/ranking_achievement/presentation/widgets/ranking_achievement_widget.dart';
+import 'package:test_cbo/features/ranking_achievement/presentation/bloc/ranking_achievement_bloc.dart';
+import 'package:test_cbo/core/di/injection_container.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -335,6 +338,15 @@ class _HomeContentState extends State<_HomeContent>
                         },
                       ),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+                // Ranking Achievement Section
+                BlocProvider(
+                  create: (context) => sl<RankingAchievementBloc>(),
+                  child: RankingAchievementWidget(
+                    roleId: widget.user.user.idUser.toString(),
+                    currentUserId: widget.user.user.idUser,
                   ),
                 ),
                 const SizedBox(height: 32),

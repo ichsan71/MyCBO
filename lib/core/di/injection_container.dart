@@ -46,6 +46,7 @@ import '../../features/realisasi_visit/domain/usecases/approve_realisasi_visit.d
 import '../../features/realisasi_visit/domain/usecases/reject_realisasi_visit.dart';
 import '../../features/realisasi_visit/presentation/bloc/realisasi_visit_bloc.dart';
 import '../../features/chatbot/di/chatbot_injection.dart';
+import '../../features/ranking_achievement/di/ranking_achievement_injection.dart';
 import '../services/photo_storage_service.dart';
 import '../services/cleanup_scheduler_service.dart';
 
@@ -107,6 +108,7 @@ Future<void> _initNonCriticalDependencies() async {
   _initNotificationDependencies();
   _initCheckInDependencies();
   _initKpiDependencies();
+  await initRankingAchievementDependencies(sl);
   await initChatbotDependencies(sl);
 }
 

@@ -317,54 +317,104 @@ class _KpiChartNewState extends State<KpiChartNew>
           ),
         ],
       ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          initiallyExpanded: _isExpanded,
-          onExpansionChanged: (expanded) {
-            setState(() {
-              _isExpanded = expanded;
-            });
+      child: Column(
+        children: [
+          // Header with toggle button
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Detail Kinerja',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _isExpanded = !_isExpanded;
+                    });
 
-            // Panggil callback eksternal jika ada (untuk detail page)
-            if (widget.onExpansionChanged != null) {
-              widget.onExpansionChanged!(expanded);
-            } else {
-              // Auto scroll internal hanya jika tidak ada callback eksternal
-              if (expanded) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  final context = _expandableDetailKey.currentContext;
-                  if (context != null) {
-                    Scrollable.ensureVisible(
-                      context,
-                      duration: const Duration(milliseconds: 500),
-                      curve: Curves.easeInOut,
-                      alignment:
-                          0.1, // Scroll sedikit dari atas agar tidak terpotong
-                    );
-                  }
-                });
-              }
-            }
-          },
-          title: Text(
-            'Detail Kinerja',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).primaryColor,
+                    // Panggil callback eksternal jika ada (untuk detail page)
+                    if (widget.onExpansionChanged != null) {
+                      widget.onExpansionChanged!(_isExpanded);
+                    } else {
+                      // Auto scroll internal hanya jika tidak ada callback eksternal
+                      if (_isExpanded) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          final context = _expandableDetailKey.currentContext;
+                          if (context != null) {
+                            Scrollable.ensureVisible(
+                              context,
+                              duration: const Duration(milliseconds: 500),
+                              curve: Curves.easeInOut,
+                              alignment:
+                                  0.1, // Scroll sedikit dari atas agar tidak terpotong
+                            );
+                          }
+                        });
+                      }
+                    }
+                  },
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.getPrimaryColor(context).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color:
+                            AppTheme.getPrimaryColor(context).withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _isExpanded ? 'Sembunyikan' : 'Lihat Semua',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.getPrimaryColor(context),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        AnimatedRotation(
+                          turns: _isExpanded ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 300),
+                          child: Icon(
+                            Icons.keyboard_arrow_down,
+                            size: 16,
+                            color: AppTheme.getPrimaryColor(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          children: [
-            AnimatedSize(
+
+          // Expandable content
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            height: _isExpanded ? null : 0,
+            child: AnimatedOpacity(
               duration: const Duration(milliseconds: 300),
+              opacity: _isExpanded ? 1.0 : 0.0,
               child: Container(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: _buildKpiCardsGrid(),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
