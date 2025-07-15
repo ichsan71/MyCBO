@@ -141,7 +141,7 @@ class RealisasiVisitCard extends StatelessWidget {
         Icon(
           icon,
           size: 16,
-          color: AppTheme.getSecondaryTextColor(context),
+          color: AppTheme.primaryColor,
         ),
         const SizedBox(width: 8),
         Text(

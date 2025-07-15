@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/presentation/theme/app_theme.dart';
 import '../../../../core/utils/constants.dart';
