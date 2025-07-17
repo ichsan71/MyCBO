@@ -100,8 +100,15 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppBarWidget(
+      appBar: AppBarWidget(
         title: 'Detail Realisasi Visit',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => _showStatusExplanationDialog(context),
+            tooltip: 'Penjelasan Status',
+          ),
+        ],
       ),
       body: BlocConsumer<RealisasiVisitBloc, RealisasiVisitState>(
         listener: (context, state) {
@@ -280,6 +287,76 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                     ),
 
                     const SizedBox(height: 16),
+
+                    // Overdue Warning Section
+                    if (_hasOverdueSchedules()) ...[
+                      AppCard(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.warning_amber_rounded,
+                                  size: 20,
+                                  color: AppTheme.errorColor,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Jadwal Melewati Batas Approval',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.errorColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Terdapat ${_getOverdueSchedulesCount()} jadwal yang telah melewati batas waktu approval. Jadwal ini tidak dapat disetujui lagi.',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                color: AppTheme.getSecondaryTextColor(context),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppTheme.errorColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: AppTheme.errorColor.withOpacity(0.3),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline,
+                                    size: 16,
+                                    color: AppTheme.errorColor,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Deadline approval: maksimal 1 hari setelah tanggal visit atau sampai jam 12 siang hari berikutnya.',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        color: AppTheme.errorColor,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
 
                     // Bulk Approval Card - redesigned
                     if (_hasPendingSchedules()) ...[
@@ -656,6 +733,132 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
     );
   }
 
+  void _showStatusExplanationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: AppTheme.borderRadiusLarge,
+        ),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.info_outline,
+                color: AppTheme.primaryColor,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Penjelasan Status',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 8),
+            _buildStatusExplanationItem(
+              'Selesai',
+              'Status selesai berarti berhasil check-in & check-out dan data sudah disetujui',
+              Colors.green,
+              Icons.check_circle_outline,
+            ),
+            const SizedBox(height: 16),
+            _buildStatusExplanationItem(
+              'Pending/Menunggu',
+              'Status pending berarti data sudah selesai check-in & check-out tapi belum disetujui',
+              Colors.orange,
+              Icons.pending_outlined,
+            ),
+            const SizedBox(height: 16),
+            _buildStatusExplanationItem(
+              'Tidak Selesai',
+              'Status tidak selesai berarti data belum melakukan check-in atau check-out',
+              Colors.red,
+              Icons.cancel_outlined,
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+        actions: [
+          AppButton(
+            text: 'Tutup',
+            onPressed: () => Navigator.of(context).pop(),
+            type: AppButtonType.primary,
+            isFullWidth: true,
+            fontSize: 14,
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusExplanationItem(
+    String status,
+    String description,
+    Color color,
+    IconData icon,
+  ) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(
+            icon,
+            size: 16,
+            color: color,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                status,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.getPrimaryTextColor(context),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                description,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: AppTheme.getSecondaryTextColor(context),
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildSearchResultInfo() {
     final filteredSchedules =
         widget.realisasiVisit.details.where(_filterSchedule).toList();
@@ -907,7 +1110,7 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Sudah Diproses (${approvedSchedules.length})',
+                    'Selesai (${approvedSchedules.length})',
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -1048,6 +1251,43 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                     ),
                   ],
                 ),
+                // Overdue indicator
+                if (_isScheduleOverdue(schedule)) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.errorColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: AppTheme.errorColor.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.schedule,
+                          size: 14,
+                          color: AppTheme.errorColor,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Melewati batas approval',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: AppTheme.errorColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 Container(
                   padding:
@@ -1136,7 +1376,7 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(
-                              schedule.statusTerrealisasi,
+                              _getScheduleStatusCategory(schedule),
                               style: GoogleFonts.poppins(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -1581,24 +1821,28 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
     String statusText;
     IconData statusIcon;
 
-    if (schedule.realisasiVisitApproved == null) {
-      if (schedule.statusTerrealisasi.toLowerCase() == 'not done') {
-        badgeColor = AppTheme.warningColor;
-        statusText = 'Pending';
-        statusIcon = Icons.hourglass_empty;
-      } else if (schedule.statusTerrealisasi.toLowerCase() == 'done') {
+    final String statusCategory = _getScheduleStatusCategory(schedule);
+
+    switch (statusCategory) {
+      case 'Selesai':
+        badgeColor = AppTheme.successColor;
+        statusText = 'Disetujui';
+        statusIcon = Icons.check_circle;
+        break;
+      case 'Pending':
         badgeColor = AppTheme.warningColor;
         statusText = 'Menunggu';
         statusIcon = Icons.hourglass_empty;
-      } else {
+        break;
+      case 'Tidak Selesai':
+        badgeColor = AppTheme.errorColor;
+        statusText = 'Tidak Selesai';
+        statusIcon = Icons.cancel;
+        break;
+      default:
         badgeColor = AppTheme.warningColor;
         statusText = 'Pending';
         statusIcon = Icons.hourglass_empty;
-      }
-    } else {
-      badgeColor = AppTheme.successColor;
-      statusText = 'Disetujui';
-      statusIcon = Icons.check_circle;
     }
 
     return Container(
@@ -1633,6 +1877,94 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
   bool _hasPendingSchedules() {
     return widget.realisasiVisit.details
         .any((detail) => detail.realisasiVisitApproved == null);
+  }
+
+  bool _hasOverdueSchedules() {
+    return widget.realisasiVisit.details.any((detail) {
+      // Hanya cek jadwal yang status "done" tapi belum disetujui
+      if (detail.statusTerrealisasi.toLowerCase() == 'done' &&
+          detail.realisasiVisitApproved == null) {
+        final DateTime? visitDate = _parseVisitDate(detail.tglVisit);
+        if (visitDate != null) {
+          final DateTime now = DateTime.now();
+          final DateTime today = DateTime(now.year, now.month, now.day);
+          final DateTime yesterday = today.subtract(const Duration(days: 1));
+          final DateTime visitDateOnly =
+              DateTime(visitDate.year, visitDate.month, visitDate.day);
+
+          // Case 1: Visit kemarin - deadline adalah hari ini jam 12 siang
+          if (visitDateOnly.isAtSameMomentAs(yesterday)) {
+            final DateTime deadline =
+                DateTime(now.year, now.month, now.day, 12, 0);
+            return now.isAfter(deadline);
+          }
+          // Case 2: Visit lebih dari 1 hari yang lalu - sudah pasti lewat deadline
+          else if (visitDateOnly.isBefore(yesterday)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    });
+  }
+
+  int _getOverdueSchedulesCount() {
+    int count = 0;
+    for (final detail in widget.realisasiVisit.details) {
+      // Hanya cek jadwal yang status "done" tapi belum disetujui
+      if (detail.statusTerrealisasi.toLowerCase() == 'done' &&
+          detail.realisasiVisitApproved == null) {
+        final DateTime? visitDate = _parseVisitDate(detail.tglVisit);
+        if (visitDate != null) {
+          final DateTime now = DateTime.now();
+          final DateTime today = DateTime(now.year, now.month, now.day);
+          final DateTime yesterday = today.subtract(const Duration(days: 1));
+          final DateTime visitDateOnly =
+              DateTime(visitDate.year, visitDate.month, visitDate.day);
+
+          // Case 1: Visit kemarin - deadline adalah hari ini jam 12 siang
+          if (visitDateOnly.isAtSameMomentAs(yesterday)) {
+            final DateTime deadline =
+                DateTime(now.year, now.month, now.day, 12, 0);
+            if (now.isAfter(deadline)) {
+              count++;
+            }
+          }
+          // Case 2: Visit lebih dari 1 hari yang lalu - sudah pasti lewat deadline
+          else if (visitDateOnly.isBefore(yesterday)) {
+            count++;
+          }
+        }
+      }
+    }
+    return count;
+  }
+
+  bool _isScheduleOverdue(RealisasiVisitDetail schedule) {
+    // Hanya cek jadwal yang status "done" tapi belum disetujui
+    if (schedule.statusTerrealisasi.toLowerCase() == 'done' &&
+        schedule.realisasiVisitApproved == null) {
+      final DateTime? visitDate = _parseVisitDate(schedule.tglVisit);
+      if (visitDate != null) {
+        final DateTime now = DateTime.now();
+        final DateTime today = DateTime(now.year, now.month, now.day);
+        final DateTime yesterday = today.subtract(const Duration(days: 1));
+        final DateTime visitDateOnly =
+            DateTime(visitDate.year, visitDate.month, visitDate.day);
+
+        // Case 1: Visit kemarin - deadline adalah hari ini jam 12 siang
+        if (visitDateOnly.isAtSameMomentAs(yesterday)) {
+          final DateTime deadline =
+              DateTime(now.year, now.month, now.day, 12, 0);
+          return now.isAfter(deadline);
+        }
+        // Case 2: Visit lebih dari 1 hari yang lalu - sudah pasti lewat deadline
+        else if (visitDateOnly.isBefore(yesterday)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   bool _canApproveSchedule(RealisasiVisitDetail schedule) {
