@@ -744,7 +744,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                                 if (_selectedDestinationType == 'dokter')
                                   _buildDoctorList(state.doctorsAndClinics)
                                 else
-                                  _buildClinicList(state.doctorsAndClinics),
+                                  _buildClinicList(
+                                      []), // Pass empty list for clinics since API only returns doctors
                               ],
                             ),
                           ),
@@ -857,13 +858,13 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
               Icon(
                 Icons.warning_amber_rounded,
                 size: 48,
-                color: AppTheme.secondaryTextColor,
+                color: AppTheme.getSecondaryTextColor(context),
               ),
               const SizedBox(height: 16),
               Text(
                 'Tidak ada data dokter tersedia',
                 style: TextStyle(
-                  color: AppTheme.secondaryTextColor,
+                  color: AppTheme.getSecondaryTextColor(context),
                   fontSize: 16,
                 ),
                 textAlign: TextAlign.center,
@@ -872,7 +873,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
               Text(
                 'Silakan coba refresh halaman atau periksa koneksi internet Anda',
                 style: TextStyle(
-                  color: AppTheme.secondaryTextColor.withOpacity(0.8),
+                  color:
+                      AppTheme.getSecondaryTextColor(context).withOpacity(0.8),
                   fontSize: 14,
                 ),
                 textAlign: TextAlign.center,
@@ -908,13 +910,13 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
               Icon(
                 Icons.search_off,
                 size: 48,
-                color: AppTheme.secondaryTextColor,
+                color: AppTheme.getSecondaryTextColor(context),
               ),
               const SizedBox(height: 16),
               Text(
                 'Tidak ada dokter yang sesuai dengan pencarian',
                 style: TextStyle(
-                  color: AppTheme.secondaryTextColor,
+                  color: AppTheme.getSecondaryTextColor(context),
                   fontSize: 16,
                 ),
                 textAlign: TextAlign.center,
@@ -1104,28 +1106,92 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
 
   Widget _buildClinicList(List<DoctorClinicBase> clinics) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Log the incoming data
+    Logger.debug(_tag, 'Building clinic list with ${clinics.length} clinics');
+
+    // Check if clinics data is empty (which is expected since API only returns doctors)
+    if (clinics.isEmpty) {
+      Logger.warning(_tag, 'No clinics available to display');
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.local_hospital_outlined,
+                size: 48,
+                color: AppTheme.getSecondaryTextColor(context),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Tidak ada data klinik tersedia',
+                style: TextStyle(
+                  color: AppTheme.getSecondaryTextColor(context),
+                  fontSize: 16,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Data klinik belum tersedia saat ini',
+                style: TextStyle(
+                  color:
+                      AppTheme.getSecondaryTextColor(context).withOpacity(0.8),
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final filteredClinics = clinics.where((clinic) {
       final searchQuery = _doctorSearchQuery.toLowerCase();
       return clinic.nama.toLowerCase().contains(searchQuery) ||
           (clinic.alamat ?? '').toLowerCase().contains(searchQuery);
     }).toList();
 
+    // If no clinics match the search query
+    if (filteredClinics.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.search_off,
+                size: 48,
+                color: AppTheme.getSecondaryTextColor(context),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Tidak ada klinik yang sesuai dengan pencarian',
+                style: TextStyle(
+                  color: AppTheme.getSecondaryTextColor(context),
+                  fontSize: 16,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Container(
       constraints: const BoxConstraints(maxHeight: 300),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppTheme.borderColor,
+          color: AppTheme.getBorderColor(context),
           width: 1.5,
         ),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppTheme.cardBackgroundColor,
-            AppTheme.surfaceColor,
-          ],
-        ),
+        color: AppTheme.getCardBackgroundColor(context),
       ),
       child: Stack(
         children: [
@@ -1134,8 +1200,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
             thumbVisibility: true,
             thickness: 10,
             radius: const Radius.circular(5),
-            thumbColor: AppTheme.primaryColor.withOpacity(0.8),
-            trackColor: AppTheme.borderColor.withOpacity(0.3),
+            thumbColor: AppTheme.getPrimaryColor(context).withOpacity(0.8),
+            trackColor: AppTheme.getBorderColor(context).withOpacity(0.3),
             trackVisibility: true,
             trackRadius: const Radius.circular(5),
             crossAxisMargin: 3,
@@ -1154,15 +1220,14 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                   margin: const EdgeInsets.only(bottom: 8),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? Theme.of(context)
-                            .primaryColor
+                        ? AppTheme.getPrimaryColor(context)
                             .withOpacity(isDark ? 0.2 : 0.1)
-                        : Theme.of(context).cardColor,
+                        : AppTheme.getCardBackgroundColor(context),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isSelected
-                          ? AppTheme.primaryColor
-                          : AppTheme.borderColor,
+                          ? AppTheme.getPrimaryColor(context)
+                          : AppTheme.getBorderColor(context),
                       width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -1182,14 +1247,13 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .primaryColor
+                                color: AppTheme.getPrimaryColor(context)
                                     .withOpacity(isDark ? 0.2 : 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 Icons.local_hospital,
-                                color: AppTheme.primaryColor,
+                                color: AppTheme.getPrimaryColor(context),
                                 size: 20,
                               ),
                             ),
@@ -1203,7 +1267,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
-                                      color: AppTheme.primaryTextColor,
+                                      color:
+                                          AppTheme.getPrimaryTextColor(context),
                                     ),
                                   ),
                                   if (clinic.alamat != null &&
@@ -1213,7 +1278,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                                       clinic.alamat!,
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: AppTheme.secondaryTextColor,
+                                        color: AppTheme.getSecondaryTextColor(
+                                            context),
                                       ),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
@@ -1225,7 +1291,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                             if (isSelected)
                               Icon(
                                 Icons.check_circle,
-                                color: AppTheme.primaryColor,
+                                color: AppTheme.getPrimaryColor(context),
                               ),
                           ],
                         ),
@@ -1243,10 +1309,11 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppTheme.cardBackgroundColor.withOpacity(0.9),
+                  color:
+                      AppTheme.getCardBackgroundColor(context).withOpacity(0.9),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppTheme.primaryColor.withOpacity(0.5),
+                    color: AppTheme.getPrimaryColor(context).withOpacity(0.5),
                     width: 1,
                   ),
                 ),
@@ -1256,14 +1323,14 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                     Icon(
                       Icons.swipe_vertical,
                       size: 14,
-                      color: AppTheme.primaryColor,
+                      color: AppTheme.getPrimaryColor(context),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       'Scroll',
                       style: TextStyle(
                         fontSize: 11,
-                        color: AppTheme.primaryColor,
+                        color: AppTheme.getPrimaryColor(context),
                         fontWeight: FontWeight.w600,
                       ),
                     ),

@@ -13,7 +13,7 @@ import '../models/update_schedule_request_model.dart';
 import 'package:intl/intl.dart';
 
 abstract class ScheduleRemoteDataSource {
-  Future<List<ScheduleModel>> getSchedules(int userId);
+  Future<List<ScheduleModel>> getSchedules(int userId, {int page = 1});
   Future<List<ScheduleModel>> getSchedulesByRangeDate(
       int userId, String rangeDate, int page);
   Future<EditScheduleDataModel> getEditScheduleData(int scheduleId);
@@ -33,10 +33,10 @@ class ScheduleRemoteDataSourceImpl implements ScheduleRemoteDataSource {
   });
 
   @override
-  Future<List<ScheduleModel>> getSchedules(int userId) async {
+  Future<List<ScheduleModel>> getSchedules(int userId, {int page = 1}) async {
     try {
       Logger.info('ScheduleRemoteDataSource',
-          'Memulai request ke API schedule dengan userId: $userId');
+          'Memulai request ke API schedule dengan userId: $userId, page: $page');
 
       final token = sharedPreferences.getString(Constants.tokenKey);
       Logger.info('ScheduleRemoteDataSource',
@@ -59,9 +59,13 @@ class ScheduleRemoteDataSourceImpl implements ScheduleRemoteDataSource {
           return status !=
               null; // Accept all status codes and handle them in the response
         },
+        // PERBAIKAN: Tambahkan timeout yang lebih lama untuk pagination
+        receiveTimeout: const Duration(seconds: 60),
+        sendTimeout: const Duration(seconds: 30),
       );
 
-      final String url = '${Constants.baseUrl}/schedule/$userId';
+      // PERBAIKAN: Tambahkan parameter page ke URL
+      final String url = '${Constants.baseUrl}/schedule/$userId?page=$page';
       Logger.info('ScheduleRemoteDataSource', 'URL request: $url');
 
       // Add retry logic
@@ -78,7 +82,7 @@ class ScheduleRemoteDataSourceImpl implements ScheduleRemoteDataSource {
             options: options,
           )
               .timeout(
-            const Duration(seconds: 30),
+            const Duration(seconds: 60), // PERBAIKAN: Timeout lebih lama
             onTimeout: () {
               throw ServerException(
                   message:
@@ -90,11 +94,12 @@ class ScheduleRemoteDataSourceImpl implements ScheduleRemoteDataSource {
           break;
         } on DioException catch (e) {
           lastError = e;
-          if (e.response?.statusCode == 500) {
+          if (e.response?.statusCode == 500 ||
+              e.type == DioExceptionType.connectionTimeout) {
             retryCount++;
             if (retryCount < maxRetries) {
               Logger.info('ScheduleRemoteDataSource',
-                  'Retrying request after 500 error (attempt $retryCount of $maxRetries)');
+                  'Retrying request after error (attempt $retryCount of $maxRetries)');
               await Future.delayed(
                   Duration(seconds: 2 * retryCount)); // Exponential backoff
               continue;
@@ -226,6 +231,17 @@ Data type: ${responseData['data']?.runtimeType}
             responseData['data'] is Map<String, dynamic> &&
             responseData['data'].containsKey('data')) {
           scheduleData = responseData['data']['data'];
+
+          // PERBAIKAN: Log pagination info jika tersedia
+          if (responseData['data'].containsKey('current_page')) {
+            Logger.info('ScheduleRemoteDataSource', '''
+====== Pagination Info ======
+Current Page: ${responseData['data']['current_page']}
+Last Page: ${responseData['data']['last_page']}
+Total: ${responseData['data']['total']}
+Per Page: ${responseData['data']['per_page']}
+''');
+          }
         }
         // Case 3: Response format {"data": [...]}
         else if (responseData.containsKey('data') &&

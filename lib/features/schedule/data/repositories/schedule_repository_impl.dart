@@ -20,14 +20,16 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
   });
 
   @override
-  Future<Either<Failure, List<Schedule>>> getSchedules(int userId) async {
+  Future<Either<Failure, List<Schedule>>> getSchedules(int userId,
+      {int page = 1}) async {
     Logger.info('ScheduleRepositoryImpl', 'Memeriksa koneksi jaringan...');
 
     if (await networkInfo.isConnected) {
       Logger.info('ScheduleRepositoryImpl',
           'Koneksi jaringan tersedia, mengambil data dari API...');
       try {
-        final schedules = await remoteDataSource.getSchedules(userId);
+        final schedules =
+            await remoteDataSource.getSchedules(userId, page: page);
         Logger.info('ScheduleRepositoryImpl',
             'Data jadwal berhasil diambil dari API, jumlah: ${schedules.length}');
         return Right(schedules);
@@ -56,8 +58,8 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
         'Memeriksa koneksi jaringan untuk filter by range date...');
     if (await networkInfo.isConnected) {
       try {
-        final schedules =
-            await remoteDataSource.getSchedulesByRangeDate(userId, rangeDate, page);
+        final schedules = await remoteDataSource.getSchedulesByRangeDate(
+            userId, rangeDate, page);
         Logger.info('ScheduleRepositoryImpl',
             'Data jadwal by range date berhasil diambil dari API, jumlah: ${schedules.length}');
         return Right(schedules);
@@ -157,7 +159,8 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
         return Left(ServerFailure(message: e.message));
       } catch (e) {
         Logger.error('ScheduleRepositoryImpl', 'Unexpected error: $e');
-        return const Left(ServerFailure(message: 'An unexpected error occurred'));
+        return const Left(
+            ServerFailure(message: 'An unexpected error occurred'));
       }
     } else {
       Logger.error('ScheduleRepositoryImpl', 'No network connection');
@@ -183,7 +186,8 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
         return Left(ServerFailure(message: e.message));
       } catch (e) {
         Logger.error('ScheduleRepositoryImpl', 'Unexpected error: $e');
-        return const Left(ServerFailure(message: 'An unexpected error occurred'));
+        return const Left(
+            ServerFailure(message: 'An unexpected error occurred'));
       }
     } else {
       Logger.error('ScheduleRepositoryImpl', 'No network connection');
@@ -209,7 +213,8 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
         return Left(ServerFailure(message: e.message));
       } catch (e) {
         Logger.error('ScheduleRepositoryImpl', 'Unexpected error: $e');
-        return const Left(ServerFailure(message: 'An unexpected error occurred'));
+        return const Left(
+            ServerFailure(message: 'An unexpected error occurred'));
       }
     } else {
       Logger.error('ScheduleRepositoryImpl', 'No network connection');
@@ -234,7 +239,8 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
         return Left(ServerFailure(message: e.message));
       } catch (e) {
         Logger.error('ScheduleRepositoryImpl', 'Unexpected error: $e');
-        return const Left(ServerFailure(message: 'An unexpected error occurred'));
+        return const Left(
+            ServerFailure(message: 'An unexpected error occurred'));
       }
     } else {
       Logger.error('ScheduleRepositoryImpl', 'No network connection');

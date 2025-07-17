@@ -12,11 +12,12 @@ abstract class ScheduleEvent extends Equatable {
 
 class GetSchedulesEvent extends ScheduleEvent {
   final int userId;
+  final int page;
 
-  const GetSchedulesEvent({required this.userId});
+  const GetSchedulesEvent({required this.userId, this.page = 1});
 
   @override
-  List<Object?> get props => [userId];
+  List<Object?> get props => [userId, page];
 }
 
 class RefreshSchedulesEvent extends ScheduleEvent {

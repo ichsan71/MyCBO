@@ -28,9 +28,11 @@ class _SchedulePageState extends State<SchedulePage> {
   String _selectedFilter = '';
   DateTimeRange? _selectedDateRange;
 
-  // List untuk mode default
+  // List untuk mode default dengan pagination
+  List<Schedule> _filteredSchedules = [];
   bool _isLoadingMore = false;
   int _currentPage = 1;
+  bool _hasMoreData = true;
 
   // List untuk mode filter rentang tanggal
   List<Schedule> _filteredRangeSchedules = [];
@@ -48,7 +50,7 @@ class _SchedulePageState extends State<SchedulePage> {
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
       context.read<ScheduleBloc>().add(
-            GetSchedulesEvent(userId: authState.user.idUser),
+            GetSchedulesEvent(userId: authState.user.idUser, page: 1),
           );
     }
   }
@@ -63,17 +65,21 @@ class _SchedulePageState extends State<SchedulePage> {
     print('- Is loading more filter: $_isLoadingMoreFilter');
     print('- Has more filter data: $_hasMoreFilterData');
     print('- Filtered schedules count: ${_filteredRangeSchedules.length}');
+    print('- Is loading more default: $_isLoadingMore');
+    print('- Has more default data: $_hasMoreData');
+    print('- Default schedules count: ${_filteredSchedules.length}');
 
     // Cek kondisi untuk load more data
     if (_selectedDateRange != null &&
         !_isLoadingMoreFilter &&
         _hasMoreFilterData &&
         _filteredRangeSchedules.isNotEmpty) {
+      // Mode filter rentang tanggal
       const threshold = 0.8;
       final maxScroll = _scrollController.position.maxScrollExtent;
       final currentScroll = _scrollController.position.pixels;
 
-      print('AuthSchedulePage: Scroll position check');
+      print('AuthSchedulePage: Range date mode scroll position check');
       print('- Current scroll: $currentScroll');
       print('- Max scroll: $maxScroll');
       print('- Threshold: ${maxScroll * threshold}');
@@ -81,8 +87,9 @@ class _SchedulePageState extends State<SchedulePage> {
       if (currentScroll >= maxScroll * threshold) {
         final authState = context.read<AuthBloc>().state;
         if (authState is AuthAuthenticated) {
-          print('AuthSchedulePage: Triggering load more...');
-          print('- Current page: $_currentFilterPage');
+          print(
+              'AuthSchedulePage: Triggering load more for range date mode...');
+          print('- Current filter page: $_currentFilterPage');
 
           // Prevent multiple calls
           if (!_isLoadingMoreFilter) {
@@ -92,7 +99,8 @@ class _SchedulePageState extends State<SchedulePage> {
 
             // Increment page and fetch data
             _currentFilterPage++;
-            print('AuthSchedulePage: Requesting page $_currentFilterPage');
+            print(
+                'AuthSchedulePage: Requesting range date page $_currentFilterPage');
 
             context.read<ScheduleBloc>().add(
                   GetSchedulesByRangeDateEvent(
@@ -102,18 +110,65 @@ class _SchedulePageState extends State<SchedulePage> {
                   ),
                 );
           } else {
-            print('AuthSchedulePage: Already loading more, skipping');
+            print(
+                'AuthSchedulePage: Already loading more range date, skipping');
           }
         }
       } else {
-        print('AuthSchedulePage: Scroll threshold not reached');
+        print('AuthSchedulePage: Range date scroll threshold not reached');
+      }
+    } else if (_selectedDateRange == null &&
+        !_isLoadingMore &&
+        _hasMoreData &&
+        _filteredSchedules.isNotEmpty) {
+      // Mode default dengan pagination
+      const threshold = 0.8;
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final currentScroll = _scrollController.position.pixels;
+
+      print('AuthSchedulePage: Default mode scroll position check');
+      print('- Current scroll: $currentScroll');
+      print('- Max scroll: $maxScroll');
+      print('- Threshold: ${maxScroll * threshold}');
+
+      if (currentScroll >= maxScroll * threshold) {
+        final authState = context.read<AuthBloc>().state;
+        if (authState is AuthAuthenticated) {
+          print('AuthSchedulePage: Triggering load more for default mode...');
+          print('- Current page: $_currentPage');
+
+          // Prevent multiple calls
+          if (!_isLoadingMore) {
+            setState(() {
+              _isLoadingMore = true;
+            });
+
+            // Increment page and fetch data
+            _currentPage++;
+            print('AuthSchedulePage: Requesting default page $_currentPage');
+
+            context.read<ScheduleBloc>().add(
+                  GetSchedulesEvent(
+                    userId: authState.user.idUser,
+                    page: _currentPage,
+                  ),
+                );
+          } else {
+            print('AuthSchedulePage: Already loading more default, skipping');
+          }
+        }
+      } else {
+        print('AuthSchedulePage: Default scroll threshold not reached');
       }
     } else {
       print('AuthSchedulePage: Load more conditions not met');
       if (_selectedDateRange == null) print('- No date range selected');
-      if (_isLoadingMoreFilter) print('- Already loading more');
-      if (!_hasMoreFilterData) print('- No more data available');
+      if (_isLoadingMoreFilter) print('- Already loading more filter');
+      if (_isLoadingMore) print('- Already loading more default');
+      if (!_hasMoreFilterData) print('- No more filter data available');
+      if (!_hasMoreData) print('- No more default data available');
       if (_filteredRangeSchedules.isEmpty) print('- No filtered schedules');
+      if (_filteredSchedules.isEmpty) print('- No default schedules');
     }
   }
 
@@ -345,6 +400,7 @@ Page: 1
           print('- Current page: ${state.currentPage}');
 
           if (_selectedDateRange != null) {
+            // Mode filter rentang tanggal
             print('AuthSchedulePage: Processing range date mode');
             print('- Current filter page: $_currentFilterPage');
             print(
@@ -357,8 +413,7 @@ Page: 1
                 _originalRangeSchedules = List<Schedule>.from(state.schedules);
                 _filteredRangeSchedules = List<Schedule>.from(state.schedules);
               } else {
-                // PERBAIKAN: Jangan tambahkan data lagi karena state.schedules sudah berisi semua data
-                // Yang lama sudah ada di bloc, yang baru sudah digabung dan deduplicated di bloc
+                // Update data untuk page berikutnya
                 print(
                     'AuthSchedulePage: Updating data for page $_currentFilterPage');
                 print(
@@ -378,20 +433,42 @@ Page: 1
               print('- Has more data: $_hasMoreFilterData');
             });
           } else {
-            // Mode default tanpa rentang tanggal
-            print('AuthSchedulePage: Processing default mode');
+            // Mode default dengan pagination
+            print('AuthSchedulePage: Processing default mode with pagination');
             setState(() {
+              if (state.currentPage == 1) {
+                // Reset data untuk page pertama
+                print('AuthSchedulePage: Resetting data for page 1');
+                _filteredSchedules = List<Schedule>.from(state.schedules);
+              } else {
+                // Update data untuk page berikutnya
+                print(
+                    'AuthSchedulePage: Updating data for page ${state.currentPage}');
+                _filteredSchedules = List<Schedule>.from(state.schedules);
+              }
+
               _isLoadingMore = false;
+              _hasMoreData = state.hasMoreData;
+
+              print('AuthSchedulePage: Final counts:');
+              print('- Filtered schedules: ${_filteredSchedules.length}');
+              print('- Has more data: $_hasMoreData');
             });
           }
         } else if (state is ScheduleError) {
           print('AuthSchedulePage: ScheduleError received: ${state.message}');
           setState(() {
             _isLoadingMoreFilter = false;
+            _isLoadingMore = false;
             if (_currentFilterPage > 1) {
               _currentFilterPage--;
               print(
-                  'AuthSchedulePage: Rolled back to page $_currentFilterPage');
+                  'AuthSchedulePage: Rolled back to filter page $_currentFilterPage');
+            }
+            if (_currentPage > 1) {
+              _currentPage--;
+              print(
+                  'AuthSchedulePage: Rolled back to default page $_currentPage');
             }
           });
 
@@ -540,82 +617,12 @@ Page: 1
                         return BlocBuilder<ScheduleBloc, ScheduleState>(
                           builder: (context, state) {
                             if (_selectedDateRange != null) {
-                              // Mode filter range date
-                              if (state is ScheduleLoading &&
-                                  _currentFilterPage == 1) {
-                                return const ShimmerScheduleListLoading();
-                              }
-
-                              if (_filteredRangeSchedules.isEmpty) {
-                                return _buildEmptyState();
-                              }
-
-                              return RefreshIndicator(
-                                onRefresh: () async {
-                                  // Reset pagination state
-                                  setState(() {
-                                    _filteredRangeSchedules = [];
-                                    _currentFilterPage = 1;
-                                    _hasMoreFilterData = true;
-                                    _isLoadingMoreFilter = false;
-                                  });
-
-                                  // Request data baru
-                                  if (mounted) {
-                                    context.read<ScheduleBloc>().add(
-                                          GetSchedulesByRangeDateEvent(
-                                            userId: authState.user.idUser,
-                                            rangeDate: _formatRangeDate(
-                                                _selectedDateRange!),
-                                            page: 1,
-                                          ),
-                                        );
-                                  }
-                                },
-                                child: ListView.builder(
-                                  controller: _scrollController,
-                                  physics:
-                                      const AlwaysScrollableScrollPhysics(),
-                                  itemCount: _filteredRangeSchedules.length +
-                                      (_hasMoreFilterData ? 1 : 0),
-                                  itemBuilder: (context, index) {
-                                    if (index <
-                                        _filteredRangeSchedules.length) {
-                                      return _buildScheduleCard(
-                                        context,
-                                        _filteredRangeSchedules[index],
-                                      );
-                                    } else {
-                                      // Tampilkan loading indicator jika ada more data dan sedang loading
-                                      // atau placeholder jika ada more data tapi belum loading
-                                      if (_hasMoreFilterData) {
-                                        print(
-                                            'AuthSchedulePage: Showing loading indicator - isLoading: $_isLoadingMoreFilter');
-                                        return _isLoadingMoreFilter
-                                            ? const Center(
-                                                child: Padding(
-                                                  padding: EdgeInsets.all(16.0),
-                                                  child:
-                                                      CircularProgressIndicator(),
-                                                ),
-                                              )
-                                            : const Center(
-                                                child: Padding(
-                                                  padding: EdgeInsets.all(16.0),
-                                                  child: Text(
-                                                      'Scroll untuk load more...'),
-                                                ),
-                                              );
-                                      } else {
-                                        return const SizedBox.shrink();
-                                      }
-                                    }
-                                  },
-                                ),
-                              );
+                              // Mode filter rentang tanggal
+                              return _buildRangeDateScheduleList(
+                                  state, authState);
                             } else {
-                              // Mode default
-                              return _buildDefaultScheduleList(
+                              // Mode default dengan pagination
+                              return _buildDefaultScheduleListWithPagination(
                                   state, authState);
                             }
                           },
@@ -696,6 +703,7 @@ Page: 1
           _searchController.clear();
           _currentPage = 1;
           _isLoadingMore = false;
+          _hasMoreData = true;
 
           // Reset state untuk mode filter tanggal
           if (_selectedDateRange != null) {
@@ -1389,53 +1397,137 @@ Page: 1
     );
   }
 
-  Widget _buildDefaultScheduleList(
+  Widget _buildRangeDateScheduleList(
+      ScheduleState state, AuthAuthenticated authState) {
+    if (state is ScheduleLoading && _currentFilterPage == 1) {
+      return const ShimmerScheduleListLoading();
+    }
+
+    if (_filteredRangeSchedules.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        // Reset pagination state
+        setState(() {
+          _filteredRangeSchedules = [];
+          _currentFilterPage = 1;
+          _hasMoreFilterData = true;
+          _isLoadingMoreFilter = false;
+        });
+
+        // Request data baru
+        if (mounted) {
+          context.read<ScheduleBloc>().add(
+                GetSchedulesByRangeDateEvent(
+                  userId: authState.user.idUser,
+                  rangeDate: _formatRangeDate(_selectedDateRange!),
+                  page: 1,
+                ),
+              );
+        }
+      },
+      child: ListView.builder(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount:
+            _filteredRangeSchedules.length + (_hasMoreFilterData ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index < _filteredRangeSchedules.length) {
+            return _buildScheduleCard(context, _filteredRangeSchedules[index]);
+          } else {
+            // Tampilkan loading indicator jika ada more data dan sedang loading
+            if (_hasMoreFilterData) {
+              print(
+                  'AuthSchedulePage: Showing loading indicator - isLoading: $_isLoadingMoreFilter');
+              return _isLoadingMoreFilter
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  : const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Text('Scroll untuk load more...'),
+                      ),
+                    );
+            } else {
+              return const SizedBox.shrink();
+            }
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildDefaultScheduleListWithPagination(
       ScheduleState state, AuthAuthenticated authState) {
     if (state is ScheduleLoading && _currentPage == 1) {
       return const ShimmerScheduleListLoading();
-    } else if (state is ScheduleLoaded) {
-      final filteredSchedules = _getFilteredSchedulesForDefault(
-        state.schedules,
-        _searchController.text,
-      );
-      if (filteredSchedules.isEmpty) {
-        return _buildEmptyState();
-      }
-      return RefreshIndicator(
-        onRefresh: () async {
-          _searchController.clear();
-          setState(() {
-            _selectedFilter = AppLocalizations.of(context)!.filterAll;
-            _currentPage = 1;
-          });
-          if (mounted) {
-            context.read<ScheduleBloc>().add(
-                  GetSchedulesEvent(userId: authState.user.idUser),
-                );
-          }
-        },
-        child: ListView.builder(
-          controller: _scrollController,
-          physics: const AlwaysScrollableScrollPhysics(),
-          itemCount: filteredSchedules.length + (_isLoadingMore ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index < filteredSchedules.length) {
-              return _buildScheduleCard(context, filteredSchedules[index]);
-            } else {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: CircularProgressIndicator(),
+    }
+
+    final filteredSchedules = _getFilteredSchedulesForDefault(
+      _filteredSchedules,
+      _searchController.text,
+    );
+
+    if (filteredSchedules.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        _searchController.clear();
+        setState(() {
+          _selectedFilter = AppLocalizations.of(context)!.filterAll;
+          _currentPage = 1;
+          _isLoadingMore = false;
+          _hasMoreData = true;
+        });
+        if (mounted) {
+          context.read<ScheduleBloc>().add(
+                GetSchedulesEvent(
+                  userId: authState.user.idUser,
+                  page: 1,
                 ),
               );
+        }
+      },
+      child: ListView.builder(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: filteredSchedules.length + (_hasMoreData ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index < filteredSchedules.length) {
+            return _buildScheduleCard(context, filteredSchedules[index]);
+          } else {
+            // Tampilkan loading indicator jika ada more data dan sedang loading
+            if (_hasMoreData) {
+              print(
+                  'AuthSchedulePage: Showing loading indicator - isLoading: $_isLoadingMore');
+              return _isLoadingMore
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  : const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Text('Scroll untuk load more...'),
+                      ),
+                    );
+            } else {
+              return const SizedBox.shrink();
             }
-          },
-        ),
-      );
-    } else if (state is ScheduleError) {
-      return _buildErrorState(context, authState, state.message);
-    }
-    return const SizedBox();
+          }
+        },
+      ),
+    );
   }
 
   List<Schedule> _getFilteredSchedulesForDefault(

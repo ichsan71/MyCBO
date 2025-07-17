@@ -53,15 +53,28 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
     GetSchedulesEvent event,
     Emitter<ScheduleState> emit,
   ) async {
-    emit(const ScheduleLoading());
-    _resetPaginationState();
+    if (_isLoading) return;
+
+    if (event.page == 1) {
+      emit(const ScheduleLoading());
+      _resetPaginationState();
+    } else {
+      emit(ScheduleLoadingMore(currentSchedules: _allSchedules));
+    }
+
+    _isLoading = true;
 
     try {
-      Logger.info(
-          'ScheduleBloc', 'Fetching schedules for user ${event.userId}');
+      Logger.info('ScheduleBloc',
+          'Fetching schedules for user ${event.userId}, page: ${event.page}');
       final result = await getSchedulesUseCase(
-        get_schedules_usecase.ScheduleParams(userId: event.userId),
+        get_schedules_usecase.ScheduleParams(
+          userId: event.userId,
+          page: event.page,
+        ),
       );
+
+      _isLoading = false;
 
       await result.fold(
         (failure) async {
@@ -71,13 +84,32 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
         },
         (schedules) {
           Logger.info('ScheduleBloc',
-              'Successfully fetched ${schedules.length} schedules');
-          _allSchedules = schedules;
-          if (schedules.isEmpty) {
+              'Successfully fetched ${schedules.length} schedules for page ${event.page}');
+
+          // Update current page untuk pagination
+          _currentPage = event.page;
+
+          if (event.page == 1) {
+            // Reset untuk page pertama
+            _allSchedules = schedules;
+          } else {
+            // Untuk page berikutnya, tambahkan dengan deduplication
+            _allSchedules.addAll(schedules);
+          }
+
+          // Selalu lakukan deduplication untuk memastikan tidak ada duplikat
+          _allSchedules = _deduplicateSchedules(_allSchedules);
+
+          // Update hasMoreData - jika hasil kosong atau kurang dari limit, berarti sudah habis
+          if (schedules.isEmpty || schedules.length < 12) {
+            _hasMoreData = false;
+          }
+
+          if (_allSchedules.isEmpty) {
             emit(const ScheduleEmpty());
           } else {
             emit(ScheduleLoaded(
-              schedules: schedules,
+              schedules: _allSchedules,
               currentPage: _currentPage,
               hasMoreData: _hasMoreData,
             ));
@@ -85,6 +117,7 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
         },
       );
     } catch (e) {
+      _isLoading = false;
       Logger.error(
           'ScheduleBloc', 'Unexpected error during schedule fetch: $e');
       emit(ScheduleError('Terjadi kesalahan tidak terduga: ${e.toString()}'));

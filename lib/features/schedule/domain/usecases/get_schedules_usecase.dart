@@ -12,17 +12,18 @@ class GetSchedulesUseCase implements UseCase<List<Schedule>, ScheduleParams> {
 
   @override
   Future<Either<Failure, List<Schedule>>> call(ScheduleParams params) async {
-    return await repository.getSchedules(params.userId);
+    return await repository.getSchedules(params.userId, page: params.page);
   }
 }
 
 class ScheduleParams extends Equatable {
   final int userId;
+  final int page;
 
-  const ScheduleParams({required this.userId});
+  const ScheduleParams({required this.userId, this.page = 1});
 
   @override
-  List<Object?> get props => [userId];
+  List<Object?> get props => [userId, page];
 }
 
 class GetSchedulesByRangeDateUseCase
