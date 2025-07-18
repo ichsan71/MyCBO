@@ -744,7 +744,7 @@ class RealisasiVisitDetailViewState extends State<RealisasiVisitDetailView> {
         contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         title: Row(
-          children: [
+          children: [ 
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
