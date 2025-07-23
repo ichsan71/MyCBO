@@ -18,7 +18,7 @@
       "description": "Pertanyaan tentang Key Performance Indicator dan analisis kinerja",
       "order": 2,
       "isActive": true,
-      "allowedRoles": []
+      "allowedRoles": ["ADMIN", "BCO", "RSM", "DM", "AM", "PS", "AE"]
     },
     {
       "id": "approval",
@@ -27,7 +27,7 @@
       "description": "Pertanyaan tentang proses persetujuan dan workflow",
       "order": 3,
       "isActive": true,
-      "allowedRoles": ["ADMIN", "GM", "CEO", "BCO", "RSM", "DM", "AM"]
+      "allowedRoles": ["ADMIN", "GM", "BCO", "RSM", "DM", "AM"]
     },
     {
       "id": "realisasi",
@@ -36,7 +36,7 @@
       "description": "Pertanyaan tentang realisasi kunjungan dan laporan visit",
       "order": 4,
       "isActive": true,
-      "allowedRoles": ["ADMIN", "GM", "CEO", "BCO", "RSM", "DM", "AM"]
+      "allowedRoles": ["ADMIN", "GM", "BCO", "RSM", "DM", "AM"]
     },
     {
       "id": "notifications",

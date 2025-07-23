@@ -168,18 +168,17 @@ class _HomeContentState extends State<_HomeContent>
         role == 'RSM' ||
         role == 'DM' ||
         role == 'AM' ||
-        role == 'GM' ||
-        role == 'CEO';
+        role == 'GM';
     final hasRealisasiVisitAccess = role == 'ADMIN' ||
         role == 'GM' ||
-        role == 'CEO' ||
         role == 'BCO' ||
         role == 'RSM' ||
         role == 'DM' ||
         role == 'AM';
     final hasKpiAccess =
-        role != 'PS' && role != 'GM' && role != 'CEO' && role != 'AE';
-    final isGmOrCeo = role == 'GM' || role == 'CEO';
+        role != 'PS' && role != 'GM' && role != 'AE' && role != 'CEO';
+    final isGmOnly = role == 'GM';
+    final isCeo = role == 'CEO';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SafeArea(
@@ -240,81 +239,93 @@ class _HomeContentState extends State<_HomeContent>
             padding: const EdgeInsets.symmetric(horizontal: 20),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                const SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(isDark ? 0.2 : 0.1),
-                        spreadRadius: 0,
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              l10n.performanceOverview,
-                              style: GoogleFonts.poppins(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).primaryColor,
-                              ),
-                            ),
-                            BlocBuilder<KpiBloc, KpiState>(
-                              builder: (context, state) {
-                                if (state is KpiLoaded) {
-                                  return IconButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        _isManualRefresh = true;
-                                      });
-                                      _refreshKpiData(isForceRefresh: true);
-                                    },
-                                    icon: Icon(
-                                      Icons.refresh_rounded,
-                                      color: Theme.of(context).primaryColor,
-                                    ),
-                                  );
-                                }
-                                return const SizedBox.shrink();
-                              },
-                            ),
-                          ],
+                if (!isCeo && !isGmOnly) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(isDark ? 0.2 : 0.1),
+                          spreadRadius: 0,
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
-                      ),
-                      BlocBuilder<KpiBloc, KpiState>(
-                        builder: (context, state) {
-                          if (state is KpiLoading) {
-                            return const KpiChartShimmer();
-                          } else if (state is KpiLoaded) {
-                            // Tampilkan KpiChartNew bahkan jika data kosong
-                            // KpiChartNew sudah menangani kasus data kosong dengan baik
-                            final grafik =
-                                state.kpiData.dataKpiAtasan.isNotEmpty
-                                    ? state.kpiData.dataKpiAtasan.first.grafik
-                                    : <KpiGrafik>[];
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                l10n.performanceOverview,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                              ),
+                              BlocBuilder<KpiBloc, KpiState>(
+                                builder: (context, state) {
+                                  if (state is KpiLoaded) {
+                                    return IconButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          _isManualRefresh = true;
+                                        });
+                                        _refreshKpiData(isForceRefresh: true);
+                                      },
+                                      icon: Icon(
+                                        Icons.refresh_rounded,
+                                        color: Theme.of(context).primaryColor,
+                                      ),
+                                    );
+                                  }
+                                  return const SizedBox.shrink();
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        BlocBuilder<KpiBloc, KpiState>(
+                          builder: (context, state) {
+                            if (state is KpiLoading) {
+                              return const KpiChartShimmer();
+                            } else if (state is KpiLoaded) {
+                              // Tampilkan KpiChartNew bahkan jika data kosong
+                              // KpiChartNew sudah menangani kasus data kosong dengan baik
+                              final grafik =
+                                  state.kpiData.dataKpiAtasan.isNotEmpty
+                                      ? state.kpiData.dataKpiAtasan.first.grafik
+                                      : <KpiGrafik>[];
 
-                            return KpiChartNew(
-                              kpiData: grafik,
-                              onRefresh: () =>
-                                  _refreshKpiData(isForceRefresh: true),
-                              onFilterChanged: _handleFilterChanged,
-                              currentYear: _currentYear,
-                              currentMonth: _currentMonth,
-                            );
-                          } else if (state is KpiError) {
-                            // Untuk error, tetap tampilkan filter bulan dengan data kosong
+                              return KpiChartNew(
+                                kpiData: grafik,
+                                onRefresh: () =>
+                                    _refreshKpiData(isForceRefresh: true),
+                                onFilterChanged: _handleFilterChanged,
+                                currentYear: _currentYear,
+                                currentMonth: _currentMonth,
+                              );
+                            } else if (state is KpiError) {
+                              // Untuk error, tetap tampilkan filter bulan dengan data kosong
+                              return KpiChartNew(
+                                kpiData: const <KpiGrafik>[],
+                                onRefresh: () =>
+                                    _refreshKpiData(isForceRefresh: true),
+                                onFilterChanged: _handleFilterChanged,
+                                currentYear: _currentYear,
+                                currentMonth: _currentMonth,
+                                isFilterEnabled: true,
+                              );
+                            }
+                            // State initial - tampilkan dengan data kosong
                             return KpiChartNew(
                               kpiData: const <KpiGrafik>[],
                               onRefresh: () =>
@@ -324,32 +335,24 @@ class _HomeContentState extends State<_HomeContent>
                               currentMonth: _currentMonth,
                               isFilterEnabled: true,
                             );
-                          }
-                          // State initial - tampilkan dengan data kosong
-                          return KpiChartNew(
-                            kpiData: const <KpiGrafik>[],
-                            onRefresh: () =>
-                                _refreshKpiData(isForceRefresh: true),
-                            onFilterChanged: _handleFilterChanged,
-                            currentYear: _currentYear,
-                            currentMonth: _currentMonth,
-                            isFilterEnabled: true,
-                          );
-                        },
-                      ),
-                    ],
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 32),
-                // Ranking Achievement Section
-                BlocProvider(
-                  create: (context) => sl<RankingAchievementBloc>(),
-                  child: RankingAchievementWidget(
-                    roleId: widget.user.user.idUser.toString(),
-                    currentUserId: widget.user.user.idUser,
+                ],
+                if (!isCeo && !isGmOnly) ...[
+                  const SizedBox(height: 32),
+                  // Ranking Achievement Section
+                  BlocProvider(
+                    create: (context) => sl<RankingAchievementBloc>(),
+                    child: RankingAchievementWidget(
+                      roleId: widget.user.user.idUser.toString(),
+                      currentUserId: widget.user.user.idUser,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 32),
+                  const SizedBox(height: 32),
+                ],
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   child: Container(
@@ -388,7 +391,7 @@ class _HomeContentState extends State<_HomeContent>
                             mainAxisSpacing: 16,
                             childAspectRatio: 1.1,
                             children: [
-                              if (hasKpiAccess && !isGmOrCeo)
+                              if (hasKpiAccess && !isGmOnly)
                                 _buildMenuCard(
                                   context: context,
                                   title: l10n.report,
@@ -397,7 +400,7 @@ class _HomeContentState extends State<_HomeContent>
                                   onTap: () => Navigator.pushNamed(
                                       context, '/kpi_member'),
                                 ),
-                              if (!isGmOrCeo)
+                              if (!isGmOnly && !isCeo)
                                 _buildMenuCard(
                                   context: context,
                                   title: l10n.addSchedule,

@@ -6,6 +6,8 @@ import 'package:test_cbo/core/error/failures.dart';
 import 'package:test_cbo/features/kpi/data/models/kpi_model.dart';
 import 'package:test_cbo/features/kpi/domain/repositories/kpi_repository.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:io';
+import 'dart:async';
 
 class KpiRepositoryImpl implements KpiRepository {
   final http.Client client;
@@ -17,7 +19,8 @@ class KpiRepositoryImpl implements KpiRepository {
   });
 
   @override
-  Future<Either<Failure, KpiResponse>> getKpiData(String userId, String year, String month) async {
+  Future<Either<Failure, KpiResponse>> getKpiData(
+      String userId, String year, String month) async {
     try {
       final token = sharedPreferences.getString('token');
       if (token == null) {
@@ -25,7 +28,8 @@ class KpiRepositoryImpl implements KpiRepository {
         return const Left(ServerFailure());
       }
 
-      final url = 'https://dev-bco.businesscorporateofficer.com/api/my-kpi/$userId/$year/$month';
+      final url =
+          'https://dev-bco.businesscorporateofficer.com/api/my-kpi/$userId/$year/$month';
       debugPrint('KPI Repository: Fetching data from $url');
 
       final response = await client.get(
@@ -36,7 +40,8 @@ class KpiRepositoryImpl implements KpiRepository {
         },
       );
 
-      debugPrint('KPI Repository: Response status code: ${response.statusCode}');
+      debugPrint(
+          'KPI Repository: Response status code: ${response.statusCode}');
       debugPrint('KPI Repository: Response body: ${response.body}');
 
       if (response.statusCode == 200) {
@@ -56,11 +61,21 @@ class KpiRepositoryImpl implements KpiRepository {
         }
         return Right(KpiResponse.fromJson(jsonData));
       } else {
-        return const Left(ServerFailure()); 
+        return const Left(ServerFailure());
       }
+    } on SocketException catch (e) {
+      // Log detail for developer
+      print('KPI Repository: SocketException: $e');
+      throw Exception(
+          'Tidak dapat terhubung ke server. Silakan cek koneksi Anda.');
+    } on TimeoutException catch (e) {
+      print('KPI Repository: TimeoutException: $e');
+      throw Exception(
+          'Permintaan ke server melebihi waktu tunggu. Silakan coba lagi.');
     } catch (e) {
-      debugPrint('KPI Repository: Error fetching data: $e');
-      return const Left(ServerFailure()); 
+      print('KPI Repository: Error fetching data: $e');
+      throw Exception(
+          'Terjadi kesalahan saat mengambil data KPI. Silakan coba lagi.');
     }
   }
-} 
+}

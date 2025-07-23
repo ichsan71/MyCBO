@@ -12,6 +12,13 @@ import 'package:test_cbo/features/schedule/presentation/bloc/schedule_bloc.dart'
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_event.dart';
 import 'package:test_cbo/features/schedule/presentation/bloc/schedule_state.dart';
 import 'package:test_cbo/features/kpi/presentation/bloc/kpi_bloc.dart';
+import 'package:test_cbo/features/ranking_bco/presentation/pages/bco_ranking_page.dart';
+import 'package:test_cbo/features/ranking_bco/presentation/bloc/bco_ranking_bloc.dart';
+import 'package:test_cbo/features/ranking_bco/domain/usecases/get_bco_ranking.dart';
+import 'package:test_cbo/features/ranking_bco/data/datasources/bco_ranking_remote_data_source.dart';
+import 'package:test_cbo/features/ranking_bco/data/repositories/bco_ranking_repository_impl.dart';
+import 'package:test_cbo/features/ranking_bco/domain/repositories/bco_ranking_repository.dart';
+import 'package:dio/dio.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -20,7 +27,8 @@ class DashboardPage extends StatefulWidget {
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserver {
+class _DashboardPageState extends State<DashboardPage>
+    with WidgetsBindingObserver {
   int _selectedIndex = 0;
   DateTime? _lastBackPressTime;
   bool _isExiting = false;
@@ -32,7 +40,7 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initializeData();
-    
+
     // Set default year and month to current date
     final now = DateTime.now();
     _currentYear = now.year.toString();
@@ -50,15 +58,15 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
     if (state == AppLifecycleState.resumed) {
       // Reset exit flag when app is resumed
       _isExiting = false;
-      
+
       // Refresh KPI data when app is resumed
       final authState = context.read<AuthBloc>().state;
       if (authState is AuthAuthenticated) {
         context.read<KpiBloc>().add(GetKpiDataEvent(
-          authState.user.idUser.toString(),
-          _currentYear,
-          _currentMonth,
-        ));
+              authState.user.idUser.toString(),
+              _currentYear,
+              _currentMonth,
+            ));
       }
     }
   }
@@ -78,10 +86,10 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
       if (authState is AuthAuthenticated) {
         // Initialize KPI data with actual user ID
         context.read<KpiBloc>().add(GetKpiDataEvent(
-          authState.user.idUser.toString(),
-          _currentYear,
-          _currentMonth,
-        ));
+              authState.user.idUser.toString(),
+              _currentYear,
+              _currentMonth,
+            ));
         _refreshScheduleIfNeeded();
       }
     });
@@ -123,11 +131,11 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
           ],
         ),
         backgroundColor: Theme.of(context).primaryColor.withValues(
-          alpha: 230.0,
-          red: Theme.of(context).primaryColor.red.toDouble(),
-          green: Theme.of(context).primaryColor.green.toDouble(),
-          blue: Theme.of(context).primaryColor.blue.toDouble(),
-        ),
+              alpha: 230.0,
+              red: Theme.of(context).primaryColor.red.toDouble(),
+              green: Theme.of(context).primaryColor.green.toDouble(),
+              blue: Theme.of(context).primaryColor.blue.toDouble(),
+            ),
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
         margin: EdgeInsets.only(
@@ -166,7 +174,7 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
     await Future.delayed(const Duration(milliseconds: 300));
 
     if (!mounted) return;
-    
+
     // Exit app
     SystemNavigator.pop();
   }
@@ -184,7 +192,7 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
     }
 
     final now = DateTime.now();
-    if (_lastBackPressTime == null || 
+    if (_lastBackPressTime == null ||
         now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
       _lastBackPressTime = now;
       _showExitSnackbar();
@@ -198,69 +206,96 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final authState = context.watch<AuthBloc>().state;
+    String role = '';
+    String token = '';
+    if (authState is AuthAuthenticated) {
+      role = authState.user.role.toUpperCase();
+      token = authState.user.token;
+    }
+    final isGmOrCeo = role == 'GM' || role == 'CEO';
 
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (bool didPop) async {
-        if (!didPop) {
-          final shouldPop = await _onWillPop();
-          if (shouldPop && mounted) {
-            SystemNavigator.pop();
-          }
-        }
-      },
-      child: Scaffold(
-        body: IndexedStack(
-          index: _selectedIndex,
-          children: const [
-            HomePage(),
-            SchedulePage(),
-            ProfilePage(),
-          ],
-        ),
-        bottomNavigationBar:
-            BlocBuilder<ScheduleBloc, ScheduleState>(builder: (context, state) {
-          return BottomNavigationBar(
-            currentIndex: _selectedIndex,
-            onTap: (index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-
-              // Refresh jadwal saat tab jadwal dipilih
-              _refreshScheduleIfNeeded();
-            },
-            items: [
+    // Provide BcoRankingBloc only if needed
+    Widget mainScaffold = Scaffold(
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: [
+          const HomePage(),
+          if (isGmOrCeo)
+            BcoRankingPage(
+              token: token,
+              year: _currentYear,
+              month: _currentMonth,
+            )
+          else
+            const SchedulePage(),
+          const ProfilePage(),
+        ],
+      ),
+      bottomNavigationBar:
+          BlocBuilder<ScheduleBloc, ScheduleState>(builder: (context, state) {
+        return BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+            _refreshScheduleIfNeeded();
+          },
+          items: [
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.home_outlined),
+              activeIcon: const Icon(Icons.home),
+              label: l10n.home,
+            ),
+            if (isGmOrCeo)
               BottomNavigationBarItem(
-                icon: const Icon(Icons.home_outlined),
-                activeIcon: const Icon(Icons.home),
-                label: l10n.home,
-              ),
+                icon: const Icon(Icons.emoji_events_outlined),
+                activeIcon: const Icon(Icons.emoji_events),
+                label: 'Peringkat BCO',
+              )
+            else
               BottomNavigationBarItem(
                 icon: const Icon(Icons.calendar_today_outlined),
                 activeIcon: const Icon(Icons.calendar_today),
                 label: l10n.schedules,
               ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.person_outline),
-                activeIcon: const Icon(Icons.person),
-                label: l10n.profile,
-              ),
-            ],
-            selectedItemColor: Theme.of(context).primaryColor,
-            unselectedItemColor: Colors.grey,
-            selectedLabelStyle: GoogleFonts.poppins(
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.person_outline),
+              activeIcon: const Icon(Icons.person),
+              label: l10n.profile,
             ),
-            unselectedLabelStyle: GoogleFonts.poppins(
-              fontWeight: FontWeight.normal,
-              fontSize: 12,
-            ),
-            type: BottomNavigationBarType.fixed,
-          );
-        }),
-      ),
+          ],
+          selectedItemColor: Theme.of(context).primaryColor,
+          unselectedItemColor: Colors.grey,
+          selectedLabelStyle: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
+          unselectedLabelStyle: GoogleFonts.poppins(
+            fontWeight: FontWeight.normal,
+            fontSize: 12,
+          ),
+          type: BottomNavigationBarType.fixed,
+        );
+      }),
     );
+
+    if (isGmOrCeo) {
+      // Provide BcoRankingBloc for GM/CEO
+      return BlocProvider<BcoRankingBloc>(
+        create: (context) {
+          final dio = Dio();
+          final remoteDataSource = BcoRankingRemoteDataSourceImpl(dio: dio);
+          final repository =
+              BcoRankingRepositoryImpl(remoteDataSource: remoteDataSource);
+          final usecase = GetBcoRanking(repository);
+          return BcoRankingBloc(getBcoRanking: usecase);
+        },
+        child: mainScaffold,
+      );
+    } else {
+      return mainScaffold;
+    }
   }
 }

@@ -110,11 +110,12 @@ class _KpiMemberPageState extends State<KpiMemberPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          state.message,
+                          'Tidak dapat mengambil data. Silakan cek koneksi Anda atau coba lagi.',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             color: AppTheme.getSecondaryTextColor(context),
                           ),
+                          textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 16),
                         AppButton(

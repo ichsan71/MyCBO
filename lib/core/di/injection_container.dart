@@ -49,6 +49,11 @@ import '../../features/chatbot/di/chatbot_injection.dart';
 import '../../features/ranking_achievement/di/ranking_achievement_injection.dart';
 import '../services/photo_storage_service.dart';
 import '../services/cleanup_scheduler_service.dart';
+import 'package:test_cbo/features/ranking_bco/data/datasources/member_kpi_remote_data_source.dart';
+import 'package:test_cbo/features/ranking_bco/data/repositories/member_kpi_repository_impl.dart';
+import 'package:test_cbo/features/ranking_bco/domain/repositories/member_kpi_repository.dart';
+import 'package:test_cbo/features/ranking_bco/domain/usecases/get_member_kpi_ranking.dart';
+import 'package:test_cbo/features/ranking_bco/presentation/bloc/member_kpi_ranking_bloc.dart';
 
 /// Service locator instance
 final sl = GetIt.instance;
@@ -110,6 +115,15 @@ Future<void> _initNonCriticalDependencies() async {
   _initKpiDependencies();
   await initRankingAchievementDependencies(sl);
   await initChatbotDependencies(sl);
+  // Member KPI Ranking (BCO)
+  sl.registerLazySingleton<MemberKpiRemoteDataSource>(
+    () => MemberKpiRemoteDataSourceImpl(sl()), // sl() = Dio
+  );
+  sl.registerLazySingleton<MemberKpiRepository>(
+    () => MemberKpiRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton(() => GetMemberKpiRanking(sl()));
+  sl.registerFactory(() => MemberKpiRankingBloc(getMemberKpiRanking: sl()));
 }
 
 // /// Initialize external dependencies
